@@ -995,3 +995,253 @@ export function checkAnswerMatch(userInput: string, acceptedAnswers: string[]): 
   }
   return false;
 }
+
+function levenshteinDistance(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+    }
+  }
+  return dp[m][n];
+}
+
+export interface WordDiffToken {
+  word: string;
+  status: 'ok' | 'typo' | 'wrong';
+  expected?: string;
+}
+
+export interface DetailedEvaluation {
+  isCorrect: boolean;
+  hasMinorSpellingTypos: boolean;
+  typoNotes: string[];
+  shortCorrection: string;
+  fullCorrectedSentence: string;
+  wordDiff: WordDiffToken[];
+}
+
+// Separa la frase inglesa con hueco (___) de la traducción al español opcional
+export function extractTargetAndTranslation(exercise: Exercise): {
+  englishTargetWithGap: string | null;
+  spanishTranslation: string | null;
+} {
+  const raw = exercise.spanishHint || '';
+  if (!raw) {
+    return { englishTargetWithGap: null, spanishTranslation: null };
+  }
+
+  // En ejercicios de traducción inversa (Español -> Inglés), el texto en español es el enunciado obligatorio
+  if (exercise.type === 'translation') {
+    return { englishTargetWithGap: null, spanishTranslation: raw };
+  }
+
+  // Si contiene "->" (ej. "Hemos vivido... -> We ___ this neighbourhood...")
+  if (raw.includes('->')) {
+    const parts = raw.split('->').map((s) => s.trim());
+    return {
+      spanishTranslation: parts[0] || null,
+      englishTargetWithGap: parts[1] || null
+    };
+  }
+
+  // Si contiene hueco "___" y paréntesis al final con traducción: "If I had..., I ___ the train. (Si hubiera...)"
+  const parenMatch = raw.match(/^(.*___.*)\s*\(([^)]+)\)\s*$/);
+  if (parenMatch) {
+    return {
+      englishTargetWithGap: parenMatch[1].trim(),
+      spanishTranslation: parenMatch[2].trim()
+    };
+  }
+
+  // Si contiene "___", es la segunda frase en inglés para Key Word Transformation
+  if (raw.includes('___')) {
+    return {
+      englishTargetWithGap: raw,
+      spanishTranslation: null
+    };
+  }
+
+  // En cualquier otro caso (Cloze, Word Formation, etc.), es una traducción al español
+  return {
+    englishTargetWithGap: null,
+    spanishTranslation: raw
+  };
+}
+
+// Reconstruye siempre la frase completa en inglés con la corrección aplicada para mostrarla claramente
+export function buildFullCorrectedSentence(exercise: Exercise): {
+  fullSentence: string;
+  shortAnswer: string;
+} {
+  const answers = exercise.acceptedAnswers;
+  // La respuesta más corta suele ser el fragmento clave ("understood", "was walking")
+  const sortedByLen = [...answers].sort((a, b) => a.length - b.length);
+  const shortAnswer = sortedByLen[0] || '';
+  const longestAnswer = sortedByLen[sortedByLen.length - 1] || '';
+
+  if (exercise.type === 'error_correction') {
+    // En error_correction, la respuesta más larga suele ser la frase entera corregida
+    if (longestAnswer.split(' ').length >= 4) {
+      return { fullSentence: longestAnswer, shortAnswer };
+    }
+    if (exercise.baseSentence && exercise.errorWord) {
+      return {
+        fullSentence: exercise.baseSentence.replace(exercise.errorWord, shortAnswer),
+        shortAnswer
+      };
+    }
+  }
+
+  const { englishTargetWithGap } = extractTargetAndTranslation(exercise);
+  if (englishTargetWithGap && englishTargetWithGap.includes('___')) {
+    return {
+      fullSentence: englishTargetWithGap.replace('___', shortAnswer),
+      shortAnswer
+    };
+  }
+
+  if (exercise.baseSentence && exercise.baseSentence.includes('___')) {
+    return {
+      fullSentence: exercise.baseSentence.replace('___', shortAnswer),
+      shortAnswer
+    };
+  }
+
+  if (exercise.prompt && exercise.prompt.includes('___')) {
+    // Limpiar "(walk)" si viene detrás del hueco
+    const replaced = exercise.prompt
+      .replace(/___\s*\([^)]+\)/, shortAnswer)
+      .replace('___', shortAnswer);
+    return {
+      fullSentence: replaced,
+      shortAnswer
+    };
+  }
+
+  return {
+    fullSentence: longestAnswer || shortAnswer,
+    shortAnswer
+  };
+}
+
+export function evaluateExerciseSubmission(
+  userInput: string,
+  exercise: Exercise
+): DetailedEvaluation {
+  const { fullSentence, shortAnswer } = buildFullCorrectedSentence(exercise);
+  const exactMatch = checkAnswerMatch(userInput, exercise.acceptedAnswers);
+
+  if (exactMatch) {
+    return {
+      isCorrect: true,
+      hasMinorSpellingTypos: false,
+      typoNotes: [],
+      shortCorrection: shortAnswer,
+      fullCorrectedSentence: fullSentence,
+      wordDiff: []
+    };
+  }
+
+  const cleanUser = userInput
+    .trim()
+    .toLowerCase()
+    .replace(/[.,!?;:"]/g, '')
+    .replace(/’/g, "'")
+    .replace(/\s+/g, ' ');
+
+  // Caso especial para Error Correction: si el usuario escribió toda la frase y corrigió bien el error gramatical ("understood"),
+  // pero cometió una errata de teclado al copiar el resto de la frase ("expalined", "inmediatdly")
+  if (exercise.type === 'error_correction') {
+    const cleanShort = shortAnswer
+      .trim()
+      .toLowerCase()
+      .replace(/[.,!?;:"]/g, '');
+    const cleanError = (exercise.errorWord || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[.,!?;:"]/g, '');
+
+    const fixedTheGrammarTarget =
+      cleanShort.length > 0 &&
+      cleanUser.includes(cleanShort) &&
+      (!cleanError || !cleanUser.includes(cleanError));
+
+    if (fixedTheGrammarTarget) {
+      // Comprobar qué palabras del resto de la frase tienen typos respecto a fullSentence
+      const targetWords = fullSentence
+        .trim()
+        .replace(/[.,!?;:"]/g, '')
+        .split(/\s+/);
+      const userWords = userInput
+        .trim()
+        .replace(/[.,!?;:"]/g, '')
+        .split(/\s+/);
+
+      const typoNotes: string[] = [];
+      const wordDiff: WordDiffToken[] = userWords.map((uw, idx) => {
+        const tw = targetWords[idx] || '';
+        if (uw.toLowerCase() === tw.toLowerCase()) {
+          return { word: uw, status: 'ok' };
+        }
+        const dist = levenshteinDistance(uw.toLowerCase(), tw.toLowerCase());
+        if (tw && dist <= 2) {
+          typoNotes.push(`"${uw}" → "${tw}"`);
+          return { word: uw, status: 'typo', expected: tw };
+        }
+        return { word: uw, status: 'wrong', expected: tw };
+      });
+
+      return {
+        isCorrect: true,
+        hasMinorSpellingTypos: typoNotes.length > 0,
+        typoNotes,
+        shortCorrection: shortAnswer,
+        fullCorrectedSentence: fullSentence,
+        wordDiff
+      };
+    }
+  }
+
+  // Comparar palabra por palabra contra la referencia más parecida (corta o frase completa)
+  const compareTarget =
+    cleanUser.split(' ').length >= 4 && fullSentence.split(' ').length >= 4
+      ? fullSentence
+      : shortAnswer;
+
+  const targetWords = compareTarget
+    .trim()
+    .replace(/[.,!?;:"]/g, '')
+    .split(/\s+/);
+  const userWords = userInput
+    .trim()
+    .replace(/[.,!?;:"]/g, '')
+    .split(/\s+/);
+
+  const wordDiff: WordDiffToken[] = userWords.map((uw, idx) => {
+    const tw = targetWords[idx] || '';
+    if (!tw) return { word: uw, status: 'wrong' };
+    if (uw.toLowerCase() === tw.toLowerCase()) {
+      return { word: uw, status: 'ok' };
+    }
+    const dist = levenshteinDistance(uw.toLowerCase(), tw.toLowerCase());
+    if (dist <= 2 && tw.length >= 4) {
+      return { word: uw, status: 'typo', expected: tw };
+    }
+    return { word: uw, status: 'wrong', expected: tw };
+  });
+
+  return {
+    isCorrect: false,
+    hasMinorSpellingTypos: false,
+    typoNotes: [],
+    shortCorrection: shortAnswer,
+    fullCorrectedSentence: fullSentence,
+    wordDiff
+  };
+}

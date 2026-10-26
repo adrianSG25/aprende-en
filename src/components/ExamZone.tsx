@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { Level, Exercise, ExamResult } from '../types';
-import { getAllStaticExercises, checkAnswerMatch } from '../data/infiniteGenerator';
+import {
+  getAllStaticExercises,
+  evaluateExerciseSubmission,
+  extractTargetAndTranslation
+} from '../data/infiniteGenerator';
 import {
   Trophy,
   Play,
@@ -8,7 +12,8 @@ import {
   XCircle,
   RotateCcw,
   Award,
-  Flame
+  Flame,
+  Languages
 } from 'lucide-react';
 
 interface ExamZoneProps {
@@ -28,6 +33,7 @@ export const ExamZone: React.FC<ExamZoneProps> = ({
   const [questionCount, setQuestionCount] = useState<number>(15);
   const [activeQuestions, setActiveQuestions] = useState<Exercise[]>([]);
   const [userResponses, setUserResponses] = useState<Record<string, string>>({});
+  const [visibleTranslations, setVisibleTranslations] = useState<Record<string, boolean>>({});
   const [examSubmitted, setExamSubmitted] = useState<boolean>(false);
   const [examStarted, setExamStarted] = useState<boolean>(false);
 
@@ -43,12 +49,12 @@ export const ExamZone: React.FC<ExamZoneProps> = ({
       pool = all.filter((e) => e.level === examTarget);
     }
 
-    // Shuffle pool
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
     const selected = shuffled.slice(0, Math.min(questionCount, shuffled.length));
 
     setActiveQuestions(selected);
     setUserResponses({});
+    setVisibleTranslations({});
     setExamSubmitted(false);
     setExamStarted(true);
   };
@@ -60,16 +66,15 @@ export const ExamZone: React.FC<ExamZoneProps> = ({
 
     activeQuestions.forEach((q) => {
       const ans = userResponses[q.id] || '';
-      const right = checkAnswerMatch(ans, q.acceptedAnswers);
-      if (right) score += 1;
+      const evalRes = evaluateExerciseSubmission(ans, q);
+      if (evalRes.isCorrect) score += 1;
 
       const catKey = q.category;
       if (!breakdown[catKey]) breakdown[catKey] = { correct: 0, total: 0 };
       breakdown[catKey].total += 1;
-      if (right) breakdown[catKey].correct += 1;
+      if (evalRes.isCorrect) breakdown[catKey].correct += 1;
 
-      // Record attempt so missed questions automatically enter the Mistake Vault!
-      onExerciseAttempt(q, right, false);
+      onExerciseAttempt(q, evalRes.isCorrect, false);
     });
 
     const result: ExamResult = {
@@ -98,8 +103,8 @@ export const ExamZone: React.FC<ExamZoneProps> = ({
     return 'A2+ (A2 Advanced)';
   };
 
-  const totalRight = activeQuestions.filter((q) =>
-    checkAnswerMatch(userResponses[q.id] || '', q.acceptedAnswers)
+  const totalRight = activeQuestions.filter(
+    (q) => evaluateExerciseSubmission(userResponses[q.id] || '', q).isCorrect
   ).length;
   const pctScore =
     activeQuestions.length > 0 ? Math.round((totalRight / activeQuestions.length) * 100) : 0;
@@ -246,48 +251,82 @@ export const ExamZone: React.FC<ExamZoneProps> = ({
       {/* Active Exam Questions */}
       {examStarted && !examSubmitted && (
         <form onSubmit={handleFinishExam} className="space-y-4">
-          {activeQuestions.map((q, idx) => (
-            <div
-              key={q.id}
-              className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-bold px-2.5 py-1 rounded bg-slate-800 text-indigo-300">
-                  Pregunta {idx + 1} de {activeQuestions.length} • Nivel {q.level}
-                </span>
-                <span className="text-xs text-slate-400">{q.topicLabel}</span>
-              </div>
+          {activeQuestions.map((q, idx) => {
+            const { englishTargetWithGap, spanishTranslation } = extractTargetAndTranslation(q);
+            const isTransVisible = !!visibleTranslations[q.id];
 
-              <p className="text-sm font-medium text-slate-300">{q.prompt}</p>
-
-              {q.baseSentence && (
-                <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5">
-                  <p className="font-bold text-white">{q.baseSentence}</p>
-                  {q.keyWord && (
-                    <span className="inline-block mt-1.5 px-2.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono font-bold text-xs">
-                      KEYWORD: {q.keyWord}
-                    </span>
-                  )}
+            return (
+              <div
+                key={q.id}
+                className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-bold px-2.5 py-1 rounded bg-slate-800 text-indigo-300">
+                    Pregunta {idx + 1} de {activeQuestions.length} • Nivel {q.level}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400">{q.topicLabel}</span>
+                    {spanishTranslation && q.type !== 'translation' && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setVisibleTranslations((prev) => ({
+                            ...prev,
+                            [q.id]: !prev[q.id]
+                          }))
+                        }
+                        className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-1 cursor-pointer"
+                      >
+                        <Languages className="w-3.5 h-3.5" />
+                        {isTransVisible ? 'Ocultar traducción' : 'Mostrar traducción'}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              )}
 
-              {q.spanishHint && (
-                <p className="text-xs sm:text-sm text-indigo-200 font-medium">
-                  🎯 {q.spanishHint}
-                </p>
-              )}
+                <p className="text-sm font-medium text-slate-300">{q.prompt}</p>
 
-              <input
-                type="text"
-                value={userResponses[q.id] || ''}
-                onChange={(e) =>
-                  setUserResponses((prev) => ({ ...prev, [q.id]: e.target.value }))
-                }
-                placeholder="Escribe tu respuesta..."
-                className="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-sm sm:text-base text-white outline-none"
-              />
-            </div>
-          ))}
+                {q.baseSentence && (
+                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5">
+                    <p className="font-bold text-white">{q.baseSentence}</p>
+                    {q.keyWord && (
+                      <span className="inline-block mt-1.5 px-2.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono font-bold text-xs">
+                        KEYWORD: {q.keyWord}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {englishTargetWithGap && (
+                  <p className="text-sm sm:text-base text-indigo-200 font-bold bg-indigo-950/30 border border-indigo-500/30 rounded-xl p-3">
+                    🎯 {englishTargetWithGap}
+                  </p>
+                )}
+
+                {q.type === 'translation' && spanishTranslation && (
+                  <p className="text-sm sm:text-base text-indigo-200 font-bold bg-indigo-950/30 border border-indigo-500/30 rounded-xl p-3">
+                    🎯 "{spanishTranslation}"
+                  </p>
+                )}
+
+                {isTransVisible && spanishTranslation && q.type !== 'translation' && (
+                  <p className="text-xs sm:text-sm text-indigo-200 bg-slate-950/80 border border-indigo-500/30 rounded-xl p-2.5">
+                    🌐 Traducción: {spanishTranslation}
+                  </p>
+                )}
+
+                <input
+                  type="text"
+                  value={userResponses[q.id] || ''}
+                  onChange={(e) =>
+                    setUserResponses((prev) => ({ ...prev, [q.id]: e.target.value }))
+                  }
+                  placeholder="Escribe tu respuesta..."
+                  className="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-sm sm:text-base text-white outline-none"
+                />
+              </div>
+            );
+          })}
 
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex items-center justify-between">
             <span className="text-xs sm:text-sm text-slate-300">
@@ -346,12 +385,12 @@ export const ExamZone: React.FC<ExamZoneProps> = ({
             </h4>
             {activeQuestions.map((q, idx) => {
               const userAns = userResponses[q.id] || '';
-              const isRight = checkAnswerMatch(userAns, q.acceptedAnswers);
+              const evalRes = evaluateExerciseSubmission(userAns, q);
               return (
                 <div
                   key={q.id}
                   className={`p-4 rounded-2xl border text-xs sm:text-sm space-y-2 ${
-                    isRight
+                    evalRes.isCorrect
                       ? 'bg-emerald-950/20 border-emerald-500/30'
                       : 'bg-rose-950/25 border-rose-500/35'
                   }`}
@@ -360,7 +399,7 @@ export const ExamZone: React.FC<ExamZoneProps> = ({
                     <span className="font-bold text-white">
                       {idx + 1}. [{q.level}] {q.topicLabel}
                     </span>
-                    {isRight ? (
+                    {evalRes.isCorrect ? (
                       <span className="flex items-center gap-1 text-emerald-400 font-bold">
                         <CheckCircle2 className="w-4 h-4" /> Correcta
                       </span>
@@ -371,18 +410,14 @@ export const ExamZone: React.FC<ExamZoneProps> = ({
                     )}
                   </div>
                   {q.baseSentence && <p className="text-slate-200 font-medium">{q.baseSentence}</p>}
-                  {q.spanishHint && <p className="text-indigo-200">{q.spanishHint}</p>}
                   <p>
                     <span className="text-slate-400">Tu respuesta: </span>
-                    <strong className={isRight ? 'text-emerald-300' : 'text-rose-300 line-through'}>
+                    <strong className={evalRes.isCorrect ? 'text-emerald-300' : 'text-rose-300 line-through'}>
                       {userAns || '(En blanco)'}
                     </strong>
-                    {!isRight && (
-                      <>
-                        {' '}
-                        → <strong className="text-emerald-300">{q.acceptedAnswers.join(' / ')}</strong>
-                      </>
-                    )}
+                  </p>
+                  <p className="text-emerald-300 font-semibold">
+                    ✅ Frase completa corregida: {evalRes.fullCorrectedSentence}
                   </p>
                   <p className="text-slate-300 text-xs">{q.explanation}</p>
                 </div>

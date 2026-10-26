@@ -1,11 +1,19 @@
-const CACHE_NAME = 'engdrill-pro-v1';
+const CACHE_NAME = 'engdrill-pro-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys.map((k) => {
+          if (k !== CACHE_NAME) return caches.delete(k);
+        })
+      )
+    ).then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener('fetch', (event) => {
