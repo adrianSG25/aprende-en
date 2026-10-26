@@ -1,0 +1,18 @@
+{
+  "name": "EngDrill Pro (A2+ a B2+ Advanced)",
+  "short_name": "EngDrill Pro",
+  "description": "Entrenamiento intensivo de Gramática, Phrasal Verbs, Use of English, Reading y Writing de A2 Advanced a B2 Advanced.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
