@@ -217,7 +217,7 @@ export function App() {
 
         {/* Desktop Navigation Bar */}
         <nav className="hidden lg:block border-t border-slate-900 bg-slate-950/60">
-          <div className="max-w-7xl mx-auto px-4 py-2 flex items-center gap-2 overflow-x-auto">
+          <div className="max-w-7xl mx-auto px-4 py-2 flex flex-wrap items-center gap-2">
             {navItems.map((item) => {
               const isActive = activeTab === item.id;
               return (

@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
 import { AIConfig } from '../types';
-import { getAIConfig, saveAIConfig } from '../services/aiService';
+import {
+  getAIConfig,
+  saveAIConfig,
+  fetchAvailableModelsForKey
+} from '../services/aiService';
 import {
   X,
   Cpu,
   Smartphone,
   CheckCircle2,
   Download,
-  Upload
+  Upload,
+  RefreshCw
 } from 'lucide-react';
 
 interface SettingsModalProps {
@@ -17,12 +22,40 @@ interface SettingsModalProps {
 export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   const [config, setConfig] = useState<AIConfig>(() => getAIConfig());
   const [saved, setSaved] = useState(false);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [detectMsg, setDetectMsg] = useState<string | null>(null);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     saveAIConfig(config);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
+  };
+
+  const handleDetectModels = async () => {
+    if (!config.apiKey.trim()) {
+      setDetectMsg('Pega primero tu API Key abajo para consultar los modelos disponibles.');
+      return;
+    }
+    setLoadingModels(true);
+    setDetectMsg(null);
+    try {
+      const models = await fetchAvailableModelsForKey(config);
+      setAvailableModels(models);
+      if (models.length > 0) {
+        const updated = { ...config, model: models[0] };
+        setConfig(updated);
+        saveAIConfig(updated);
+        setDetectMsg(`✅ Se han detectado ${models.length} modelos activos en tu cuenta. Seleccionado: ${models[0]}`);
+      } else {
+        setDetectMsg('⚠️ No se pudieron listar los modelos. Se usará detección automática.');
+      }
+    } catch {
+      setDetectMsg('⚠️ Error al consultar modelos. Revisa tu API Key.');
+    } finally {
+      setLoadingModels(false);
+    }
   };
 
   const handleExportBackup = () => {
@@ -78,12 +111,42 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
         <form onSubmit={handleSave} className="space-y-4">
           <div>
             <h4 className="text-sm font-bold text-indigo-300">
-              1. Conectar IA para Ejercicios Infinitos y Corrector Profundo de Writing (Opcional)
+              1. Conectar IA para Ejercicios Infinitos y Corrector Profundo de Writing
             </h4>
             <p className="text-xs text-slate-400 mt-0.5">
-              La app incluye cientos de ejercicios y analizadores que funcionan 100% gratis sin claves. Si añades una API Key gratuita de Groq o Google Gemini, podrás generar tandas nuevas infinitas y correcciones de Writing línea por línea.
+              Pega tu API Key (de Groq `gsk_...`, Google Gemini `AIza...`, xAI Grok `xai-...` u OpenAI `sk-...`). El sistema detecta automáticamente qué modelos tienes activos en tu cuenta para evitar errores 404.
             </p>
           </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">
+              API Key (se guarda únicamente en tu navegador local)
+            </label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="password"
+                value={config.apiKey}
+                onChange={(e) => setConfig({ ...config, apiKey: e.target.value, model: 'auto' })}
+                placeholder="gsk_... / AIza... / xai-... / sk-..."
+                className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-indigo-500"
+              />
+              <button
+                type="button"
+                onClick={handleDetectModels}
+                disabled={loadingModels}
+                className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold text-indigo-300 flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingModels ? 'animate-spin' : ''}`} />
+                {loadingModels ? 'Detectando...' : 'Detectar Modelos'}
+              </button>
+            </div>
+          </div>
+
+          {detectMsg && (
+            <p className="text-xs text-emerald-300 bg-emerald-950/30 border border-emerald-500/30 rounded-xl px-3 py-2">
+              {detectMsg}
+            </p>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -94,46 +157,43 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 value={config.provider}
                 onChange={(e) => {
                   const prov = e.target.value as AIConfig['provider'];
-                  const defaultModel =
-                    prov === 'groq'
-                      ? 'llama-3.3-70b-versatile'
-                      : prov === 'gemini'
-                      ? 'gemini-2.5-flash'
-                      : 'gpt-4o-mini';
-                  setConfig({ ...config, provider: prov, model: defaultModel });
+                  setConfig({ ...config, provider: prov, model: 'auto' });
                 }}
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white"
               >
-                <option value="groq">Groq Cloud (Gratis y ultrarrápido)</option>
-                <option value="gemini">Google Gemini Studio (Gratis)</option>
-                <option value="openai">OpenAI Compatible</option>
+                <option value="groq">Groq Cloud (gsk_...)</option>
+                <option value="gemini">Google Gemini Studio (AIza...)</option>
+                <option value="openai">OpenAI / xAI Grok / OpenRouter</option>
               </select>
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-400 mb-1">
-                Modelo
+                Modelo (Auto-selección recomendada)
               </label>
-              <input
-                type="text"
-                value={config.model}
-                onChange={(e) => setConfig({ ...config, model: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white"
-              />
+              {availableModels.length > 0 ? (
+                <select
+                  value={config.model}
+                  onChange={(e) => setConfig({ ...config, model: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white"
+                >
+                  <option value="auto">✨ Automático (el mejor disponible)</option>
+                  {availableModels.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={config.model}
+                  onChange={(e) => setConfig({ ...config, model: e.target.value })}
+                  placeholder="auto"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white"
+                />
+              )}
             </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-400 mb-1">
-              API Key (se guarda solo en tu navegador local)
-            </label>
-            <input
-              type="password"
-              value={config.apiKey}
-              onChange={(e) => setConfig({ ...config, apiKey: e.target.value })}
-              placeholder="gsk_... / AIza... / sk-..."
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-indigo-500"
-            />
           </div>
 
           <button
@@ -159,7 +219,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
           </h4>
           <ul className="text-xs text-slate-300 space-y-1.5 bg-slate-950 p-3.5 rounded-xl border border-slate-800">
             <li>
-              • <strong>En Android (Chrome):</strong> Abre la URL de Vercel/Netlify, toca los 3 puntos arriba a la derecha y pulsa <strong>"Instalar aplicación" / "Añadir a pantalla de inicio"</strong>.
+              • <strong>En Android (Chrome):</strong> Abre la URL, toca los 3 puntos arriba a la derecha y pulsa <strong>"Instalar aplicación" / "Añadir a pantalla de inicio"</strong>.
             </li>
             <li>
               • <strong>En iPhone (Safari):</strong> Abre la URL, toca el botón <strong>Compartir</strong> abajo en el centro y selecciona <strong>"Añadir a la pantalla de inicio"</strong>.
