@@ -1,7 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { WritingPrompt, Exercise } from '../types';
+import { WritingPrompt, Exercise, Level } from '../types';
 import { WRITING_PROMPTS, analyzeWritingLocally } from '../data/writingData';
-import { evaluateWritingWithAI, AIWritingCorrectionResult } from '../services/aiService';
+import {
+  evaluateWritingWithAI,
+  AIWritingCorrectionResult,
+  RoleplayScenario,
+  RoleplayEvaluationResult,
+  generateAIRoleplayScenario,
+  evaluateRoleplayResponseWithAI
+} from '../services/aiService';
 import { appendCustomAIExercises } from '../services/storageService';
 import { ExerciseCard } from './ExerciseCard';
 import {
@@ -12,7 +19,10 @@ import {
   Eye,
   AlertTriangle,
   Cpu,
-  Save
+  Save,
+  MessageSquare,
+  Languages,
+  Send
 } from 'lucide-react';
 
 interface WritingZoneProps {
@@ -28,17 +38,199 @@ interface WritingZoneProps {
   onExerciseAttempt: (exercise: Exercise, isCorrect: boolean, forceAddToVault?: boolean) => void;
 }
 
+const BUILTIN_ROLEPLAY_SCENARIOS: RoleplayScenario[] = [
+  {
+    id: 'rp-mechanic',
+    level: 'B1',
+    title: '🔧 En el Mecánico: Avería Cara e Imprevista',
+    roleLabel: 'Mechanic (Dave)',
+    situationEs: 'Has llevado tu coche al taller porque hacía un ruido raro al cambiar de marcha. El mecánico sale con malas noticias.',
+    characterSaysEn: 'I\'ve just looked under the bonnet and I\'m afraid the clutch is completely worn out. It\'s going to cost at least £850 to replace it, and we won\'t get the spare part until next Wednesday.',
+    characterSaysEs: 'Acabo de mirar debajo del capó y me temo que el embrague está totalmente desgastado. Va a costar al menos 850 libras cambiarlo, y no recibiremos la pieza de repuesto hasta el próximo miércoles.',
+    yourGoalEs: '¿Qué le responderías? Dile que 850 libras te parece demasiado caro, pregúntale si hay una opción más económica (o piezas de segunda mano) y explícale que necesitas el coche el lunes sin falta para ir a trabajar.',
+    usefulPhrases: [
+      'have it repaired / fixed (Causative)',
+      'second-hand part (pieza de segunda mano)',
+      'lend me a courtesy car (dejarme un coche de sustitución)',
+      'afford (permitirse pagar)'
+    ],
+    sampleResponseEn: '£850 is way more than I expected! I can\'t afford to pay that much right now. Is there any chance you could use a second-hand part to keep the cost down? Also, I really need my car on Monday to get to work—could you lend me a courtesy car in the meantime?'
+  },
+  {
+    id: 'rp-landlord',
+    level: 'B1+',
+    title: '🏠 Tu Casero: Sin Calefacción en Pleno Invierno',
+    roleLabel: 'Landlord (Mr. Henderson)',
+    situationEs: 'La caldera de tu piso alquilado se ha averiado hace dos días y hace muchísimo frío. Llamas a tu casero y te dice esto:',
+    characterSaysEn: 'Look, my regular plumber is fully booked this week. If you put on an extra jumper, you\'ll be fine until he can come round next Tuesday to look at the boiler.',
+    characterSaysEs: 'Mira, mi fontanero habitual tiene la agenda llena esta semana. Si te pones un jersey extra, estarás bien hasta que pueda pasarse el martes que viene a mirar la caldera.',
+    yourGoalEs: '¿Qué le responderías? Dile que no puedes aguantar (put up with) estar sin agua caliente ni calefacción hasta el martes, y que si no manda a otro fontanero hoy mismo, llamarás tú a uno de urgencia y lo descontarás del alquiler.',
+    usefulPhrases: [
+      'put up with (aguantar / soportar)',
+      'have the boiler fixed (hacer arreglar la caldera)',
+      'unless you send... (a menos que mandes...)',
+      'deduct it from the rent (descontarlo del alquiler)'
+    ],
+    sampleResponseEn: 'I\'m sorry, Mr. Henderson, but I can\'t put up with freezing temperatures and no hot water until next Tuesday! Unless you get another plumber to fix the boiler today, I will have to call an emergency technician myself and deduct the bill from next month\'s rent.'
+  },
+  {
+    id: 'rp-airport',
+    level: 'B1+',
+    title: '✈️ En el Aeropuerto: Vuelo Cancelado a Última Hora',
+    roleLabel: 'Airline Desk Agent',
+    situationEs: 'Estás en el aeropuerto de Londres a las 10 de la noche y acaban de cancelar tu vuelo de vuelta a casa.',
+    characterSaysEn: 'Due to a technical fault with the aircraft, tonight\'s flight has been called off. We can rebook you onto a flight leaving on Thursday afternoon, which is in 40 hours.',
+    characterSaysEs: 'Debido a un fallo técnico en el avión, el vuelo de esta noche ha sido cancelado. Podemos reubicarle en un vuelo que sale el jueves por la tarde, dentro de 40 horas.',
+    yourGoalEs: '¿Qué le responderías? Dile que tienes una reunión o compromiso importante mañana, pregúntale si pueden meterte en un vuelo con escala de otra compañía y exige que la aerolínea se haga cargo del hotel y la cena de esta noche.',
+    usefulPhrases: [
+      'connecting flight (vuelo con escala)',
+      'be entitled to (tener derecho a)',
+      'cover the cost of accommodation (cubrir el coste del alojamiento)',
+      'make up for (compensar por)'
+    ],
+    sampleResponseEn: 'Waiting 40 hours is completely unacceptable because I have an important meeting tomorrow morning. Could you check if there is a connecting flight with another airline early tomorrow? Also, since the flight was called off due to a technical fault, we are entitled to hotel accommodation and meal vouchers for tonight.'
+  },
+  {
+    id: 'rp-boss',
+    level: 'B2',
+    title: '💼 En la Oficina: Tu Jefe Pide rehacer Todo un Viernes a las 18:00',
+    roleLabel: 'Project Manager (Sarah)',
+    situationEs: 'Son las 6 de la tarde del viernes, estás a punto de apagar el ordenador y tu jefa se acerca a tu mesa.',
+    characterSaysEn: 'The client has just turned down our marketing proposal. I need you to stay late tonight and come up with a completely new presentation before Monday morning.',
+    characterSaysEs: 'El cliente acaba de rechazar nuestra propuesta de marketing. Necesito que te quedes hasta tarde esta noche y que se te ocurra una presentación totalmente nueva antes del lunes por la mañana.',
+    yourGoalEs: '¿Qué le responderías con educación pero firmeza (nivel B2)? Dile que ojalá te lo hubiera dicho antes porque esta noche tienes planes que no puedes cancelar, pero propón revisar los puntos clave el lunes a primera hora con todo el equipo.',
+    usefulPhrases: [
+      'I wish you had told me earlier (Ojalá me lo hubieras dicho antes)',
+      'put off / call off my plans (posponer / cancelar mis planes)',
+      'first thing on Monday morning (el lunes a primera hora)',
+      'go over the feedback (revisar los comentarios)'
+    ],
+    sampleResponseEn: 'I understand how frustrating it is that the client turned it down, Sarah, and I wish I had known a few hours earlier. Unfortunately, I have family plans tonight that I really can\'t call off at the last minute. However, I\'d be happy to come in an hour early on Monday morning so we can go over the client\'s feedback and come up with a stronger draft together.'
+  },
+  {
+    id: 'rp-refund',
+    level: 'B2+',
+    title: '💻 Tienda de Electrónica: Se Niegan a Devolverte el Dinero',
+    roleLabel: 'Store Manager',
+    situationEs: 'Compraste un portátil reacondicionado hace 5 días con un año de garantía, pero la pantalla parpadea y se apaga solo. El encargado de la tienda te dice:',
+    characterSaysEn: 'Once a refurbished laptop has been opened and used, we don\'t give refunds. The best I can do is send it away to our warehouse, which usually takes three to four weeks.',
+    characterSaysEs: 'Una vez que un portátil reacondicionado ha sido abierto y usado, no hacemos reembolsos. Lo máximo que puedo hacer es enviarlo a nuestro almacén, lo que suele tardar de tres a cuatro semanas.',
+    yourGoalEs: '¿Qué le responderías usando estructuras de nivel B2+? Dile que en ningún caso vas a esperar un mes por un ordenador que ya venía defectuoso, y que o te dan uno de reemplazo hoy mismo o reclamarás el reembolso completo.',
+    usefulPhrases: [
+      'Under no circumstances am I going to... (Bajo ninguna circunstancia voy a...)',
+      'Not only does the screen flicker, but... (No solo parpadea la pantalla, sino que...)',
+      'faulty from the start (defectuoso desde el principio)',
+      'full refund or immediate replacement (reembolso completo o reemplazo inmediato)'
+    ],
+    sampleResponseEn: 'I\'m afraid that simply isn\'t good enough. Not only does the screen flicker constantly, but the laptop also shuts down on its own, which means it was faulty when you sold it to me. Under no circumstances am I going to wait four weeks without a computer for my work. Unless you can provide an immediate replacement today, I insist on receiving a full refund.'
+  }
+];
+
 export const WritingZone: React.FC<WritingZoneProps> = ({
   onSaveWriting,
   onExerciseAttempt
 }) => {
+  const [mainTab, setMainTab] = useState<'roleplay' | 'essays'>('roleplay');
+
+  // ==================== STATE FOR ROLEPLAY ("¿QUÉ LE RESPONDERÍAS?") ====================
+  const [scenarios, setScenarios] = useState<RoleplayScenario[]>(BUILTIN_ROLEPLAY_SCENARIOS);
+  const [activeScenarioId, setActiveScenarioId] = useState<string>(BUILTIN_ROLEPLAY_SCENARIOS[0].id);
+  const [rpUserText, setRpUserText] = useState<string>('');
+  const [rpShowTranslation, setRpShowTranslation] = useState<boolean>(false);
+  const [rpShowSample, setRpShowSample] = useState<boolean>(false);
+  const [rpEvaluating, setRpEvaluating] = useState<boolean>(false);
+  const [rpResult, setRpResult] = useState<RoleplayEvaluationResult | null>(null);
+
+  // Generador de nueva situación con IA
+  const [newRpLevel, setNewRpLevel] = useState<Level>('B1+');
+  const [newRpTopic, setNewRpTopic] = useState<string>('');
+  const [newRpLoading, setNewRpLoading] = useState<boolean>(false);
+  const [newRpError, setNewRpError] = useState<string | null>(null);
+
+  const currentScenario =
+    scenarios.find((s) => s.id === activeScenarioId) || scenarios[0];
+
+  const handleSelectScenario = (id: string) => {
+    setActiveScenarioId(id);
+    setRpUserText('');
+    setRpResult(null);
+    setRpShowTranslation(false);
+    setRpShowSample(false);
+  };
+
+  const handleGenerateNewScenario = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setNewRpLoading(true);
+    setNewRpError(null);
+    try {
+      const created = await generateAIRoleplayScenario(newRpLevel, newRpTopic);
+      setScenarios((prev) => [created, ...prev]);
+      setActiveScenarioId(created.id);
+      setRpUserText('');
+      setRpResult(null);
+      setNewRpTopic('');
+    } catch (err: unknown) {
+      setNewRpError(err instanceof Error ? err.message : 'Error generando situación con IA.');
+    } finally {
+      setNewRpLoading(false);
+    }
+  };
+
+  const handleEvaluateRoleplay = async () => {
+    if (!rpUserText.trim()) return;
+    setRpEvaluating(true);
+    try {
+      const res = await evaluateRoleplayResponseWithAI(currentScenario, rpUserText);
+      setRpResult(res);
+    } catch {
+      // Fallback al analizador local si no tiene API key o falla la conexión
+      const local = analyzeWritingLocally(rpUserText);
+      setRpResult({
+        scoreOutOf10: Math.round(local.scoreOutOf100 / 10),
+        naturalCorrectedResponseEn: rpUserText,
+        b2NativeAlternativeEn: currentScenario.sampleResponseEn,
+        feedbackSummaryEs:
+          local.feedbackItems.length > 0
+            ? local.feedbackItems.map((f) => `${f.messageEs} (${f.suggestionEn})`).join(' | ')
+            : 'Respuesta evaluada localmente. Compara tu frase con la alternativa nativa de nivel B2.',
+        errorsList: local.feedbackItems
+          .filter((f) => f.type === 'error')
+          .map((f) => ({
+            wrong: f.snippet,
+            right: f.suggestionEn,
+            explanationEs: f.messageEs
+          })),
+        characterFollowUpEn: 'Alright, let me see what I can do for you given the situation.',
+        characterFollowUpEs: 'Está bien, déjame ver qué puedo hacer por ti dada la situación.'
+      });
+    } finally {
+      setRpEvaluating(false);
+    }
+  };
+
+  // Continuar la conversación con la nueva respuesta del personaje
+  const handleContinueDialogue = () => {
+    if (!rpResult || !rpResult.characterFollowUpEn) return;
+    const updatedScenario: RoleplayScenario = {
+      ...currentScenario,
+      characterSaysEn: rpResult.characterFollowUpEn,
+      characterSaysEs: rpResult.characterFollowUpEs,
+      yourGoalEs: 'Continúa la conversación respondiendo a lo que te acaba de contestar.'
+    };
+    setScenarios((prev) =>
+      prev.map((s) => (s.id === currentScenario.id ? updatedScenario : s))
+    );
+    setRpUserText('');
+    setRpResult(null);
+  };
+
+  // ==================== STATE FOR ESSAYS & GUIDED WRITINGS ====================
   const [selectedPromptId, setSelectedPromptId] = useState<string>(WRITING_PROMPTS[0].id);
   const [text, setText] = useState<string>('');
   const [showModel, setShowModel] = useState<boolean>(false);
   const [showLocalEval, setShowLocalEval] = useState<boolean>(false);
   const [savedNotice, setSavedNotice] = useState<boolean>(false);
 
-  // AI Correction State
   const [aiLoading, setAiLoading] = useState<boolean>(false);
   const [aiResult, setAiResult] = useState<AIWritingCorrectionResult | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -106,362 +298,671 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
-        <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <PenTool className="w-5 h-5 text-rose-400" />
-          Laboratorio de Escritura y Retos Gramaticales (A2+ → B2+)
-        </h2>
-        <p className="text-xs sm:text-sm text-slate-400 mt-1">
-          Practica integrando estructuras obligatorias en vivo, detecta trampas de hispanohablantes al instante y compara con modelos de examen.
-        </p>
+      {/* Header & Mode Switcher */}
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <PenTool className="w-5 h-5 text-rose-400" />
+            Zona de Escritura Práctica: Situaciones Reales y Textos (A2+ → B2+)
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+            Responde a situaciones reales (mecánico, trabajo, aeropuerto...) o escribe textos con corrección detallada de todos tus errores.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setMainTab('roleplay')}
+            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
+              mainTab === 'roleplay'
+                ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/25'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" />
+            💬 ¿Qué le responderías? (Situaciones Reales)
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMainTab('essays')}
+            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
+              mainTab === 'essays'
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+            }`}
+          >
+            <PenTool className="w-4 h-4" />
+            📝 Emails, Essays B2 y Retos Guiados
+          </button>
+        </div>
       </div>
 
-      {/* Prompt Selector Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-        {WRITING_PROMPTS.map((p) => {
-          const isSelected = p.id === currentPrompt.id;
-          return (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => handleSelectPrompt(p.id)}
-              className={`text-left p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
-                isSelected
-                  ? 'bg-rose-950/40 border-rose-500 text-white shadow-lg shadow-rose-500/10'
-                  : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:border-slate-700'
-              }`}
-            >
-              <div>
-                <div className="flex items-center justify-between gap-1 mb-1.5">
-                  <span className="text-xs font-extrabold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
-                    Nivel {p.level}
-                  </span>
-                  <span className="text-[11px] text-amber-300 font-semibold">
-                    {p.type}
-                  </span>
-                </div>
-                <h3 className="font-bold text-sm text-white line-clamp-2">
-                  {p.title}
-                </h3>
-              </div>
-              <p className="text-[11px] text-slate-400">
-                {p.minWords}–{p.maxWords} palabras
-              </p>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Main Writing Workspace */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Columns: Prompt + Editor */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-rose-400">
-                {currentPrompt.type} • Nivel {currentPrompt.level}
-              </span>
-              <span className="text-xs text-slate-400">
-                Objetivo: {currentPrompt.minWords} a {currentPrompt.maxWords} palabras
-              </span>
-            </div>
-
-            <h3 className="text-lg font-extrabold text-white">
-              {currentPrompt.title}
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-300">
-              {currentPrompt.situationEs}
-            </p>
-            <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs sm:text-sm text-indigo-200 font-medium">
-              📋 <strong>Task:</strong> {currentPrompt.promptEn}
-            </div>
-          </div>
-
-          {/* Textarea Editor */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-3">
-                <span
-                  className={`font-bold px-2.5 py-1 rounded-lg ${
-                    localEvaluation.wordCount >= currentPrompt.minWords
-                      ? 'bg-emerald-500/20 text-emerald-300'
-                      : 'bg-slate-800 text-slate-300'
+      {/* ==================== TAB 1: "¿QUÉ LE RESPONDERÍAS?" (ROLEPLAY) ==================== */}
+      {mainTab === 'roleplay' && (
+        <div className="space-y-6">
+          {/* Scenario Selector Pills */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {scenarios.map((sc) => {
+              const isSelected = sc.id === currentScenario.id;
+              return (
+                <button
+                  key={sc.id}
+                  type="button"
+                  onClick={() => handleSelectScenario(sc.id)}
+                  className={`text-left p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                    isSelected
+                      ? 'bg-rose-950/45 border-rose-500 text-white shadow-lg shadow-rose-500/10'
+                      : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:border-slate-700'
                   }`}
                 >
-                  Palabras: {localEvaluation.wordCount} / {currentPrompt.minWords}–{currentPrompt.maxWords}
-                </span>
-                <span className="text-slate-400">
-                  Frases: {localEvaluation.sentenceCount}
-                </span>
+                  <div>
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <span className="text-xs font-extrabold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
+                        Nivel {sc.level}
+                      </span>
+                      <span className="text-[11px] text-amber-300 font-semibold truncate">
+                        {sc.roleLabel}
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-sm text-white line-clamp-2">
+                      {sc.title}
+                    </h3>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Active Roleplay Arena */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
+              {/* Situation Context */}
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-rose-400">
+                    Situación Real • Nivel {currentScenario.level}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setRpShowTranslation(!rpShowTranslation)}
+                    className="text-xs font-bold px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Languages className="w-3.5 h-3.5" />
+                    {rpShowTranslation ? 'Ocultar traducción' : 'Traducir lo que te dice'}
+                  </button>
+                </div>
+                <h3 className="text-xl font-extrabold text-white">
+                  {currentScenario.title}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300">
+                  📍 <strong>Contexto:</strong> {currentScenario.situationEs}
+                </p>
               </div>
 
-              <button
-                type="button"
-                onClick={handleSave}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold flex items-center gap-1.5 cursor-pointer"
-              >
-                <Save className="w-3.5 h-3.5" />
-                {savedNotice ? '¡Guardado!' : 'Guardar borrador'}
-              </button>
+              {/* Speech Bubble from Mechanic / Landlord / Boss */}
+              <div className="bg-slate-950 border-l-4 border-amber-400 rounded-r-2xl p-4 sm:p-5 space-y-2">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-amber-300 block">
+                  🗣️ {currentScenario.roleLabel} te dice:
+                </span>
+                <p className="text-base sm:text-lg font-semibold text-white leading-relaxed">
+                  "{currentScenario.characterSaysEn}"
+                </p>
+                {rpShowTranslation && (
+                  <p className="text-xs sm:text-sm text-indigo-200 pt-2 border-t border-slate-800">
+                    🌐 "{currentScenario.characterSaysEs}"
+                  </p>
+                )}
+              </div>
+
+              {/* Your Mission */}
+              <div className="bg-indigo-950/35 border border-indigo-500/30 rounded-xl p-4">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-300 block mb-1">
+                  🎯 ¿Qué le responderías tú? (Tu objetivo):
+                </span>
+                <p className="text-sm text-indigo-100 leading-relaxed">
+                  {currentScenario.yourGoalEs}
+                </p>
+              </div>
+
+              {/* User Response Input */}
+              <div className="space-y-3">
+                <textarea
+                  rows={4}
+                  value={rpUserText}
+                  onChange={(e) => setRpUserText(e.target.value)}
+                  placeholder={`Escribe aquí en inglés lo que le dirías a ${currentScenario.roleLabel}...`}
+                  className="w-full bg-slate-950 border border-slate-700 focus:border-rose-500 rounded-xl p-4 text-white text-base leading-relaxed outline-none"
+                  spellCheck={false}
+                />
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    disabled={rpEvaluating || !rpUserText.trim()}
+                    onClick={handleEvaluateRoleplay}
+                    className="px-6 py-3 bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-rose-600/25 flex items-center gap-2 cursor-pointer"
+                  >
+                    <Send className="w-4 h-4" />
+                    {rpEvaluating
+                      ? 'Revisando tus errores...'
+                      : 'Enviar Respuesta y Ver Mis Errores'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRpShowSample(!rpShowSample)}
+                    className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm rounded-xl flex items-center gap-2 cursor-pointer"
+                  >
+                    <Eye className="w-4 h-4" />
+                    {rpShowSample ? 'Ocultar Ejemplo' : 'Ver Ejemplo de Respuesta'}
+                  </button>
+                </div>
+              </div>
+
+              {rpShowSample && (
+                <div className="bg-slate-950 border border-emerald-500/30 rounded-xl p-4 space-y-1">
+                  <span className="text-xs font-bold uppercase text-emerald-400 block">
+                    Ejemplo de respuesta natural:
+                  </span>
+                  <p className="text-sm text-slate-100 leading-relaxed">
+                    "{currentScenario.sampleResponseEn}"
+                  </p>
+                </div>
+              )}
+
+              {/* Evaluation Feedback Box */}
+              {rpResult && (
+                <div className="bg-slate-950 border border-rose-500/40 rounded-2xl p-5 space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <h4 className="font-bold text-base text-white flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-amber-400" />
+                      Análisis de tu Respuesta
+                    </h4>
+                    <span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-bold text-xs">
+                      Nota: {rpResult.scoreOutOf10} / 10
+                    </span>
+                  </div>
+
+                  <p className="text-sm text-slate-200 leading-relaxed">
+                    {rpResult.feedbackSummaryEs}
+                  </p>
+
+                  {/* Error-by-Error List */}
+                  {rpResult.errorsList.length > 0 ? (
+                    <div className="space-y-2">
+                      <span className="text-xs font-bold uppercase text-rose-300 block">
+                        🔍 Errores corregidos en lo que has escrito:
+                      </span>
+                      {rpResult.errorsList.map((err, i) => (
+                        <div
+                          key={i}
+                          className="bg-slate-900 border border-rose-500/30 rounded-xl p-3.5 text-xs sm:text-sm space-y-1"
+                        >
+                          <p className="text-rose-300 line-through">❌ {err.wrong}</p>
+                          <p className="text-emerald-300 font-bold">✅ {err.right}</p>
+                          <p className="text-slate-400 text-xs">{err.explanationEs}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 text-emerald-200 text-xs sm:text-sm font-semibold">
+                      ✅ ¡No se han detectado errores gramaticales en tu respuesta!
+                    </div>
+                  )}
+
+                  {/* Corrected vs Native B2 Version */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="bg-slate-900 border border-emerald-500/30 rounded-xl p-3.5 space-y-1">
+                      <span className="text-[11px] font-bold uppercase text-emerald-400 block">
+                        ✅ Tu respuesta corregida:
+                      </span>
+                      <p className="text-sm text-white font-semibold">
+                        "{rpResult.naturalCorrectedResponseEn}"
+                      </p>
+                    </div>
+
+                    <div className="bg-slate-900 border border-amber-500/30 rounded-xl p-3.5 space-y-1">
+                      <span className="text-[11px] font-bold uppercase text-amber-300 block">
+                        🚀 Cómo lo diría un nativo (Nivel B2/B2+):
+                      </span>
+                      <p className="text-sm text-amber-100 font-semibold">
+                        "{rpResult.b2NativeAlternativeEn}"
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Follow-up reply from the character */}
+                  {rpResult.characterFollowUpEn && (
+                    <div className="pt-3 border-t border-slate-800 space-y-3">
+                      <div className="bg-slate-900 border-l-4 border-sky-400 rounded-r-xl p-3.5 space-y-1">
+                        <span className="text-xs font-bold text-sky-300 block">
+                          💬 {currentScenario.roleLabel} te contesta ahora:
+                        </span>
+                        <p className="text-sm text-white font-medium">
+                          "{rpResult.characterFollowUpEn}"
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          ({rpResult.characterFollowUpEs})
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleContinueDialogue}
+                        className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl cursor-pointer"
+                      >
+                        Seguir respondiéndole a esto →
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            <textarea
-              rows={10}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Escribe tu texto en inglés aquí... Fíjate en el panel derecho para ir cumpliendo los retos gramaticales en tiempo real."
-              className="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-xl p-4 text-white text-base leading-relaxed outline-none"
-              spellCheck={false}
-            />
+            {/* Right Sidebar: Useful Expressions + AI Custom Scenario Generator */}
+            <div className="space-y-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+                <h4 className="text-sm font-bold uppercase tracking-wider text-amber-300">
+                  💡 Expresiones Útiles para Esta Situación
+                </h4>
+                <p className="text-xs text-slate-400">
+                  Intenta incluir alguna de estas estructuras al escribir tu respuesta:
+                </p>
+                <ul className="space-y-2">
+                  {currentScenario.usefulPhrases.map((phr, idx) => (
+                    <li
+                      key={idx}
+                      className="text-xs sm:text-sm bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-indigo-200 font-mono"
+                    >
+                      • {phr}
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => setShowLocalEval(true)}
-                className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-indigo-600/25 flex items-center gap-2 cursor-pointer"
+              {/* AI Custom Situation Creator */}
+              <form
+                onSubmit={handleGenerateNewScenario}
+                className="bg-slate-900 border border-purple-500/30 rounded-2xl p-5 space-y-3.5"
               >
-                <Sparkles className="w-4 h-4" />
-                Analizar Gramática y Nivel (Instantáneo)
-              </button>
+                <div className="flex items-center gap-2">
+                  <Cpu className="w-5 h-5 text-purple-400" />
+                  <h4 className="text-sm font-bold text-white">
+                    Crear Nueva Situación con IA
+                  </h4>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Pide cualquier situación cotidiana (en el médico, entrevista de trabajo, discusión con un vecino, aduana, restaurante...) y practica qué responderías.
+                </p>
 
-              <button
-                type="button"
-                onClick={handleEvaluateAI}
-                disabled={aiLoading}
-                className="px-5 py-3 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-purple-600/25 flex items-center gap-2 cursor-pointer"
-              >
-                <Cpu className="w-4 h-4" />
-                {aiLoading ? 'Corrigiendo con IA...' : 'Corrección Profunda IA + Crear Ejercicios'}
-              </button>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">
+                    Nivel
+                  </label>
+                  <select
+                    value={newRpLevel}
+                    onChange={(e) => setNewRpLevel(e.target.value as Level)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white"
+                  >
+                    <option value="A2+">A2+ (A2 Advanced)</option>
+                    <option value="B1">B1 (Intermediate)</option>
+                    <option value="B1+">B1+ (Intermediate Advanced)</option>
+                    <option value="B2">B2 (Upper-Intermediate)</option>
+                    <option value="B2+">B2+ (B2 Advanced)</option>
+                  </select>
+                </div>
 
-              <button
-                type="button"
-                onClick={() => setShowModel(!showModel)}
-                className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm rounded-xl flex items-center gap-2 cursor-pointer"
-              >
-                <Eye className="w-4 h-4" />
-                {showModel ? 'Ocultar Respuesta Modelo' : 'Ver Respuesta Modelo Comentada'}
-              </button>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">
+                    ¿En qué situación quieres verte? (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    value={newRpTopic}
+                    onChange={(e) => setNewRpTopic(e.target.value)}
+                    placeholder="Ej: En el dentista, negociando un sueldo, reclamando una maleta..."
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white outline-none focus:border-purple-500"
+                  />
+                </div>
+
+                {newRpError && (
+                  <p className="text-xs text-rose-300 bg-rose-950/40 p-2.5 rounded-lg">
+                    {newRpError}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={newRpLoading}
+                  className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  {newRpLoading ? 'Creando situación...' : 'Generar Nueva Situación'}
+                </button>
+              </form>
             </div>
           </div>
         </div>
+      )}
 
-        {/* Right Column: Live Required Structures Checklist */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 h-fit">
-          <div>
-            <h4 className="text-sm font-bold uppercase tracking-wider text-amber-300">
-              🎯 Checklist Gramatical en Vivo
-            </h4>
-            <p className="text-xs text-slate-400 mt-1">
-              Se marcan en verde automáticamente mientras escribes al detectar la estructura:
-            </p>
+      {/* ==================== TAB 2: ESSAYS & GUIDED WRITING LAB ==================== */}
+      {mainTab === 'essays' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {WRITING_PROMPTS.map((p) => {
+              const isSelected = p.id === currentPrompt.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => handleSelectPrompt(p.id)}
+                  className={`text-left p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                    isSelected
+                      ? 'bg-rose-950/40 border-rose-500 text-white shadow-lg shadow-rose-500/10'
+                      : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:border-slate-700'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-1 mb-1.5">
+                      <span className="text-xs font-extrabold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
+                        Nivel {p.level}
+                      </span>
+                      <span className="text-[11px] text-amber-300 font-semibold">
+                        {p.type}
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-sm text-white line-clamp-2">
+                      {p.title}
+                    </h3>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    {p.minWords}–{p.maxWords} palabras
+                  </p>
+                </button>
+              );
+            })}
           </div>
 
-          <div className="space-y-3">
-            {checklistStatus.map((item) => (
-              <div
-                key={item.id}
-                className={`p-3.5 rounded-xl border transition-all ${
-                  item.matched
-                    ? 'bg-emerald-950/35 border-emerald-500/40 text-emerald-100'
-                    : 'bg-slate-950/70 border-slate-800 text-slate-300'
-                }`}
-              >
-                <div className="flex items-start gap-2.5">
-                  {item.matched ? (
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  ) : (
-                    <Circle className="w-5 h-5 text-slate-600 shrink-0 mt-0.5" />
-                  )}
-                  <div className="space-y-1">
-                    <p className="text-xs sm:text-sm font-bold">{item.label}</p>
-                    <p className="text-xs text-slate-400 font-mono">
-                      Ej: {item.examples.join(' / ')}
-                    </p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-rose-400">
+                    {currentPrompt.type} • Nivel {currentPrompt.level}
+                  </span>
+                  <span className="text-xs text-slate-400">
+                    Objetivo: {currentPrompt.minWords} a {currentPrompt.maxWords} palabras
+                  </span>
+                </div>
+
+                <h3 className="text-lg font-extrabold text-white">
+                  {currentPrompt.title}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300">
+                  {currentPrompt.situationEs}
+                </p>
+                <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs sm:text-sm text-indigo-200 font-medium">
+                  📋 <strong>Task:</strong> {currentPrompt.promptEn}
+                </div>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`font-bold px-2.5 py-1 rounded-lg ${
+                        localEvaluation.wordCount >= currentPrompt.minWords
+                          ? 'bg-emerald-500/20 text-emerald-300'
+                          : 'bg-slate-800 text-slate-300'
+                      }`}
+                    >
+                      Palabras: {localEvaluation.wordCount} / {currentPrompt.minWords}–{currentPrompt.maxWords}
+                    </span>
+                    <span className="text-slate-400">
+                      Frases: {localEvaluation.sentenceCount}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    {savedNotice ? '¡Guardado!' : 'Guardar borrador'}
+                  </button>
+                </div>
+
+                <textarea
+                  rows={10}
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder="Escribe tu texto en inglés aquí..."
+                  className="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-xl p-4 text-white text-base leading-relaxed outline-none"
+                  spellCheck={false}
+                />
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowLocalEval(true)}
+                    className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-indigo-600/25 flex items-center gap-2 cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Analizar Gramática y Nivel (Instantáneo)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleEvaluateAI}
+                    disabled={aiLoading}
+                    className="px-5 py-3 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-purple-600/25 flex items-center gap-2 cursor-pointer"
+                  >
+                    <Cpu className="w-4 h-4" />
+                    {aiLoading ? 'Corrigiendo con IA...' : 'Corrección Profunda IA + Crear Ejercicios'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowModel(!showModel)}
+                    className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm rounded-xl flex items-center gap-2 cursor-pointer"
+                  >
+                    <Eye className="w-4 h-4" />
+                    {showModel ? 'Ocultar Respuesta Modelo' : 'Ver Respuesta Modelo Comentada'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 h-fit">
+              <div>
+                <h4 className="text-sm font-bold uppercase tracking-wider text-amber-300">
+                  🎯 Checklist Gramatical en Vivo
+                </h4>
+                <p className="text-xs text-slate-400 mt-1">
+                  Se marcan en verde automáticamente mientras escribes:
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {checklistStatus.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`p-3.5 rounded-xl border transition-all ${
+                      item.matched
+                        ? 'bg-emerald-950/35 border-emerald-500/40 text-emerald-100'
+                        : 'bg-slate-950/70 border-slate-800 text-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      {item.matched ? (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                      ) : (
+                        <Circle className="w-5 h-5 text-slate-600 shrink-0 mt-0.5" />
+                      )}
+                      <div className="space-y-1">
+                        <p className="text-xs sm:text-sm font-bold">{item.label}</p>
+                        <p className="text-xs text-slate-400 font-mono">
+                          Ej: {item.examples.join(' / ')}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {showLocalEval && (
+            <div className="bg-slate-900 border border-indigo-500/40 rounded-2xl p-6 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                <h3 className="text-lg font-bold text-white">
+                  Diagnóstico Gramatical y Léxico Instantáneo
+                </h3>
+                <div className="flex items-center gap-3">
+                  <div className="bg-slate-950 px-4 py-2 rounded-xl border border-slate-800 text-center">
+                    <span className="text-[11px] text-slate-400 block">Nivel Estimado</span>
+                    <strong className="text-indigo-300 text-sm">{localEvaluation.estimatedLevel}</strong>
+                  </div>
+                  <div className="bg-slate-950 px-4 py-2 rounded-xl border border-slate-800 text-center">
+                    <span className="text-[11px] text-slate-400 block">Puntuación</span>
+                    <strong className="text-emerald-400 text-sm">{localEvaluation.scoreOutOf100} / 100</strong>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
 
-          {/* Detected Bonus Structures */}
-          {localEvaluation.detectedAdvancedStructures.length > 0 && (
-            <div className="pt-3 border-t border-slate-800 space-y-2">
-              <span className="text-xs font-bold uppercase text-indigo-300 block">
-                ✨ Estructuras detectadas en tu texto:
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {localEvaluation.detectedAdvancedStructures.map((st, i) => (
-                  <span
+              <div className="space-y-3">
+                {localEvaluation.feedbackItems.map((fb, i) => (
+                  <div
                     key={i}
-                    className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-200 border border-indigo-500/30"
+                    className={`p-4 rounded-xl border text-xs sm:text-sm ${
+                      fb.type === 'error'
+                        ? 'bg-rose-950/30 border-rose-500/40 text-rose-100'
+                        : fb.type === 'upgrade'
+                        ? 'bg-amber-950/30 border-amber-500/40 text-amber-100'
+                        : 'bg-emerald-950/30 border-emerald-500/40 text-emerald-100'
+                    }`}
                   >
-                    ✓ {st}
-                  </span>
+                    <div className="flex items-center gap-2 font-bold mb-1">
+                      {fb.type === 'error' ? (
+                        <AlertTriangle className="w-4 h-4 text-rose-400" />
+                      ) : (
+                        <Sparkles className="w-4 h-4 text-amber-400" />
+                      )}
+                      <span>
+                        {fb.type === 'error'
+                          ? `Error detectado: "${fb.snippet}"`
+                          : fb.type === 'upgrade'
+                          ? `Mejora de Nivel B2 para: "${fb.snippet}"`
+                          : fb.snippet}
+                      </span>
+                    </div>
+                    <p className="text-slate-200">{fb.messageEs}</p>
+                    <p className="text-indigo-300 font-semibold mt-1">💡 {fb.suggestionEn}</p>
+                  </div>
                 ))}
               </div>
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Local Instant Evaluation Results */}
-      {showLocalEval && (
-        <div className="bg-slate-900 border border-indigo-500/40 rounded-2xl p-6 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
-            <div>
-              <h3 className="text-lg font-bold text-white">
-                Diagnóstico Gramatical y Léxico Instantáneo
+          {aiError && (
+            <div className="p-4 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-rose-200 text-sm">
+              {aiError}
+            </div>
+          )}
+
+          {aiResult && (
+            <div className="bg-slate-900 border border-purple-500/40 rounded-2xl p-6 space-y-5">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Cpu className="w-5 h-5 text-purple-400" />
+                  Informe del Examinador IA
+                </h3>
+                <span className="px-3.5 py-1.5 rounded-xl bg-purple-500/20 text-purple-200 font-bold text-sm">
+                  Nota: {aiResult.scoreOutOf100}/100 ({aiResult.estimatedLevel})
+                </span>
+              </div>
+
+              <p className="text-sm text-slate-200 leading-relaxed">{aiResult.generalFeedbackEs}</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-slate-950 border border-emerald-500/30 rounded-xl p-4 space-y-2">
+                  <h4 className="text-xs font-bold uppercase text-emerald-400">
+                    ✅ Tu Texto Corregido
+                  </h4>
+                  <p className="text-sm text-slate-100 whitespace-pre-line leading-relaxed">
+                    {aiResult.correctedVersionEn}
+                  </p>
+                </div>
+
+                <div className="bg-slate-950 border border-amber-500/30 rounded-xl p-4 space-y-2">
+                  <h4 className="text-xs font-bold uppercase text-amber-300">
+                    🚀 Versión Elevada a Nivel B2 Advanced
+                  </h4>
+                  <p className="text-sm text-slate-100 whitespace-pre-line leading-relaxed">
+                    {aiResult.b2AdvancedUpgradeEn}
+                  </p>
+                </div>
+              </div>
+
+              {aiResult.lineByLineCorrections.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold uppercase text-rose-300">
+                    Correcciones Línea por Línea:
+                  </h4>
+                  {aiResult.lineByLineCorrections.map((c, idx) => (
+                    <div
+                      key={idx}
+                      className="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm space-y-1"
+                    >
+                      <p className="text-rose-300 line-through">❌ {c.original}</p>
+                      <p className="text-emerald-300 font-bold">✅ {c.correction}</p>
+                      <p className="text-slate-400 text-xs">{c.explanationEs}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {aiResult.generatedDrillExercises.length > 0 && (
+                <div className="space-y-3 pt-3 border-t border-slate-800">
+                  <h4 className="text-sm font-bold text-purple-300">
+                    🔥 Ejercicios generados a partir de los fallos de tu Writing:
+                  </h4>
+                  {aiResult.generatedDrillExercises.map((ex, i) => (
+                    <ExerciseCard
+                      key={ex.id}
+                      exercise={ex}
+                      onAttempt={onExerciseAttempt}
+                      indexLabel={`Fallo de Writing #${i + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {showModel && (
+            <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl p-6 space-y-4">
+              <h3 className="text-lg font-bold text-emerald-300">
+                🏆 Respuesta Modelo de Examen (Nivel {currentPrompt.level})
               </h3>
-              <p className="text-xs sm:text-sm text-slate-400">
-                Escaneo automático de errores hispanos, variedad estructural y nivel de vocabulario.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="bg-slate-950 px-4 py-2 rounded-xl border border-slate-800 text-center">
-                <span className="text-[11px] text-slate-400 block">Nivel Estimado</span>
-                <strong className="text-indigo-300 text-sm">{localEvaluation.estimatedLevel}</strong>
+              <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-slate-100 text-sm sm:text-base whitespace-pre-line leading-relaxed">
+                {currentPrompt.modelAnswer}
               </div>
-              <div className="bg-slate-950 px-4 py-2 rounded-xl border border-slate-800 text-center">
-                <span className="text-[11px] text-slate-400 block">Puntuación</span>
-                <strong className="text-emerald-400 text-sm">{localEvaluation.scoreOutOf100} / 100</strong>
+              <div className="space-y-1.5">
+                <h4 className="text-xs font-bold uppercase text-amber-300">
+                  ¿Por qué este texto saca máxima nota?
+                </h4>
+                <ul className="space-y-1 text-xs sm:text-sm text-slate-300">
+                  {currentPrompt.modelAnalysisEs.map((note, i) => (
+                    <li key={i}>• {note}</li>
+                  ))}
+                </ul>
               </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {localEvaluation.feedbackItems.map((fb, i) => (
-              <div
-                key={i}
-                className={`p-4 rounded-xl border text-xs sm:text-sm ${
-                  fb.type === 'error'
-                    ? 'bg-rose-950/30 border-rose-500/40 text-rose-100'
-                    : fb.type === 'upgrade'
-                    ? 'bg-amber-950/30 border-amber-500/40 text-amber-100'
-                    : 'bg-emerald-950/30 border-emerald-500/40 text-emerald-100'
-                }`}
-              >
-                <div className="flex items-center gap-2 font-bold mb-1">
-                  {fb.type === 'error' ? (
-                    <AlertTriangle className="w-4 h-4 text-rose-400" />
-                  ) : (
-                    <Sparkles className="w-4 h-4 text-amber-400" />
-                  )}
-                  <span>
-                    {fb.type === 'error'
-                      ? `Error detectado: "${fb.snippet}"`
-                      : fb.type === 'upgrade'
-                      ? `Mejora de Nivel B2 para: "${fb.snippet}"`
-                      : fb.snippet}
-                  </span>
-                </div>
-                <p className="text-slate-200">{fb.messageEs}</p>
-                <p className="text-indigo-300 font-semibold mt-1">💡 {fb.suggestionEn}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* AI Deep Evaluation Results */}
-      {aiError && (
-        <div className="p-4 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-rose-200 text-sm">
-          {aiError}
-        </div>
-      )}
-
-      {aiResult && (
-        <div className="bg-slate-900 border border-purple-500/40 rounded-2xl p-6 space-y-5">
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Cpu className="w-5 h-5 text-purple-400" />
-              Informe del Examinador IA
-            </h3>
-            <span className="px-3.5 py-1.5 rounded-xl bg-purple-500/20 text-purple-200 font-bold text-sm">
-              Nota: {aiResult.scoreOutOf100}/100 ({aiResult.estimatedLevel})
-            </span>
-          </div>
-
-          <p className="text-sm text-slate-200 leading-relaxed">{aiResult.generalFeedbackEs}</p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-slate-950 border border-emerald-500/30 rounded-xl p-4 space-y-2">
-              <h4 className="text-xs font-bold uppercase text-emerald-400">
-                ✅ Tu Texto Corregido
-              </h4>
-              <p className="text-sm text-slate-100 whitespace-pre-line leading-relaxed">
-                {aiResult.correctedVersionEn}
-              </p>
-            </div>
-
-            <div className="bg-slate-950 border border-amber-500/30 rounded-xl p-4 space-y-2">
-              <h4 className="text-xs font-bold uppercase text-amber-300">
-                🚀 Versión Elevada a Nivel B2 Advanced
-              </h4>
-              <p className="text-sm text-slate-100 whitespace-pre-line leading-relaxed">
-                {aiResult.b2AdvancedUpgradeEn}
-              </p>
-            </div>
-          </div>
-
-          {aiResult.lineByLineCorrections.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-xs font-bold uppercase text-rose-300">
-                Correcciones Línea por Línea:
-              </h4>
-              {aiResult.lineByLineCorrections.map((c, idx) => (
-                <div
-                  key={idx}
-                  className="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm space-y-1"
-                >
-                  <p className="text-rose-300 line-through">❌ {c.original}</p>
-                  <p className="text-emerald-300 font-bold">✅ {c.correction}</p>
-                  <p className="text-slate-400 text-xs">{c.explanationEs}</p>
-                </div>
-              ))}
             </div>
           )}
-
-          {aiResult.generatedDrillExercises.length > 0 && (
-            <div className="space-y-3 pt-3 border-t border-slate-800">
-              <h4 className="text-sm font-bold text-purple-300">
-                🔥 Ejercicios generados a partir de los fallos de tu Writing:
-              </h4>
-              {aiResult.generatedDrillExercises.map((ex, i) => (
-                <ExerciseCard
-                  key={ex.id}
-                  exercise={ex}
-                  onAttempt={onExerciseAttempt}
-                  indexLabel={`Fallo de Writing #${i + 1}`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Model Answer Comparison */}
-      {showModel && (
-        <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl p-6 space-y-4">
-          <h3 className="text-lg font-bold text-emerald-300">
-            🏆 Respuesta Modelo de Examen (Nivel {currentPrompt.level})
-          </h3>
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-slate-100 text-sm sm:text-base whitespace-pre-line leading-relaxed">
-            {currentPrompt.modelAnswer}
-          </div>
-          <div className="space-y-1.5">
-            <h4 className="text-xs font-bold uppercase text-amber-300">
-              ¿Por qué este texto saca máxima nota?
-            </h4>
-            <ul className="space-y-1 text-xs sm:text-sm text-slate-300">
-              {currentPrompt.modelAnalysisEs.map((note, i) => (
-                <li key={i}>• {note}</li>
-              ))}
-            </ul>
-          </div>
         </div>
       )}
     </div>

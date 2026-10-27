@@ -429,3 +429,265 @@ Analyze the text thoroughly and create 2 practice exercises in generatedDrillExe
     )
   };
 }
+
+// ==================== 3. GENERADOR DE HISTORIAS CON PREGUNTAS DE ESCRIBIR ====================
+
+export interface AIStoryOpenQuestion {
+  id: string;
+  questionEn: string;
+  questionEs: string;
+  targetStructureHint: string;
+  sampleIdealAnswer: string;
+}
+
+export interface AIGeneratedStory {
+  id: string;
+  level: Level;
+  title: string;
+  genre: string;
+  paragraphs: string[];
+  annotations: {
+    phrase: string;
+    type: 'grammar' | 'phrasal_verb' | 'connector' | 'vocab';
+    label: string;
+    explanationEs: string;
+  }[];
+  openQuestions: AIStoryOpenQuestion[];
+}
+
+export async function generateAIStoryWithOpenQuestions(
+  level: Level,
+  topicOrGenre: string
+): Promise<AIGeneratedStory> {
+  const config = getAIConfig();
+  const sys = `You are a creative Cambridge English story writer (A2+ to B2 Advanced) for Spanish speakers.
+Write an engaging 3-paragraph story at level ${level} rich in phrasal verbs, connectors, and target grammar structures of level ${level}.
+Also create 4 OPEN-ENDED QUESTIONS about the story where the student must WRITE full sentences in English (NOT fill-in-the-blank, NOT multiple choice).
+Return ONLY valid JSON with this structure:
+{
+  "title": "Engaging Story Title",
+  "genre": "Misterio / Vida Real / Viajes / etc.",
+  "paragraphs": [
+    "Paragraph 1...",
+    "Paragraph 2...",
+    "Paragraph 3..."
+  ],
+  "annotations": [
+    {
+      "phrase": "exact substring from one of the paragraphs",
+      "type": "grammar" | "phrasal_verb" | "connector" | "vocab",
+      "label": "Name of structure or phrasal verb",
+      "explanationEs": "Why it is used here in Spanish"
+    }
+  ],
+  "openQuestions": [
+    {
+      "questionEn": "Open question in English about the story or asking what the student would have done...",
+      "questionEs": "Traducción de la pregunta al español",
+      "targetStructureHint": "Pista: Responde usando una frase completa (ej. usando Past Perfect / un condicional / un phrasal verb del texto)",
+      "sampleIdealAnswer": "A complete model sentence in English answering the question."
+    }
+  ]
+}`;
+
+  const usr = `Level: ${level}. Topic/Genre preference: "${topicOrGenre || 'Una historia interesante con giro inesperado en la vida cotidiana, viajes o trabajo'}".
+Ensure there are at least 5 annotations whose "phrase" matches exact substrings inside the paragraphs, and 4 openQuestions that require writing full sentences.`;
+
+  const jsonStr = await callLLMJson(sys, usr, config);
+  const parsed = JSON.parse(jsonStr);
+
+  return {
+    id: `ai-story-${Date.now()}`,
+    level,
+    title: parsed.title || 'Historia Generada por IA',
+    genre: parsed.genre || 'Narrativa IA',
+    paragraphs: Array.isArray(parsed.paragraphs) && parsed.paragraphs.length > 0
+      ? parsed.paragraphs
+      : ['Once upon a time...'],
+    annotations: Array.isArray(parsed.annotations) ? parsed.annotations : [],
+    openQuestions: (Array.isArray(parsed.openQuestions) ? parsed.openQuestions : []).map(
+      (q: Partial<AIStoryOpenQuestion>, idx: number) => ({
+        id: `ai-sq-${Date.now()}-${idx}`,
+        questionEn: q.questionEn || 'What happened in the story?',
+        questionEs: q.questionEs || '¿Qué ocurrió en la historia?',
+        targetStructureHint: q.targetStructureHint || 'Escribe una frase completa en inglés.',
+        sampleIdealAnswer: q.sampleIdealAnswer || ''
+      })
+    )
+  };
+}
+
+export interface OpenAnswerFeedback {
+  isContentAccurate: boolean;
+  scoreOutOf10: number;
+  correctedUserSentence: string;
+  b2UpgradeSentence: string;
+  feedbackEs: string;
+  errorsFound: {
+    wrong: string;
+    right: string;
+    whyEs: string;
+  }[];
+}
+
+export async function evaluateStoryOpenAnswerWithAI(
+  storyParagraphs: string[],
+  questionEn: string,
+  userWrittenAnswer: string,
+  level: Level
+): Promise<OpenAnswerFeedback> {
+  const config = getAIConfig();
+  const sys = `You are an English teacher evaluating a Spanish student's written answer to a reading comprehension & reflection question (Level ${level}).
+Evaluate BOTH:
+1) Whether their answer makes sense according to the story.
+2) Every grammatical, spelling, preposition, or vocabulary error in their sentence.
+Return ONLY valid JSON:
+{
+  "isContentAccurate": true,
+  "scoreOutOf10": 8,
+  "correctedUserSentence": "The student's sentence with all grammar/spelling errors fixed",
+  "b2UpgradeSentence": "How a B2/B2+ native speaker would express the same idea using rich grammar/phrasal verbs",
+  "feedbackEs": "Explicación clara y directa en español sobre si ha respondido bien a la pregunta y qué tal la gramática",
+  "errorsFound": [
+    {
+      "wrong": "exact error from student",
+      "right": "corrected part",
+      "whyEs": "Por qué estaba mal explicado en español"
+    }
+  ]
+}`;
+
+  const usr = `Story Text:
+"""
+${storyParagraphs.join('\n\n')}
+"""
+Question: "${questionEn}"
+Student's Written Answer: "${userWrittenAnswer}"`;
+
+  const jsonStr = await callLLMJson(sys, usr, config);
+  const parsed = JSON.parse(jsonStr);
+
+  return {
+    isContentAccurate: parsed.isContentAccurate !== false,
+    scoreOutOf10: typeof parsed.scoreOutOf10 === 'number' ? parsed.scoreOutOf10 : 7,
+    correctedUserSentence: parsed.correctedUserSentence || userWrittenAnswer,
+    b2UpgradeSentence: parsed.b2UpgradeSentence || userWrittenAnswer,
+    feedbackEs: parsed.feedbackEs || 'Respuesta revisada.',
+    errorsFound: Array.isArray(parsed.errorsFound) ? parsed.errorsFound : []
+  };
+}
+
+// ==================== 4. SITUACIONES DE LA VIDA REAL ("¿QUÉ LE RESPONDERÍAS?") ====================
+
+export interface RoleplayScenario {
+  id: string;
+  level: Level;
+  title: string;
+  roleLabel: string;
+  situationEs: string;
+  characterSaysEn: string;
+  characterSaysEs: string;
+  yourGoalEs: string;
+  usefulPhrases: string[];
+  sampleResponseEn: string;
+}
+
+export async function generateAIRoleplayScenario(
+  level: Level,
+  customTopic: string
+): Promise<RoleplayScenario> {
+  const config = getAIConfig();
+  const sys = `You are designing a practical real-life English conversational scenario (Level ${level}) for a Spanish speaker ("¿Qué le responderías?").
+For example: at the mechanic's garage, landlord problem, airport desk, job negotiation, doctor, restaurant complaint, noisy neighbour, bank issue, etc.
+Return ONLY valid JSON:
+{
+  "title": "Short title (e.g. En el Mecánico: Avería Cara)",
+  "roleLabel": "Mechanic / Landlord / Boss / Flight Attendant / etc.",
+  "situationEs": "Descripción en español del contexto en el que te encuentras",
+  "characterSaysEn": "What the person says directly to you in natural English (2-3 sentences)",
+  "characterSaysEs": "Traducción al español de lo que te acaba de decir",
+  "yourGoalEs": "Tu objetivo al responderle (ej. Dile que es demasiado caro, pregúntale si hay una pieza de segunda mano y cuándo estará listo)",
+  "usefulPhrases": ["phrase or phrasal verb 1", "phrase 2", "phrase 3"],
+  "sampleResponseEn": "A natural, high-scoring model response in English"
+}`;
+
+  const usr = `Level: ${level}. Scenario topic: "${customTopic || 'Una situación cotidiana práctica donde tengas que defenderte, negociar o resolver un imprevisto en inglés'}".`;
+
+  const jsonStr = await callLLMJson(sys, usr, config);
+  const parsed = JSON.parse(jsonStr);
+
+  return {
+    id: `rp-ai-${Date.now()}`,
+    level,
+    title: parsed.title || 'Situación en Vivo',
+    roleLabel: parsed.roleLabel || 'Interlocutor',
+    situationEs: parsed.situationEs || '',
+    characterSaysEn: parsed.characterSaysEn || '',
+    characterSaysEs: parsed.characterSaysEs || '',
+    yourGoalEs: parsed.yourGoalEs || 'Respóndele con tus propias palabras en inglés.',
+    usefulPhrases: Array.isArray(parsed.usefulPhrases) ? parsed.usefulPhrases : [],
+    sampleResponseEn: parsed.sampleResponseEn || ''
+  };
+}
+
+export interface RoleplayEvaluationResult {
+  scoreOutOf10: number;
+  naturalCorrectedResponseEn: string;
+  b2NativeAlternativeEn: string;
+  feedbackSummaryEs: string;
+  errorsList: {
+    wrong: string;
+    right: string;
+    explanationEs: string;
+  }[];
+  characterFollowUpEn: string;
+  characterFollowUpEs: string;
+}
+
+export async function evaluateRoleplayResponseWithAI(
+  scenario: RoleplayScenario,
+  userResponseEn: string
+): Promise<RoleplayEvaluationResult> {
+  const config = getAIConfig();
+  const sys = `You are an expert English coach for Spanish speakers.
+The user is responding in English to a real-life situation (${scenario.level}).
+Analyze their written response in detail:
+1) Point out every single grammar, vocabulary, preposition, or spelling mistake they made.
+2) Give them their exact sentence corrected naturally.
+3) Give them a B2/B2+ native-sounding version using phrasal verbs or idiomatic expressions.
+4) Write how the interlocutor (${scenario.roleLabel}) replies next so the user can keep the conversation going if they want!
+Return ONLY valid JSON:
+{
+  "scoreOutOf10": 8,
+  "naturalCorrectedResponseEn": "The student's response with all errors fixed",
+  "b2NativeAlternativeEn": "How a fluent B2/B2+ speaker would say it in real life",
+  "feedbackSummaryEs": "Valoración directa en español sobre su respuesta, tono y gramática",
+  "errorsList": [
+    {
+      "wrong": "exact mistake written by student",
+      "right": "correct English form",
+      "explanationEs": "Explicación clara en español de por qué estaba mal"
+    }
+  ],
+  "characterFollowUpEn": "What the mechanic/boss/landlord replies back to the student's message in English",
+  "characterFollowUpEs": "Traducción al español de esa nueva respuesta"
+}`;
+
+  const usr = `Situation: ${scenario.situationEs}
+${scenario.roleLabel} said: "${scenario.characterSaysEn}"
+Goal: ${scenario.yourGoalEs}
+Student replied: "${userResponseEn}"`;
+
+  const jsonStr = await callLLMJson(sys, usr, config);
+  const parsed = JSON.parse(jsonStr);
+
+  return {
+    scoreOutOf10: typeof parsed.scoreOutOf10 === 'number' ? parsed.scoreOutOf10 : 8,
+    naturalCorrectedResponseEn: parsed.naturalCorrectedResponseEn || userResponseEn,
+    b2NativeAlternativeEn: parsed.b2NativeAlternativeEn || userResponseEn,
+    feedbackSummaryEs: parsed.feedbackSummaryEs || '¡Buena respuesta!',
+    errorsList: Array.isArray(parsed.errorsList) ? parsed.errorsList : [],
+    characterFollowUpEn: parsed.characterFollowUpEn || '',
+    characterFollowUpEs: parsed.characterFollowUpEs || ''
+  };
+}
