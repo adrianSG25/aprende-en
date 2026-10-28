@@ -1,4 +1,4 @@
-const CACHE_NAME = 'engdrill-pro-v4';
+const CACHE_NAME = 'engdrill-pro-v5';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

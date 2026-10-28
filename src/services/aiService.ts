@@ -355,25 +355,75 @@ export interface AIWritingCorrectionResult {
   generatedDrillExercises: Exercise[];
 }
 
+// Filtra correcciones tiquismiquis (guiones como second hand vs second-hand, mayúsculas, apóstrofes, comas o erratas de 1 letra)
+function isPedanticOrMinorOrthography(wrong: string, right: string): boolean {
+  if (!wrong || !right) return true;
+  const clean = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[-–—]/g, ' ')
+      .replace(/[.,!?;:'"’()]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  const cw = clean(wrong);
+  const cr = clean(right);
+
+  // Si al quitar guiones, signos de puntuación, apóstrofes y mayúsculas son iguales (ej. "second hand" vs "second-hand", "dont" vs "don't", "monday" vs "Monday"), ignorar el error
+  if (cw === cr) return true;
+
+  // Si tienen exactamente las mismas palabras y solo hay 1 letra de diferencia por errata de teclado en una palabra de >= 5 letras, no marcarlo como fallo gramatical
+  const wWords = cw.split(' ');
+  const rWords = cr.split(' ');
+  if (wWords.length === rWords.length) {
+    let totalCharDiff = 0;
+    let sameStructure = true;
+    for (let i = 0; i < wWords.length; i++) {
+      const a = wWords[i];
+      const b = rWords[i];
+      if (a === b) continue;
+      if (Math.abs(a.length - b.length) <= 1 && Math.max(a.length, b.length) >= 5) {
+        // Calcular diferencia simple
+        let mismatches = Math.abs(a.length - b.length);
+        const minLen = Math.min(a.length, b.length);
+        for (let c = 0; c < minLen; c++) {
+          if (a[c] !== b[c]) mismatches++;
+        }
+        if (mismatches <= 2) {
+          totalCharDiff += 1;
+          continue;
+        }
+      }
+      sameStructure = false;
+    }
+    if (sameStructure && totalCharDiff <= 1) return true;
+  }
+
+  return false;
+}
+
 export async function evaluateWritingWithAI(
   userText: string,
   targetLevel: Level,
   promptTitle: string
 ): Promise<AIWritingCorrectionResult> {
   const config = getAIConfig();
-  const sys = `You are a strict, encouraging Cambridge English Writing Examiner (from A2+ to B2 Advanced) helping a Spanish speaker improve their grammar, phrasal verbs, and connectors.
+  const sys = `You are a practical, encouraging English Writing Coach (from A2+ to B2 Advanced) helping a Spanish speaker communicate naturally in real-world and work contexts.
+CRITICAL RULE: DO NOT be pedantic about orthography or punctuation!
+- NEVER mark hyphens (e.g. "second hand" vs "second-hand"), missing apostrophes ("dont" vs "don't"), capitalization ("monday" vs "Monday"), commas, or minor 1-letter keyboard typos as errors.
+- ONLY correct real GRAMMATICAL errors (wrong verb tense, wrong preposition, wrong word order, missing subject, false friends) or unnatural phrasing.
 Return ONLY valid JSON matching this exact structure:
 {
   "estimatedLevel": "e.g. B1+ / B2",
   "scoreOutOf100": 82,
-  "generalFeedbackEs": "Detailed paragraph in Spanish assessing grammar, vocabulary, connectors, and structure.",
-  "correctedVersionEn": "The user's text with all grammatical and lexical errors fixed naturally.",
-  "b2AdvancedUpgradeEn": "A B2+ (Advanced) version of the user's text using inversions, cleft sentences, rich phrasal verbs and C1/B2+ linkers.",
+  "generalFeedbackEs": "Detailed paragraph in Spanish assessing grammar, vocabulary, connectors, and practical communication.",
+  "correctedVersionEn": "The user's text with real grammatical and lexical errors fixed naturally.",
+  "b2AdvancedUpgradeEn": "A B2+ (Advanced) version of the user's text using natural phrasal verbs and strong connectors.",
   "lineByLineCorrections": [
     {
-      "original": "exact wrong phrase from user",
+      "original": "exact wrong grammar phrase from user",
       "correction": "corrected English phrase",
-      "explanationEs": "Why it was wrong in Spanish"
+      "explanationEs": "Why it was grammatically wrong in Spanish"
     }
   ],
   "generatedDrillExercises": [
@@ -399,18 +449,26 @@ Student's Text:
 """
 ${userText}
 """
-Analyze the text thoroughly and create 2 practice exercises in generatedDrillExercises targeting the student's weak spots.`;
+Analyze the text focusing ONLY on real grammar/vocabulary (ignore hyphens, commas, apostrophes, and minor spelling slips).`;
 
   const jsonStr = await callLLMJson(sys, usr, config);
   const parsed = JSON.parse(jsonStr);
 
+  const rawCorrections = Array.isArray(parsed.lineByLineCorrections)
+    ? parsed.lineByLineCorrections
+    : [];
+  const filteredCorrections = rawCorrections.filter(
+    (c: { original?: string; correction?: string }) =>
+      !isPedanticOrMinorOrthography(c.original || '', c.correction || '')
+  );
+
   return {
     estimatedLevel: parsed.estimatedLevel || targetLevel,
-    scoreOutOf100: typeof parsed.scoreOutOf100 === 'number' ? parsed.scoreOutOf100 : 75,
+    scoreOutOf100: typeof parsed.scoreOutOf100 === 'number' ? parsed.scoreOutOf100 : 80,
     generalFeedbackEs: parsed.generalFeedbackEs || 'Texto evaluado correctamente.',
     correctedVersionEn: parsed.correctedVersionEn || userText,
     b2AdvancedUpgradeEn: parsed.b2AdvancedUpgradeEn || userText,
-    lineByLineCorrections: Array.isArray(parsed.lineByLineCorrections) ? parsed.lineByLineCorrections : [],
+    lineByLineCorrections: filteredCorrections,
     generatedDrillExercises: (Array.isArray(parsed.generatedDrillExercises) ? parsed.generatedDrillExercises : []).map(
       (ex: Partial<Exercise>, i: number) => ({
         id: `ai-wr-ex-${Date.now()}-${i}`,
@@ -537,20 +595,26 @@ export async function evaluateStoryOpenAnswerWithAI(
   level: Level
 ): Promise<OpenAnswerFeedback> {
   const config = getAIConfig();
-  const sys = `You are an English teacher evaluating a Spanish student's written answer to a reading comprehension & reflection question (Level ${level}).
+  const sys = `You are a practical, real-world English coach evaluating a Spanish student's written answer to a reading comprehension & reflection question (Level ${level}).
+CRITICAL RULE — NON-PEDANTIC ORTHOGRAPHY:
+The student uses English for everyday life and work, NOT academic proofreading.
+- NEVER mark missing or extra hyphens as errors (e.g., "second hand" vs "second-hand", "well known" vs "well-known" are 100% VALID).
+- NEVER mark missing apostrophes in contractions ("dont", "cant", "im"), capitalization, commas/periods, or minor 1-letter keyboard typos as errors.
+- ONLY report real grammatical, verb tense, preposition, word order, or vocabulary mistakes in "errorsFound".
+
 Evaluate BOTH:
 1) Whether their answer makes sense according to the story.
-2) Every grammatical, spelling, preposition, or vocabulary error in their sentence.
+2) Real grammatical, preposition, or vocabulary errors in their sentence (ignoring trivial punctuation/hyphens).
 Return ONLY valid JSON:
 {
   "isContentAccurate": true,
   "scoreOutOf10": 8,
-  "correctedUserSentence": "The student's sentence with all grammar/spelling errors fixed",
+  "correctedUserSentence": "The student's sentence with real grammar/vocabulary errors fixed",
   "b2UpgradeSentence": "How a B2/B2+ native speaker would express the same idea using rich grammar/phrasal verbs",
-  "feedbackEs": "Explicación clara y directa en español sobre si ha respondido bien a la pregunta y qué tal la gramática",
+  "feedbackEs": "Explicación clara y directa en español sobre si ha respondido bien a la pregunta y qué tal la gramática práctica (sin ser tiquismiquis con guiones o puntuación)",
   "errorsFound": [
     {
-      "wrong": "exact error from student",
+      "wrong": "exact real grammar/vocabulary error from student",
       "right": "corrected part",
       "whyEs": "Por qué estaba mal explicado en español"
     }
@@ -567,13 +631,23 @@ Student's Written Answer: "${userWrittenAnswer}"`;
   const jsonStr = await callLLMJson(sys, usr, config);
   const parsed = JSON.parse(jsonStr);
 
+  const rawErrors = Array.isArray(parsed.errorsFound) ? parsed.errorsFound : [];
+  const filteredErrors = rawErrors.filter(
+    (err: any) => !isPedanticOrMinorOrthography(err.wrong || '', err.right || '')
+  );
+
+  let finalScore = typeof parsed.scoreOutOf10 === 'number' ? parsed.scoreOutOf10 : 8;
+  if (rawErrors.length > 0 && filteredErrors.length === 0 && finalScore < 9) {
+    finalScore = 9.5;
+  }
+
   return {
     isContentAccurate: parsed.isContentAccurate !== false,
-    scoreOutOf10: typeof parsed.scoreOutOf10 === 'number' ? parsed.scoreOutOf10 : 7,
+    scoreOutOf10: finalScore,
     correctedUserSentence: parsed.correctedUserSentence || userWrittenAnswer,
     b2UpgradeSentence: parsed.b2UpgradeSentence || userWrittenAnswer,
     feedbackEs: parsed.feedbackEs || 'Respuesta revisada.',
-    errorsFound: Array.isArray(parsed.errorsFound) ? parsed.errorsFound : []
+    errorsFound: filteredErrors
   };
 }
 
@@ -649,24 +723,29 @@ export async function evaluateRoleplayResponseWithAI(
   userResponseEn: string
 ): Promise<RoleplayEvaluationResult> {
   const config = getAIConfig();
-  const sys = `You are an expert English coach for Spanish speakers.
+  const sys = `You are a practical, real-world English coach for Spanish speakers (focused on everyday, informal, and workplace communication, NOT pedantic academic proofreading).
 The user is responding in English to a real-life situation (${scenario.level}).
-Analyze their written response in detail:
-1) Point out every single grammar, vocabulary, preposition, or spelling mistake they made.
-2) Give them their exact sentence corrected naturally.
+CRITICAL RULE — DO NOT BE PEDANTIC ABOUT ORTHOGRAPHY OR PUNCTUATION:
+- NEVER flag missing or extra hyphens as mistakes! For example, writing "second hand" instead of "second-hand", "well known" instead of "well-known", or "full time" instead of "full-time" is 100% CORRECT and natural in real-world messages.
+- NEVER flag missing apostrophes in contractions ("dont", "cant", "im", "wont"), capitalization, commas, periods, or minor 1-letter keyboard typos.
+- ONLY include genuine grammar mistakes (wrong verb tense, wrong preposition, Spanish false friends, broken word order, wrong vocabulary choice) in "errorsList".
+
+Analyze their written response:
+1) Point out ONLY genuine grammar, vocabulary, preposition, or structure mistakes (ignore hyphens, punctuation, and minor typos).
+2) Give them their exact sentence with any real grammar errors fixed naturally.
 3) Give them a B2/B2+ native-sounding version using phrasal verbs or idiomatic expressions.
 4) Write how the interlocutor (${scenario.roleLabel}) replies next so the user can keep the conversation going if they want!
 Return ONLY valid JSON:
 {
   "scoreOutOf10": 8,
-  "naturalCorrectedResponseEn": "The student's response with all errors fixed",
+  "naturalCorrectedResponseEn": "The student's response with real grammar errors fixed",
   "b2NativeAlternativeEn": "How a fluent B2/B2+ speaker would say it in real life",
-  "feedbackSummaryEs": "Valoración directa en español sobre su respuesta, tono y gramática",
+  "feedbackSummaryEs": "Valoración directa en español sobre su respuesta y gramática práctica (sin ser tiquismiquis con guiones, mayúsculas o puntuación)",
   "errorsList": [
     {
-      "wrong": "exact mistake written by student",
+      "wrong": "exact real grammar/vocabulary mistake written by student",
       "right": "correct English form",
-      "explanationEs": "Explicación clara en español de por qué estaba mal"
+      "explanationEs": "Explicación clara en español de por qué estaba mal gramaticalmente"
     }
   ],
   "characterFollowUpEn": "What the mechanic/boss/landlord replies back to the student's message in English",
@@ -681,12 +760,22 @@ Student replied: "${userResponseEn}"`;
   const jsonStr = await callLLMJson(sys, usr, config);
   const parsed = JSON.parse(jsonStr);
 
+  const rawErrors = Array.isArray(parsed.errorsList) ? parsed.errorsList : [];
+  const filteredErrors = rawErrors.filter(
+    (err: any) => !isPedanticOrMinorOrthography(err.wrong || '', err.right || '')
+  );
+
+  let finalScore = typeof parsed.scoreOutOf10 === 'number' ? parsed.scoreOutOf10 : 8;
+  if (rawErrors.length > 0 && filteredErrors.length === 0 && finalScore < 9) {
+    finalScore = 9.5;
+  }
+
   return {
-    scoreOutOf10: typeof parsed.scoreOutOf10 === 'number' ? parsed.scoreOutOf10 : 8,
+    scoreOutOf10: finalScore,
     naturalCorrectedResponseEn: parsed.naturalCorrectedResponseEn || userResponseEn,
     b2NativeAlternativeEn: parsed.b2NativeAlternativeEn || userResponseEn,
     feedbackSummaryEs: parsed.feedbackSummaryEs || '¡Buena respuesta!',
-    errorsList: Array.isArray(parsed.errorsList) ? parsed.errorsList : [],
+    errorsList: filteredErrors,
     characterFollowUpEn: parsed.characterFollowUpEn || '',
     characterFollowUpEs: parsed.characterFollowUpEs || ''
   };

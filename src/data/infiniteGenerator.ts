@@ -961,37 +961,100 @@ export function normalizeAnswer(str: string): string {
   return str
     .trim()
     .toLowerCase()
+    .replace(/[-–—]/g, ' ') // Tratar guiones como espacios (second-hand === second hand)
     .replace(/[.,!?;:"']/g, (m) => (m === "'" ? "'" : ''))
     .replace(/’/g, "'")
     .replace(/\s+/g, ' ')
+    // Soportar contracciones escritas sin apóstrofe en móvil/informal
+    .replace(/\bcant\b/g, 'cannot')
     .replace(/\bcan't\b/g, 'cannot')
+    .replace(/\bwont\b/g, 'will not')
     .replace(/\bwon't\b/g, 'will not')
+    .replace(/\bshant\b/g, 'shall not')
     .replace(/\bshan't\b/g, 'shall not')
+    .replace(/\bdont\b/g, 'do not')
+    .replace(/\bdoesnt\b/g, 'does not')
+    .replace(/\bdidnt\b/g, 'did not')
+    .replace(/\bisnt\b/g, 'is not')
+    .replace(/\barent\b/g, 'are not')
+    .replace(/\bwasnt\b/g, 'was not')
+    .replace(/\bwerent\b/g, 'were not')
+    .replace(/\bhavent\b/g, 'have not')
+    .replace(/\bhasnt\b/g, 'has not')
+    .replace(/\bhadnt\b/g, 'had not')
+    .replace(/\bwouldnt\b/g, 'would not')
+    .replace(/\bcouldnt\b/g, 'could not')
+    .replace(/\bshouldnt\b/g, 'should not')
+    .replace(/\bmustnt\b/g, 'must not')
+    .replace(/\bneednt\b/g, 'need not')
+    .replace(/\bmightnt\b/g, 'might not')
     .replace(/\bn't\b/g, ' not')
+    .replace(/\bim\b/g, 'i am')
     .replace(/\bi'm\b/g, 'i am')
+    .replace(/\byoure\b/g, 'you are')
     .replace(/\byou're\b/g, 'you are')
+    .replace(/\bwere\b/g, 'we are')
     .replace(/\bwe're\b/g, 'we are')
+    .replace(/\btheyre\b/g, 'they are')
     .replace(/\bthey're\b/g, 'they are')
+    .replace(/\bhes\b/g, 'he is')
     .replace(/\bhe's\b/g, 'he is')
+    .replace(/\bshes\b/g, 'she is')
     .replace(/\bshe's\b/g, 'she is')
+    .replace(/\bits\b/g, 'it is')
     .replace(/\bit's\b/g, 'it is')
+    .replace(/\bive\b/g, 'i have')
     .replace(/\bi've\b/g, 'i have')
+    .replace(/\byouve\b/g, 'you have')
     .replace(/\byou've\b/g, 'you have')
+    .replace(/\bweve\b/g, 'we have')
     .replace(/\bwe've\b/g, 'we have')
+    .replace(/\btheyve\b/g, 'they have')
     .replace(/\bthey've\b/g, 'they have')
     .replace(/\bi'll\b/g, 'i will')
-    .replace(/\b'd\b/g, ' would') // Note: we also check direct match before contraction expansion
+    .replace(/\b'd\b/g, ' would')
+    .replace(/'/g, '')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
 export function checkAnswerMatch(userInput: string, acceptedAnswers: string[]): boolean {
-  const cleanUserRaw = userInput.trim().toLowerCase().replace(/[.,!?;:"]/g, '').replace(/’/g, "'").replace(/\s+/g, ' ');
+  const cleanUserRaw = userInput
+    .trim()
+    .toLowerCase()
+    .replace(/[-–—]/g, ' ')
+    .replace(/[.,!?;:"]/g, '')
+    .replace(/’/g, "'")
+    .replace(/\s+/g, ' ');
   if (!cleanUserRaw) return false;
 
+  const normUser = normalizeAnswer(userInput);
+
   for (const ans of acceptedAnswers) {
-    const cleanAnsRaw = ans.trim().toLowerCase().replace(/[.,!?;:"]/g, '').replace(/’/g, "'").replace(/\s+/g, ' ');
+    const cleanAnsRaw = ans
+      .trim()
+      .toLowerCase()
+      .replace(/[-–—]/g, ' ')
+      .replace(/[.,!?;:"]/g, '')
+      .replace(/’/g, "'")
+      .replace(/\s+/g, ' ');
     if (cleanUserRaw === cleanAnsRaw) return true;
-    if (normalizeAnswer(userInput) === normalizeAnswer(ans)) return true;
+    const normAns = normalizeAnswer(ans);
+    if (normUser === normAns) return true;
+
+    // Tolerar pequeñas faltas de ortografía (1 letra por palabra larga) cuando la estructura gramatical es la misma
+    const uWords = normUser.split(' ');
+    const aWords = normAns.split(' ');
+    if (uWords.length === aWords.length) {
+      const allWordsClose = uWords.every((uw, idx) => {
+        const aw = aWords[idx];
+        if (uw === aw) return true;
+        if (aw.length >= 5 && levenshteinDistance(uw, aw) <= 1) return true;
+        if (aw.length >= 8 && levenshteinDistance(uw, aw) <= 2) return true;
+        return false;
+      });
+      if (allWordsClose) return true;
+    }
   }
   return false;
 }
