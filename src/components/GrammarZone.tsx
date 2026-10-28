@@ -39,7 +39,8 @@ export const GrammarZone: React.FC<GrammarZoneProps> = ({ onExerciseAttempt }) =
 
   const getExercisesForUnit = (unitId: string, unitLevel: Level): Exercise[] => {
     const direct = allExercises.filter((e) => e.topicId === unitId);
-    if (direct.length > 0) return direct;
+    const unique = Array.from(new Map(direct.map((e) => [e.id, e])).values());
+    if (unique.length > 0) return unique;
     return CURATED_GRAMMAR_EXERCISES.filter((e) => e.level === unitLevel);
   };
 

@@ -9,7 +9,8 @@ import {
   BookMarked,
   AlertCircle,
   Eye,
-  EyeOff
+  EyeOff,
+  Sparkles
 } from 'lucide-react';
 
 interface VocabZoneProps {
@@ -36,24 +37,49 @@ export const VocabZone: React.FC<VocabZoneProps> = ({ onExerciseAttempt }) => {
   const [exIdx, setExIdx] = useState(0);
 
   const vocabDrillPool = useMemo(() => {
-    const all = getAllStaticExercises().filter((e) =>
+    const fromAll = getAllStaticExercises().filter((e) =>
       ['vocabulary', 'word_formation', 'prepositions', 'connectors'].includes(e.category)
     );
-    return all.length > 0 ? all : CURATED_VOCAB_EXERCISES;
+    const combined = [...CURATED_VOCAB_EXERCISES, ...fromAll];
+    return Array.from(new Map(combined.map((e) => [e.id, e])).values());
   }, []);
 
-  const filteredItems = VOCABULARY_ITEMS.filter((item) => {
-    if (selectedLevel !== 'ALL' && item.level !== selectedLevel) return false;
-    if (selectedCat !== 'ALL' && item.category !== selectedCat) return false;
-    return true;
-  });
+  const filteredItems = useMemo(() => {
+    return VOCABULARY_ITEMS.filter((item) => {
+      if (selectedLevel !== 'ALL' && item.level !== selectedLevel) return false;
+      if (selectedCat !== 'ALL' && item.category !== selectedCat) return false;
+      return true;
+    });
+  }, [selectedLevel, selectedCat]);
 
-  const filteredExercises = vocabDrillPool.filter(
-    (e) => selectedLevel === 'ALL' || e.level === selectedLevel
-  );
+  const filteredExercises = useMemo(() => {
+    return vocabDrillPool.filter((e) => {
+      if (selectedLevel !== 'ALL' && e.level !== selectedLevel) return false;
+      if (selectedCat !== 'ALL') {
+        if (selectedCat === 'word_formation') {
+          return e.category === 'word_formation' || e.type === 'word_formation';
+        }
+        if (selectedCat === 'prepositions') {
+          return e.category === 'prepositions' || e.topicLabel.toLowerCase().includes('preposition');
+        }
+        if (selectedCat === 'connectors') {
+          return e.category === 'connectors' || e.topicLabel.toLowerCase().includes('connector');
+        }
+        if (selectedCat === 'collocations') {
+          return e.topicLabel.toLowerCase().includes('collocation');
+        }
+        if (selectedCat === 'confusing_words') {
+          return e.topicLabel.toLowerCase().includes('confusing');
+        }
+      }
+      return true;
+    });
+  }, [vocabDrillPool, selectedLevel, selectedCat]);
 
   const currentEx =
-    filteredExercises[exIdx % Math.max(1, filteredExercises.length)];
+    filteredExercises.length > 0
+      ? filteredExercises[exIdx % filteredExercises.length]
+      : null;
 
   const toggleReveal = (id: string) => {
     setRevealedIds((prev) =>
@@ -64,14 +90,19 @@ export const VocabZone: React.FC<VocabZoneProps> = ({ onExerciseAttempt }) => {
   return (
     <div className="space-y-6">
       {/* Top Bar */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Brain className="w-5 h-5 text-emerald-400" />
-            Vocabulario, Collocations, Preposiciones y Word Formation
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <Brain className="w-5 h-5 text-emerald-400" />
+              Vocabulario, Collocations, Preposiciones y Word Formation
+            </h2>
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <Sparkles className="w-3 h-3" /> Banco Ampliado
+            </span>
+          </div>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Fija las estructuras léxicas que marcan la diferencia entre A2+, B1 y B2 Advanced.
+            Fija las estructuras léxicas, palabras confusas, preposiciones y colocaciones que marcan la diferencia entre A2+, B1 y B2 Advanced.
           </p>
         </div>
 
@@ -79,32 +110,35 @@ export const VocabZone: React.FC<VocabZoneProps> = ({ onExerciseAttempt }) => {
           <button
             type="button"
             onClick={() => setMode('study')}
-            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer ${
+            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
               mode === 'study'
                 ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
           >
             <BookMarked className="w-4 h-4" />
-            Tarjetas de Estudio Activo ({filteredItems.length})
+            Tarjetas de Estudio ({filteredItems.length})
           </button>
 
           <button
             type="button"
-            onClick={() => setMode('drill')}
-            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer ${
+            onClick={() => {
+              setMode('drill');
+              setExIdx(0);
+            }}
+            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
               mode === 'drill'
                 ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
           >
             <Dumbbell className="w-4 h-4" />
-            Ejercicios de Léxico, Preposiciones y Raíces ({filteredExercises.length})
+            Práctica Interactiva ({filteredExercises.length} ejercicios)
           </button>
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters (Levels & Category selector) */}
       <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-1.5">
           {LEVELS.map((lvl) => (
@@ -117,7 +151,7 @@ export const VocabZone: React.FC<VocabZoneProps> = ({ onExerciseAttempt }) => {
               }}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 selectedLevel === lvl
-                  ? 'bg-indigo-600 text-white'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                   : 'bg-slate-800 text-slate-400 hover:text-white'
               }`}
             >
@@ -126,37 +160,40 @@ export const VocabZone: React.FC<VocabZoneProps> = ({ onExerciseAttempt }) => {
           ))}
         </div>
 
-        {mode === 'study' && (
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={selectedCat}
-              onChange={(e) => setSelectedCat(e.target.value)}
-              className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-200 outline-none"
-            >
-              {Object.entries(CAT_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </select>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={selectedCat}
+            onChange={(e) => {
+              setSelectedCat(e.target.value);
+              setExIdx(0);
+            }}
+            className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-200 outline-none cursor-pointer"
+          >
+            {Object.entries(CAT_LABELS).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </select>
 
+          {mode === 'study' && (
             <button
               type="button"
               onClick={() => {
                 setHideTerms(!hideTerms);
                 setRevealedIds([]);
               }}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border cursor-pointer transition-all ${
                 hideTerms
                   ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                  : 'bg-slate-800 border-slate-700 text-slate-300'
+                  : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
               }`}
             >
               {hideTerms ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
               {hideTerms ? 'Mostrar Términos en Inglés' : 'Modo Autoevaluación (Ocultar Inglés)'}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Mode 1: Study Cards */}
@@ -167,7 +204,7 @@ export const VocabZone: React.FC<VocabZoneProps> = ({ onExerciseAttempt }) => {
             return (
               <div
                 key={item.id}
-                className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between gap-3"
+                className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between gap-3 hover:border-slate-700 transition-all"
               >
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between gap-2">
@@ -175,7 +212,7 @@ export const VocabZone: React.FC<VocabZoneProps> = ({ onExerciseAttempt }) => {
                       Nivel {item.level}
                     </span>
                     <span className="text-xs text-slate-400 font-semibold">
-                      {CAT_LABELS[item.category]}
+                      {CAT_LABELS[item.category] || item.category}
                     </span>
                   </div>
 
@@ -261,6 +298,24 @@ export const VocabZone: React.FC<VocabZoneProps> = ({ onExerciseAttempt }) => {
           onNext={() => setExIdx((i) => i + 1)}
           indexLabel={`Ejercicio Léxico ${(exIdx % filteredExercises.length) + 1} / ${filteredExercises.length}`}
         />
+      )}
+
+      {mode === 'drill' && !currentEx && (
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-3">
+          <p className="text-slate-300 font-semibold">
+            No hay ejercicios específicos con esta combinación de nivel y área.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedLevel('ALL');
+              setSelectedCat('ALL');
+            }}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold cursor-pointer transition-colors"
+          >
+            Ver todos los ejercicios de vocabulario
+          </button>
+        </div>
       )}
     </div>
   );

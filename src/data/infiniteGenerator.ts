@@ -1,5 +1,6 @@
 import { Exercise, Level, ExerciseCategory } from '../types';
 import { CURATED_GRAMMAR_EXERCISES } from './grammarData';
+import { EXPANDED_GRAMMAR_DRILLS } from './expandedGrammarExercises';
 import { CURATED_PHRASAL_EXERCISES } from './phrasalVerbsData';
 import { CURATED_VOCAB_EXERCISES } from './vocabularyData';
 
@@ -774,6 +775,7 @@ export function getAllStaticExercises(): Exercise[] {
   const generatedFromTemplates = COMBINATORIAL_TEMPLATES.flatMap((tpl) => tpl.generate());
   return [
     ...CURATED_GRAMMAR_EXERCISES,
+    ...EXPANDED_GRAMMAR_DRILLS,
     ...CURATED_PHRASAL_EXERCISES,
     ...CURATED_VOCAB_EXERCISES,
     ...EXPANDED_DRILL_MATRICES,
