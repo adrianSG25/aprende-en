@@ -34,12 +34,24 @@ export interface Exercise {
   grammarRule?: string;         // Fórmula rápida (ej. "wish + Past Perfect = arrepentimiento del pasado")
 }
 
+export interface StreetExample {
+  situation: string;            // Situación cotidiana (el móvil, la pizza, el trabajo...)
+  howYouSayItInSpanish: string; // En español de toda la vida
+  howEnglishBuildsIt: string;    // En inglés natural
+  breakdown: string;            // Por qué se construye así sin tecnicismos
+}
+
 export interface GrammarUnit {
   id: string;
   level: Level;
   title: string;
   subtitle: string;
   formula: string;
+  // Campos didácticos para entenderlo sin saber gramática teórica:
+  inPlainSpanish?: string;      // Explicación "en cristiano", como te lo contaría un colega
+  spanishParallel?: string;     // Comparativa directa: cómo piensa un español vs cómo lo ven ellos
+  mentalTrick?: string;         // Truco mnemotécnico de 5 segundos para no dudar
+  streetExamples?: StreetExample[]; // Casos reales de la vida cotidiana desglosados paso a paso
   whenToUse: string[];
   spanishSpeakerTraps: {
     wrong: string;
