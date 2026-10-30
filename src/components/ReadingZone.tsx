@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ReadingStory, StoryAnnotation, Exercise, Level } from '../types';
+import { StoryAnnotation, Exercise, Level } from '../types';
 import { READING_STORIES } from '../data/readingData';
 import { checkAnswerMatch } from '../data/infiniteGenerator';
 import { analyzeWritingLocally } from '../data/writingData';
@@ -100,17 +100,17 @@ const BUILTIN_OPEN_QUESTIONS: Record<string, AIStoryOpenQuestion[]> = {
   'story-b2p-expedition': [
     {
       id: 'boq-b2p-1',
-      questionEn: 'What astonished the glaciologists as soon as they analysed the first ice core samples from Lake Vostok?',
-      questionEs: '¿Qué asombró a los glaciólogos nada más analizar las primeras muestras de hielo del lago Vostok?',
-      targetStructureHint: 'Intenta usar una estructura de nivel B2+ como "No sooner had they..." o "Little did they suspect...".',
-      sampleIdealAnswer: 'No sooner had they analysed the samples than they discovered microscopic organisms thriving in total darkness.'
+      questionEn: 'Under what circumstances would the research team have called off the Arctic crossing?',
+      questionEs: '¿Bajo qué circunstancias habría cancelado el equipo de investigación la travesía ártica?',
+      targetStructureHint: 'Responde usando una inversión o un condicional mixto ("Had the weather worsened...", "Under no circumstances would they...").',
+      sampleIdealAnswer: 'Under no circumstances would they have carried on had the satellite communication system failed completely.'
     },
     {
       id: 'boq-b2p-2',
-      questionEn: 'Why is this Antarctic discovery considered so important for future space exploration?',
-      questionEs: '¿Por qué se considera tan importante este descubrimiento antártico para la futura exploración espacial?',
-      targetStructureHint: 'Usa "Not only has it..., but..." o pasiva impersonal ("It is believed that...").',
-      sampleIdealAnswer: 'Not only has it changed our view of life on Earth, but it also suggests that life could exist beneath the ice of Jupiter\'s moon Europa.'
+      questionEn: 'What crucial lesson did Elena take away from her time in Svalbard?',
+      questionEs: '¿Qué lección crucial se llevó Elena de su estancia en Svalbard?',
+      targetStructureHint: 'Usa una estructura enfática ("Not only did she realize...", "It was the extreme silence that...").',
+      sampleIdealAnswer: 'Not only did she learn to cope with extreme isolation, but she also realized how fragile the Arctic ecosystem truly is.'
     }
   ]
 };
@@ -122,35 +122,31 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
 }) => {
   const [subTab, setSubTab] = useState<'stories' | 'ai_story_creator' | 'custom_analyzer'>('stories');
   const [selectedStoryId, setSelectedStoryId] = useState<string>(READING_STORIES[0].id);
-  const [xrayActive, setXrayActive] = useState<boolean>(true);
+  const [xrayActive, setXrayActive] = useState(true);
   const [activeAnnotation, setActiveAnnotation] = useState<StoryAnnotation | null>(null);
-
-  // Respuestas a ejercicios estructurados
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [checked, setChecked] = useState<Record<string, boolean>>({});
 
-  // Respuestas abiertas (de escribir frases completas) para cualquier historia
-  const [openInputs, setOpenInputs] = useState<Record<string, string>>({});
-  const [openShowTrans, setOpenShowTrans] = useState<Record<string, boolean>>({});
-  const [openFeedbacks, setOpenFeedbacks] = useState<Record<string, OpenAnswerFeedback>>({});
-  const [openLoadingId, setOpenLoadingId] = useState<string | null>(null);
-
-  // Estado del Generador de Historias con IA
+  // Creador IA de historias
   const [aiLevel, setAiLevel] = useState<Level>('B1+');
-  const [aiTopic, setAiTopic] = useState<string>('');
-  const [aiStoryLoading, setAiStoryLoading] = useState<boolean>(false);
+  const [aiTopic, setAiTopic] = useState('');
+  const [aiStoryLoading, setAiStoryLoading] = useState(false);
   const [aiStoryError, setAiStoryError] = useState<string | null>(null);
   const [aiStoriesList, setAiStoriesList] = useState<AIGeneratedStory[]>([]);
   const [activeAiStory, setAiActiveStory] = useState<AIGeneratedStory | null>(null);
 
-  // Custom Text Analyzer state
-  const [customText, setCustomText] = useState<string>(
-    'Although the team had been working on the prototype for months, they had to put off the launch when they ran into an unexpected software bug. If they had tested the system earlier, they wouldn\'t have wasted so much time. Nevertheless, the engineers came up with a brilliant fix, and the product is now believed to be the fastest on the market.'
-  );
+  // Estados para las preguntas abiertas de escribir
+  const [openInputs, setOpenInputs] = useState<Record<string, string>>({});
+  const [openLoadingId, setOpenLoadingId] = useState<string | null>(null);
+  const [openFeedbacks, setOpenFeedbacks] = useState<Record<string, OpenAnswerFeedback>>({});
+  const [openShowTrans, setOpenShowTrans] = useState<Record<string, boolean>>({});
+
+  // Analizador libre de texto pegado
+  const [customText, setCustomText] = useState('');
   const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
   const [customExIdx, setCustomExIdx] = useState(0);
 
-  const currentStory: ReadingStory =
+  const currentStory =
     READING_STORIES.find((s) => s.id === selectedStoryId) || READING_STORIES[0];
 
   const handleSelectStory = (id: string) => {
@@ -158,41 +154,61 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
     setActiveAnnotation(null);
     setAnswers({});
     setChecked({});
+    setOpenInputs({});
+    setOpenFeedbacks({});
   };
 
-  const handleCheckStoryQuestion = (qId: string, val?: string) => {
-    if (val !== undefined) {
-      setAnswers((prev) => ({ ...prev, [qId]: val }));
+  const handleCheckStoryQuestion = (qId: string, directAnswer?: string) => {
+    const val = directAnswer !== undefined ? directAnswer : answers[qId];
+    if (!val) return;
+    if (directAnswer !== undefined) {
+      setAnswers((prev) => ({ ...prev, [qId]: directAnswer }));
     }
     setChecked((prev) => ({ ...prev, [qId]: true }));
 
-    const totalQ = currentStory.questions.length;
-    const answeredCount = Object.keys({ ...checked, [qId]: true }).length;
-    if (answeredCount >= totalQ) {
+    const qObj = currentStory.questions.find((x) => x.id === qId);
+    if (qObj) {
+      const isRight = checkAnswerMatch(val, qObj.acceptedAnswers);
+      const exObj: Exercise = {
+        id: `reading-q-${qId}`,
+        level: currentStory.level,
+        category: 'grammar',
+        topicLabel: `Reading: ${currentStory.title}`,
+        type: qObj.inputMode === 'choice' ? 'multiple_choice' : 'cloze',
+        prompt: qObj.question,
+        baseSentence: qObj.quoteFromText,
+        acceptedAnswers: qObj.acceptedAnswers,
+        explanation: qObj.explanation
+      };
+      onExerciseAttempt(exObj, isRight, false);
+    }
+
+    const allQIds = currentStory.questions.map((q) => q.id);
+    const allDone = allQIds.every((id) => id === qId || checked[id]);
+    if (allDone) {
       onMarkStoryComplete(currentStory.id);
     }
   };
 
-  // Evaluar respuesta escrita abierta (con IA o con corrector local si no hay clave IA)
   const handleEvaluateOpenQuestion = async (
     q: AIStoryOpenQuestion,
-    paragraphs: string[],
+    storyParagraphs: string[],
     level: Level
   ) => {
-    const userText = (openInputs[q.id] || '').trim();
+    const userText = openInputs[q.id]?.trim();
     if (!userText) return;
 
     setOpenLoadingId(q.id);
     try {
       const aiRes = await evaluateStoryOpenAnswerWithAI(
-        paragraphs,
+        storyParagraphs,
         q.questionEn,
         userText,
         level
       );
       setOpenFeedbacks((prev) => ({ ...prev, [q.id]: aiRes }));
     } catch {
-      // Fallback al motor gramatical local si no tiene IA o falla la red
+      // Fallback local
       const local = analyzeWritingLocally(userText);
       const fallbackFeedback: OpenAnswerFeedback = {
         isContentAccurate: true,
@@ -269,10 +285,10 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
       if (typeof seg === 'string') return <span key={i}>{seg}</span>;
 
       const colorMap = {
-        grammar: 'bg-indigo-500/25 text-indigo-200 border-b-2 border-indigo-400 hover:bg-indigo-500/40',
-        phrasal_verb: 'bg-amber-500/25 text-amber-200 border-b-2 border-amber-400 hover:bg-amber-500/40',
-        connector: 'bg-emerald-500/25 text-emerald-200 border-b-2 border-emerald-400 hover:bg-emerald-500/40',
-        vocab: 'bg-purple-500/25 text-purple-200 border-b-2 border-purple-400 hover:bg-purple-500/40'
+        grammar: 'bg-indigo-100 text-indigo-900 border-b-2 border-indigo-500 hover:bg-indigo-200',
+        phrasal_verb: 'bg-amber-100 text-amber-900 border-b-2 border-amber-500 hover:bg-amber-200',
+        connector: 'bg-emerald-100 text-emerald-900 border-b-2 border-emerald-500 hover:bg-emerald-200',
+        vocab: 'bg-purple-100 text-purple-900 border-b-2 border-purple-500 hover:bg-purple-200'
       };
 
       return (
@@ -290,24 +306,24 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
     });
   };
 
-  // Bloque reutilizable para renderizar las Preguntas Abiertas de Escribir debajo de cualquier historia
+  // Bloque reutilizable para renderizar las Preguntas Abiertas de Escribir
   const renderOpenWritingQuestionsBlock = (
     questions: AIStoryOpenQuestion[],
     paragraphs: string[],
     level: Level
   ) => (
-    <div className="bg-slate-900 border border-indigo-500/40 rounded-2xl p-6 space-y-5">
+    <div className="bg-white border border-indigo-200 rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-5 shadow-sm">
       <div>
-        <h3 className="text-lg font-bold text-white flex items-center gap-2">
-          <PenTool className="w-5 h-5 text-emerald-400" />
-          Preguntas Abiertas sobre la Historia (Escribe con tus propias palabras)
+        <h3 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+          <PenTool className="w-5 h-5 text-emerald-600" />
+          Preguntas Abiertas sobre la Historia (Escribe con tus palabras)
         </h3>
-        <p className="text-xs sm:text-sm text-slate-400 mt-1">
-          Aquí no es rellenar huecos: escribe tu respuesta completa en inglés y el corrector te señalará cada fallo gramatical y cómo mejorarlo a nivel B2.
+        <p className="text-xs sm:text-sm text-slate-600 mt-1">
+          Escribe tu respuesta completa en inglés y la herramienta te señalará cada errata o mejora de nivel B2.
         </p>
       </div>
 
-      <div className="space-y-5">
+      <div className="space-y-4 sm:space-y-5">
         {questions.map((oq, idx) => {
           const val = openInputs[oq.id] || '';
           const fb = openFeedbacks[oq.id];
@@ -317,10 +333,10 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
           return (
             <div
               key={oq.id}
-              className="bg-slate-950/90 border border-slate-800 rounded-2xl p-5 space-y-3.5"
+              className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-3"
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
-                <p className="font-bold text-base text-white">
+                <p className="font-bold text-sm sm:text-base text-slate-900">
                   {idx + 1}. {oq.questionEn}
                 </p>
                 <button
@@ -328,7 +344,7 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                   onClick={() =>
                     setOpenShowTrans((prev) => ({ ...prev, [oq.id]: !prev[oq.id] }))
                   }
-                  className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5 cursor-pointer shrink-0"
+                  className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center gap-1.5 cursor-pointer shrink-0"
                 >
                   <Languages className="w-3.5 h-3.5" />
                   {showTrans ? 'Ocultar traducción' : 'Traducir pregunta'}
@@ -336,12 +352,12 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
               </div>
 
               {showTrans && (
-                <p className="text-xs sm:text-sm text-indigo-200 bg-indigo-950/30 border border-indigo-500/20 rounded-xl px-3.5 py-2">
+                <p className="text-xs sm:text-sm text-indigo-950 bg-indigo-50 border border-indigo-200 rounded-xl px-3.5 py-2">
                   🌐 {oq.questionEs}
                 </p>
               )}
 
-              <p className="text-xs text-amber-300/90 font-medium">
+              <p className="text-xs text-amber-800 font-medium">
                 💡 {oq.targetStructureHint}
               </p>
 
@@ -352,7 +368,7 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                   setOpenInputs((prev) => ({ ...prev, [oq.id]: e.target.value }))
                 }
                 placeholder="Escribe tu respuesta completa en inglés aquí..."
-                className="w-full bg-slate-900 border border-slate-700 focus:border-indigo-500 rounded-xl p-3.5 text-sm sm:text-base text-white outline-none"
+                className="w-full bg-white border-2 border-slate-300 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 rounded-xl p-3.5 text-sm sm:text-base text-slate-900 outline-none min-h-[90px]"
                 spellCheck={false}
               />
 
@@ -361,7 +377,7 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                   type="button"
                   disabled={isLoading || !val.trim()}
                   onClick={() => handleEvaluateOpenQuestion(oq, paragraphs, level)}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-emerald-600/20 flex items-center gap-2 cursor-pointer"
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
                 >
                   <Sparkles className="w-4 h-4" />
                   {isLoading ? 'Analizando tus errores...' : 'Corregir mi respuesta escrita'}
@@ -369,45 +385,45 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
               </div>
 
               {fb && (
-                <div className="mt-3 p-4 rounded-xl bg-slate-900 border border-emerald-500/30 space-y-3 text-xs sm:text-sm">
+                <div className="mt-3 p-4 rounded-xl bg-white border border-emerald-300 space-y-3 text-xs sm:text-sm shadow-xs">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-emerald-300">
+                    <span className="font-bold text-emerald-800">
                       ✅ Corrección de tu respuesta (Nota: {fb.scoreOutOf10}/10)
                     </span>
                   </div>
 
-                  <p className="text-slate-200 leading-relaxed">{fb.feedbackEs}</p>
+                  <p className="text-slate-700 leading-relaxed">{fb.feedbackEs}</p>
 
                   {fb.errorsFound.length > 0 && (
                     <div className="space-y-2">
-                      <span className="text-xs font-bold uppercase text-rose-300 block">
+                      <span className="text-xs font-bold uppercase text-rose-800 block">
                         Errores detectados en tu frase:
                       </span>
                       {fb.errorsFound.map((err, i) => (
                         <div
                           key={i}
-                          className="bg-slate-950 border border-rose-500/30 rounded-lg p-3 space-y-1"
+                          className="bg-slate-50 border border-rose-200 rounded-lg p-3 space-y-1"
                         >
-                          <p className="text-rose-300 line-through">❌ {err.wrong}</p>
-                          <p className="text-emerald-300 font-bold">✅ {err.right}</p>
-                          <p className="text-slate-400 text-xs">{err.whyEs}</p>
+                          <p className="text-rose-700 line-through">❌ {err.wrong}</p>
+                          <p className="text-emerald-800 font-bold">✅ {err.right}</p>
+                          <p className="text-slate-500 text-xs">{err.whyEs}</p>
                         </div>
                       ))}
                     </div>
                   )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3">
-                      <span className="text-[11px] uppercase font-bold text-emerald-400 block mb-1">
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                      <span className="text-[11px] uppercase font-bold text-emerald-800 block mb-1">
                         Tu frase corregida:
                       </span>
-                      <p className="text-white font-semibold">{fb.correctedUserSentence}</p>
+                      <p className="text-slate-900 font-semibold">{fb.correctedUserSentence}</p>
                     </div>
-                    <div className="bg-slate-950 border border-slate-800 rounded-xl p-3">
-                      <span className="text-[11px] uppercase font-bold text-amber-300 block mb-1">
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                      <span className="text-[11px] uppercase font-bold text-amber-900 block mb-1">
                         Versión de Nivel B2 / Modelo:
                       </span>
-                      <p className="text-amber-100 font-semibold">
+                      <p className="text-amber-950 font-semibold">
                         {fb.b2UpgradeSentence || oq.sampleIdealAnswer}
                       </p>
                     </div>
@@ -448,60 +464,56 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
         explanation: 'Consecuencia irreal en el pasado (Third Conditional o Modal Perfecto).'
       },
       {
-        category: 'Voz Pasiva y Reportaje',
-        label: 'Pasiva Impersonal / Personal (is believed/said/thought to...)',
-        regex: /\b(is|are|was|were)\s+(believed|thought|said|reported|considered|expected|known)\s+to\b/gi,
-        explanation: 'Estructura formal de pasiva personal de nivel B2 / B2+.'
+        category: 'Phrasal Verbs Comunes',
+        label: 'Phrasal Verb con partícula off/up/out/down/into',
+        regex: /\b(called off|put off|turned down|come up with|bumped into|ran into|gave up|ended up|carried out|look forward to)\b/gi,
+        explanation: 'Verbo compuesto indispensable para los exámenes B1 y B2.'
       },
       {
-        category: 'Phrasal Verbs Detectados',
-        label: 'Phrasal Verb en contexto',
-        regex: /\b(put off|put up with|come up with|came up with|ran into|run into|ran out of|run out of|look forward to|cut down on|do away with|figure out|figured out|turned down|turn down|broke down|break down|set off|carried on|carry on|get away with|got away with|brush up on|fell through)\b/gi,
-        explanation: 'Phrasal verb clave de nivel B1-B2+.'
-      },
-      {
-        category: 'Conectores B1-B2+',
-        label: 'Linker / Conector Discursivo',
-        regex: /\b(although|even though|despite|in spite of|nevertheless|nonetheless|furthermore|moreover|whereas|however|consequently|therefore|unless|as long as|provided that)\b/gi,
-        explanation: 'Conector de contraste, adición o condición que estructura el texto.'
+        category: 'Conectores B2',
+        label: 'Conector de contraste / adición (Despite / Although / Furthermore)',
+        regex: /\b(despite\s+(the\s+fact\s+that)?|in\s+spite\s+of|although|even\s+though|furthermore|moreover|nevertheless|on\s+the\s+contrary)\b/gi,
+        explanation: 'Conectores avanzados para estructurar discursos y ensayos de Use of English.'
       }
     ];
 
-    const findings: { match: string; label: string; category: string; explanation: string }[] = [];
+    const findings: {
+      category: string;
+      label: string;
+      match: string;
+      explanation: string;
+    }[] = [];
+
     const generatedEx: Exercise[] = [];
 
-    patterns.forEach((p, idx) => {
-      const matches = customText.match(p.regex);
-      if (matches) {
-        Array.from(new Set(matches)).forEach((m, mIdx) => {
-          findings.push({
-            match: m,
-            label: p.label,
-            category: p.category,
-            explanation: p.explanation
-          });
+    if (customText.trim()) {
+      patterns.forEach((pat) => {
+        const matches = customText.match(pat.regex);
+        if (matches) {
+          matches.slice(0, 3).forEach((m) => {
+            findings.push({
+              category: pat.category,
+              label: pat.label,
+              match: m,
+              explanation: pat.explanation
+            });
 
-          const sentences = customText.split(/(?<=[.!?])\s+/);
-          const parentSentence = sentences.find((s) => s.toLowerCase().includes(m.toLowerCase()));
-          if (parentSentence) {
-            const gapped = parentSentence.replace(new RegExp(m, 'i'), '___');
+            const gapped = customText.replace(m, '___');
             generatedEx.push({
-              id: `cust-txt-ex-${idx}-${mIdx}-${Date.now()}`,
+              id: `custom-${Date.now()}-${Math.random()}`,
               level: 'B2',
               category: 'grammar',
-              topicLabel: p.label,
+              topicLabel: pat.label,
               type: 'cloze',
-              prompt: `Completa la estructura (${p.label}) extraída de tu propio texto:`,
-              baseSentence: gapped,
-              spanishHint: `Pista gramatical: ${p.explanation}`,
+              prompt: `Rellena el hueco detectado en tu texto (${pat.label}):`,
+              baseSentence: gapped.slice(0, 200) + '...',
               acceptedAnswers: [m],
-              explanation: `En el texto original se usó "${m}" (${p.label}): ${p.explanation}`,
-              grammarRule: p.label
+              explanation: pat.explanation
             });
-          }
-        });
-      }
-    });
+          });
+        }
+      });
+    }
 
     return { findings, generatedEx };
   };
@@ -509,89 +521,89 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
   const customAnalysis = analyzeCustomText();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header & Mode Tabs */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-sky-400" />
-            Zona de Historias, Generador de Textos IA y Preguntas de Escribir
+          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-sky-500" />
+            Zona de Historias, Textos IA & Preguntas de Escribir
           </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Lee historias o genera historias nuevas con IA y responde debajo escribiendo con tus propias palabras para que te corrija los errores.
+          <p className="text-xs sm:text-sm text-slate-600 mt-1">
+            Lee historias o crea nuevas con IA y responde preguntas de escribir con corrección de errores.
           </p>
         </div>
 
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => setSubTab('ai_story_creator')}
-            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer ${
-              subTab === 'ai_story_creator'
-                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/25'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+            onClick={() => setSubTab('stories')}
+            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
+              subTab === 'stories'
+                ? 'bg-sky-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
-            <Cpu className="w-4 h-4" />
-            ✨ Crear Historia con IA + Preguntas de Escribir
+            <BookOpen className="w-4 h-4" />
+            <span>Historias ({READING_STORIES.length})</span>
           </button>
 
           <button
             type="button"
-            onClick={() => setSubTab('stories')}
-            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer ${
-              subTab === 'stories'
-                ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/20'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+            onClick={() => setSubTab('ai_story_creator')}
+            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
+              subTab === 'ai_story_creator'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
-            <BookOpen className="w-4 h-4" />
-            Historias Base ({READING_STORIES.length})
+            <Cpu className="w-4 h-4" />
+            <span>Crear con IA</span>
           </button>
 
           <button
             type="button"
             onClick={() => setSubTab('custom_analyzer')}
-            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer ${
+            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
               subTab === 'custom_analyzer'
-                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                ? 'bg-purple-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <FileSearch className="w-4 h-4" />
-            Analizar Mi Propio Texto
+            <span>Analizar Texto</span>
           </button>
         </div>
       </div>
 
       {/* TAB A: AI STORY CREATOR + OPEN WRITTEN QUESTIONS */}
       {subTab === 'ai_story_creator' && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <form
             onSubmit={handleCreateAIStory}
-            className="bg-slate-900 border border-emerald-500/30 rounded-2xl p-6 space-y-4"
+            className="bg-white border border-emerald-200 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm"
           >
             <div className="flex items-center gap-2.5">
-              <Cpu className="w-6 h-6 text-emerald-400" />
+              <Cpu className="w-6 h-6 text-emerald-600" />
               <div>
-                <h3 className="text-lg font-bold text-white">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900">
                   Generador IA de Historias con Preguntas Abiertas de Escribir
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-400">
-                  La IA escribirá una historia del nivel que elijas con estructuras clave resaltadas y 4 preguntas abiertas debajo para que respondas escribiendo frases completas.
+                <p className="text-xs sm:text-sm text-slate-600">
+                  La IA escribirá una historia de tu nivel con estructuras clave resaltadas y preguntas abiertas debajo.
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-400 mb-1.5">
+                <label className="block text-xs font-bold uppercase text-slate-600 mb-1.5">
                   Nivel de la Historia
                 </label>
                 <select
                   value={aiLevel}
                   onChange={(e) => setAiLevel(e.target.value as Level)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-sm"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-sm outline-none focus:border-emerald-600"
                 >
                   <option value="A2+">A2+ (A2 Advanced)</option>
                   <option value="B1">B1 (Intermediate)</option>
@@ -602,22 +614,22 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold uppercase text-slate-400 mb-1.5">
+                <label className="block text-xs font-bold uppercase text-slate-600 mb-1.5">
                   Temática o Género de la Historia (Opcional)
                 </label>
                 <input
                   type="text"
                   value={aiTopic}
                   onChange={(e) => setAiTopic(e.target.value)}
-                  placeholder="Ej: Un problema en un hotel en Londres, un misterio policíaco, una entrevista de trabajo que sale mal..."
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-emerald-500"
+                  placeholder="Ej: Un problema en un hotel en Londres, misterio, entrevista de trabajo..."
+                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 text-sm outline-none focus:border-emerald-600"
                 />
               </div>
             </div>
 
             {aiStoryError && (
-              <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-200 text-xs sm:text-sm flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
                 <span>{aiStoryError}</span>
               </div>
             )}
@@ -626,7 +638,7 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
               <button
                 type="submit"
                 disabled={aiStoryLoading}
-                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/25 flex items-center gap-2 cursor-pointer"
+                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
               >
                 <Sparkles className="w-4 h-4" />
                 {aiStoryLoading
@@ -643,8 +655,8 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                       onClick={() => setAiActiveStory(st)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold border cursor-pointer ${
                         activeAiStory?.id === st.id
-                          ? 'bg-emerald-500/20 border-emerald-400 text-emerald-200'
-                          : 'bg-slate-800 border-slate-700 text-slate-300'
+                          ? 'bg-emerald-50 border-emerald-400 text-emerald-800'
+                          : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
                       }`}
                     >
                       [{st.level}] {st.title}
@@ -656,15 +668,15 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
           </form>
 
           {activeAiStory && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <div className="lg:col-span-2 bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-6 space-y-4 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200">
                     <div>
-                      <span className="text-xs font-bold px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
                         Nivel {activeAiStory.level} • {activeAiStory.genre}
                       </span>
-                      <h3 className="text-xl font-extrabold text-white mt-1">
+                      <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mt-1">
                         {activeAiStory.title}
                       </h3>
                     </div>
@@ -674,8 +686,8 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                       onClick={() => setXrayActive(!xrayActive)}
                       className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border cursor-pointer ${
                         xrayActive
-                          ? 'bg-indigo-600/30 border-indigo-400 text-indigo-200'
-                          : 'bg-slate-800 border-slate-700 text-slate-300'
+                          ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                          : 'bg-slate-100 border-slate-200 text-slate-700'
                       }`}
                     >
                       <Microscope className="w-4 h-4" />
@@ -683,10 +695,10 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                     </button>
                   </div>
 
-                  <div className="space-y-4 text-slate-100 text-base sm:text-lg leading-relaxed">
+                  <div className="space-y-4 text-slate-800 text-base sm:text-lg leading-relaxed">
                     {activeAiStory.paragraphs.map((p, idx) => (
                       <p key={idx} className="leading-8">
-                        <span className="text-xs font-mono text-slate-500 mr-2 select-none">
+                        <span className="text-xs font-mono text-slate-400 mr-2 select-none">
                           [P{idx + 1}]
                         </span>
                         {renderAnnotatedParagraph(p, activeAiStory.annotations)}
@@ -696,25 +708,25 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                 </div>
 
                 {/* X-Ray Sidebar for AI Story */}
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-                  <h4 className="text-sm font-bold uppercase tracking-wider text-indigo-300 flex items-center gap-2">
+                <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 space-y-3 shadow-sm">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-700 flex items-center gap-2">
                     <Microscope className="w-4 h-4" />
                     Estructuras Clave de la Historia
                   </h4>
 
                   {activeAnnotation ? (
-                    <div className="bg-slate-950 border border-indigo-500/40 rounded-xl p-4 space-y-2">
-                      <span className="text-xs font-bold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
+                    <div className="bg-slate-50 border border-indigo-200 rounded-xl p-4 space-y-1.5">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
                         {activeAnnotation.label}
                       </span>
-                      <p className="text-base font-extrabold text-white">
+                      <p className="text-base font-extrabold text-slate-900">
                         "{activeAnnotation.phrase}"
                       </p>
-                      <p className="text-sm text-slate-300">{activeAnnotation.explanationEs}</p>
+                      <p className="text-sm text-slate-600">{activeAnnotation.explanationEs}</p>
                     </div>
                   ) : (
-                    <p className="text-xs text-slate-400">
-                      Pulsa cualquier expresión subrayada en el texto para ver su explicación gramatical.
+                    <p className="text-xs text-slate-500">
+                      Pulsa cualquier expresión subrayada en el texto para ver su explicación.
                     </p>
                   )}
 
@@ -724,10 +736,10 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                         key={i}
                         type="button"
                         onClick={() => setActiveAnnotation(ann)}
-                        className="w-full text-left p-2.5 rounded-xl border border-slate-800 bg-slate-950/60 hover:bg-slate-800/50 text-xs cursor-pointer"
+                        className="w-full text-left p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs cursor-pointer"
                       >
-                        <div className="font-bold text-amber-300">"{ann.phrase}"</div>
-                        <div className="text-slate-400 mt-0.5">{ann.label}</div>
+                        <div className="font-bold text-amber-800">"{ann.phrase}"</div>
+                        <div className="text-slate-500 mt-0.5">{ann.label}</div>
                       </button>
                     ))}
                   </div>
@@ -747,8 +759,8 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
 
       {/* TAB B: CURATED STORIES + X-RAY + OPEN WRITTEN QUESTIONS + EXERCISES */}
       {subTab === 'stories' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
             {READING_STORIES.map((story) => {
               const isSelected = story.id === currentStory.id;
               const isDone = completedStories.includes(story.id);
@@ -757,42 +769,42 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                   key={story.id}
                   type="button"
                   onClick={() => handleSelectStory(story.id)}
-                  className={`text-left p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                  className={`text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-1.5 shadow-2xs ${
                     isSelected
-                      ? 'bg-sky-950/50 border-sky-500 text-white shadow-lg shadow-sky-500/10'
-                      : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:border-slate-700'
+                      ? 'bg-sky-50 border-2 border-sky-600 text-slate-900 shadow-xs'
+                      : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
                   }`}
                 >
                   <div>
-                    <div className="flex items-center justify-between gap-1 mb-1.5">
-                      <span className="text-xs font-extrabold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
-                        Nivel {story.level}
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <span className="text-[11px] font-extrabold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        {story.level}
                       </span>
-                      {isDone && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+                      {isDone && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
                     </div>
-                    <h3 className="font-bold text-sm text-white line-clamp-2">
+                    <h3 className="font-bold text-xs sm:text-sm text-slate-900 line-clamp-2">
                       {story.title}
                     </h3>
                   </div>
-                  <p className="text-[11px] text-slate-400">{story.genre}</p>
+                  <p className="text-[11px] text-slate-500">{story.genre}</p>
                 </button>
               );
             })}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div className="lg:col-span-2 bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-6 space-y-4 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold px-2.5 py-0.5 rounded bg-sky-500/20 text-sky-300">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200">
                       Nivel {currentStory.level}
                     </span>
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-slate-500">
                       • {currentStory.genre} • {currentStory.readingTimeMin} min lectura
                     </span>
                   </div>
-                  <h3 className="text-xl font-extrabold text-white mt-1">
+                  <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mt-1">
                     {currentStory.title}
                   </h3>
                 </div>
@@ -800,21 +812,21 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                 <button
                   type="button"
                   onClick={() => setXrayActive(!xrayActive)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${
                     xrayActive
-                      ? 'bg-indigo-600/30 border-indigo-400 text-indigo-200'
-                      : 'bg-slate-800 border-slate-700 text-slate-300'
+                      ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                      : 'bg-slate-100 border-slate-200 text-slate-700'
                   }`}
                 >
                   <Microscope className="w-4 h-4" />
-                  {xrayActive ? 'Rayos X Gramatical: ACTIVADO' : 'Activar Rayos X Gramatical'}
+                  {xrayActive ? 'Rayos X: ACTIVADO' : 'Activar Rayos X'}
                 </button>
               </div>
 
-              <div className="space-y-4 text-slate-100 text-base sm:text-lg leading-relaxed font-normal">
+              <div className="space-y-4 text-slate-800 text-base sm:text-lg leading-relaxed font-normal">
                 {currentStory.paragraphs.map((p, idx) => (
                   <p key={idx} className="leading-8">
-                    <span className="text-xs font-mono text-slate-500 mr-2 select-none">
+                    <span className="text-xs font-mono text-slate-400 mr-2 select-none">
                       [P{idx + 1}]
                     </span>
                     {renderAnnotatedParagraph(p, currentStory.annotations)}
@@ -823,32 +835,32 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
               </div>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between gap-4">
-              <div className="space-y-4">
-                <h4 className="text-sm font-bold uppercase tracking-wider text-indigo-300 flex items-center gap-2">
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 flex flex-col justify-between gap-4 shadow-sm">
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-700 flex items-center gap-2">
                   <Microscope className="w-4 h-4" />
-                  Destripador Gramatical del Texto
+                  Destripador Gramatical
                 </h4>
 
                 {activeAnnotation ? (
-                  <div className="bg-slate-950 border border-indigo-500/40 rounded-xl p-4 space-y-2">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
+                  <div className="bg-slate-50 border border-indigo-200 rounded-xl p-3.5 space-y-1.5">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
                       {activeAnnotation.label}
                     </span>
-                    <p className="text-base font-extrabold text-white">
+                    <p className="text-base font-extrabold text-slate-900">
                       "{activeAnnotation.phrase}"
                     </p>
-                    <p className="text-sm text-slate-300 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                       {activeAnnotation.explanationEs}
                     </p>
                   </div>
                 ) : (
-                  <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 text-xs sm:text-sm text-slate-400">
-                    👆 Pulsa sobre cualquiera de las palabras resaltadas en la historia para ver por qué el autor usó ese tiempo verbal, conector o phrasal verb.
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-500">
+                    👆 Pulsa sobre cualquiera de las palabras resaltadas en la historia para ver por qué el autor usó esa estructura.
                   </div>
                 )}
 
-                <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
                   {currentStory.annotations.map((ann, i) => (
                     <button
                       key={i}
@@ -856,12 +868,12 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                       onClick={() => setActiveAnnotation(ann)}
                       className={`w-full text-left p-2.5 rounded-xl border text-xs transition-all cursor-pointer ${
                         activeAnnotation?.phrase === ann.phrase
-                          ? 'bg-indigo-950/60 border-indigo-500/60 text-white'
-                          : 'bg-slate-950/50 border-slate-800/80 text-slate-300 hover:bg-slate-800/50'
+                          ? 'bg-indigo-50 border-indigo-300 text-indigo-900 font-bold'
+                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
                       }`}
                     >
-                      <div className="font-bold text-amber-300">"{ann.phrase}"</div>
-                      <div className="text-slate-400 mt-0.5">{ann.label}</div>
+                      <div className="font-bold text-amber-800">"{ann.phrase}"</div>
+                      <div className="text-slate-500 mt-0.5">{ann.label}</div>
                     </button>
                   ))}
                 </div>
@@ -878,15 +890,15 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
             )}
 
           {/* 2. Grammar Analysis & Transformations of the Text */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-6 space-y-4 shadow-sm">
             <div>
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-amber-400" />
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-500" />
                 Análisis Gramatical y Transformaciones del Texto ({currentStory.questions.length})
               </h3>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3.5">
               {currentStory.questions.map((q, idx) => {
                 const userAns = answers[q.id] || '';
                 const isChecked = !!checked[q.id];
@@ -895,14 +907,14 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                 return (
                   <div
                     key={q.id}
-                    className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 sm:p-5 space-y-3"
+                    className="bg-slate-50 border border-slate-200 rounded-xl p-4 sm:p-5 space-y-3"
                   >
-                    <p className="font-bold text-sm sm:text-base text-white">
+                    <p className="font-bold text-sm sm:text-base text-slate-900">
                       {idx + 1}. {q.question}
                     </p>
 
                     {q.quoteFromText && (
-                      <p className="text-xs sm:text-sm italic text-indigo-300 bg-indigo-950/30 px-3 py-2 rounded-lg border border-indigo-500/20">
+                      <p className="text-xs sm:text-sm italic text-indigo-900 bg-indigo-50 px-3 py-2 rounded-lg border border-indigo-200">
                         Fragmento del texto: "{q.quoteFromText}"
                       </p>
                     )}
@@ -919,9 +931,9 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                               className={`w-full text-left px-4 py-3 rounded-xl text-xs sm:text-sm font-medium border transition-all cursor-pointer ${
                                 selected
                                   ? isRight
-                                    ? 'bg-emerald-950/50 border-emerald-500 text-emerald-200'
-                                    : 'bg-rose-950/50 border-rose-500 text-rose-200'
-                                  : 'bg-slate-900 border-slate-800 text-slate-200 hover:border-slate-700'
+                                    ? 'bg-emerald-50 border-emerald-500 text-emerald-900 font-bold'
+                                    : 'bg-rose-50 border-rose-500 text-rose-900 font-bold'
+                                  : 'bg-white border-slate-300 text-slate-800 hover:bg-slate-50'
                               }`}
                             >
                               {opt}
@@ -938,12 +950,12 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                             setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
                           }
                           placeholder="Escribe tu respuesta aquí..."
-                          className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-indigo-500"
+                          className="flex-1 bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-indigo-600"
                         />
                         <button
                           type="button"
                           onClick={() => handleCheckStoryQuestion(q.id)}
-                          className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl cursor-pointer"
+                          className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl cursor-pointer shadow-xs min-h-[44px]"
                         >
                           Comprobar
                         </button>
@@ -954,24 +966,24 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                       <div
                         className={`p-3.5 rounded-xl border text-xs sm:text-sm ${
                           isRight
-                            ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200'
-                            : 'bg-rose-950/30 border-rose-500/40 text-rose-200'
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
+                            : 'bg-rose-50 border-rose-300 text-rose-950'
                         }`}
                       >
                         <div className="flex items-center gap-2 font-bold mb-1">
                           {isRight ? (
                             <>
-                              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                               ¡Análisis correcto!
                             </>
                           ) : (
                             <>
-                              <XCircle className="w-4 h-4 text-rose-400" />
+                              <XCircle className="w-4 h-4 text-rose-600" />
                               Respuesta esperada: {q.acceptedAnswers.join(' / ')}
                             </>
                           )}
                         </div>
-                        <p className="text-slate-300">{q.explanation}</p>
+                        <p className="text-slate-700">{q.explanation}</p>
                       </div>
                     )}
                   </div>
@@ -984,10 +996,10 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
 
       {/* TAB C: CUSTOM TEXT ANALYZER */}
       {subTab === 'custom_analyzer' && (
-        <div className="space-y-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <FileSearch className="w-5 h-5 text-purple-400" />
+        <div className="space-y-4 sm:space-y-6">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-6 space-y-4 shadow-sm">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+              <FileSearch className="w-5 h-5 text-purple-600" />
               Pega cualquier texto o historia en inglés para destripar su gramática
             </h3>
             <textarea
@@ -995,11 +1007,11 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
               value={customText}
               onChange={(e) => setCustomText(e.target.value)}
               placeholder="Pega aquí cualquier texto en inglés..."
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-sm sm:text-base text-white outline-none focus:border-purple-500"
+              className="w-full bg-white border-2 border-slate-300 rounded-xl p-4 text-sm sm:text-base text-slate-900 outline-none focus:border-purple-600 min-h-[120px]"
             />
 
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-500">
                 Estructuras detectadas en tu texto: <strong>{customAnalysis.findings.length}</strong>
               </span>
               <button
@@ -1009,7 +1021,7 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                   setCustomExIdx(0);
                 }}
                 disabled={customAnalysis.generatedEx.length === 0}
-                className="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-40 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center gap-2 cursor-pointer"
+                className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-xs min-h-[44px]"
               >
                 <Dumbbell className="w-4 h-4" />
                 Generar {customAnalysis.generatedEx.length} Ejercicios de Este Texto
@@ -1021,16 +1033,16 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                 {customAnalysis.findings.map((f, i) => (
                   <div
                     key={i}
-                    className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs sm:text-sm space-y-1"
+                    className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs sm:text-sm space-y-1"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-amber-300">"{f.match}"</span>
-                      <span className="text-[11px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300">
+                      <span className="font-bold text-amber-800">"{f.match}"</span>
+                      <span className="text-[11px] px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
                         {f.category}
                       </span>
                     </div>
-                    <p className="text-white font-semibold text-xs">{f.label}</p>
-                    <p className="text-slate-400 text-xs">{f.explanation}</p>
+                    <p className="text-slate-900 font-semibold text-xs">{f.label}</p>
+                    <p className="text-slate-600 text-xs">{f.explanation}</p>
                   </div>
                 ))}
               </div>
@@ -1043,7 +1055,7 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                 exercise={customExercises[customExIdx % customExercises.length]}
                 onAttempt={onExerciseAttempt}
                 onNext={() => setCustomExIdx((i) => i + 1)}
-                indexLabel={`Ejercicio de tu texto ${(customExIdx % customExercises.length) + 1} / ${customExercises.length}`}
+                indexLabel={`Ejercicio #${(customExIdx % customExercises.length) + 1} de ${customExercises.length}`}
               />
             </div>
           )}

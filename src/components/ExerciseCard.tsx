@@ -27,11 +27,11 @@ interface ExerciseCardProps {
 }
 
 const LEVEL_BADGE_COLORS: Record<string, string> = {
-  'A2+': 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-  'B1': 'bg-sky-500/20 text-sky-300 border-sky-500/40',
-  'B1+': 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40',
-  'B2': 'bg-purple-500/20 text-purple-300 border-purple-500/40',
-  'B2+': 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+  'A2+': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'B1': 'bg-sky-50 text-sky-700 border-sky-200',
+  'B1+': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  'B2': 'bg-purple-50 text-purple-700 border-purple-200',
+  'B2+': 'bg-rose-50 text-rose-700 border-rose-200'
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -100,7 +100,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
     }
   };
 
-  // Ordenamos respuestas para que la pista muestre la respuesta corta (el núcleo gramatical)
+  // Ordenamos respuestas para que la pista muestre la respuesta corta
   const sortedAnswers = [...exercise.acceptedAnswers].sort((a, b) => a.length - b.length);
   const shortTargetAnswer = sortedAnswers[0] || '';
   const firstLetterHint = shortTargetAnswer
@@ -118,7 +118,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
     return (
       <>
         {before}
-        <span className="px-1.5 py-0.5 mx-0.5 rounded bg-emerald-500/30 border border-emerald-400 text-emerald-200 font-extrabold underline decoration-emerald-400">
+        <span className="px-1.5 py-0.5 mx-0.5 rounded bg-emerald-100 border border-emerald-300 text-emerald-900 font-extrabold underline decoration-emerald-500">
           {match}
         </span>
         {after}
@@ -127,26 +127,26 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   };
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl transition-all">
+    <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-6 shadow-sm transition-all">
       {/* Header Badges */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           {indexLabel && (
-            <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300">
+            <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700">
               {indexLabel}
             </span>
           )}
           <span
             className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${
-              LEVEL_BADGE_COLORS[exercise.level] || 'bg-slate-800 text-slate-300'
+              LEVEL_BADGE_COLORS[exercise.level] || 'bg-slate-100 text-slate-700 border-slate-200'
             }`}
           >
             Nivel {exercise.level}
           </span>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-800/80 text-amber-300 border border-amber-500/20">
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200">
             {TYPE_LABELS[exercise.type] || exercise.type}
           </span>
-          <span className="text-xs text-slate-400 font-medium">
+          <span className="text-xs text-slate-500 font-medium">
             • {exercise.topicLabel}
           </span>
         </div>
@@ -159,8 +159,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               onClick={() => setShowTranslation(!showTranslation)}
               className={`text-xs font-bold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all cursor-pointer ${
                 showTranslation
-                  ? 'bg-indigo-600/30 border-indigo-400 text-indigo-200'
-                  : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
+                  ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                  : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
               }`}
             >
               <Languages className="w-3.5 h-3.5" />
@@ -169,8 +169,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           )}
 
           {streakCount !== undefined && streakCount > 0 && (
-            <div className="flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-orange-500/15 text-orange-300 border border-orange-500/30">
-              <Sparkles className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-orange-50 text-orange-700 border border-orange-200">
+              <Sparkles className="w-3.5 h-3.5 text-orange-500" />
               Racha: {streakCount}
             </div>
           )}
@@ -182,8 +182,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         <p
           className={`${
             exercise.prompt.includes('___')
-              ? 'text-base sm:text-lg font-semibold text-white bg-slate-950/90 border border-slate-800 rounded-xl p-4'
-              : 'text-slate-300 text-sm sm:text-base font-medium'
+              ? 'text-base sm:text-lg font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-xl p-4'
+              : 'text-slate-700 text-sm sm:text-base font-medium'
           }`}
         >
           {exercise.prompt}
@@ -192,22 +192,22 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
       {/* Base Sentence (for Transformation, Error Correction, Word Formation) */}
       {exercise.baseSentence && (
-        <div className="bg-slate-950/90 border border-slate-800/90 rounded-xl p-4 mb-4 space-y-2.5">
-          <p className="text-base sm:text-lg font-semibold text-white leading-relaxed">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4 space-y-2.5">
+          <p className="text-base sm:text-lg font-semibold text-slate-900 leading-relaxed">
             {exercise.baseSentence}
           </p>
           {exercise.keyWord && (
             <div className="flex items-center gap-2">
-              <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold">
+              <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold">
                 Palabra clave:
               </span>
-              <span className="px-3 py-0.5 rounded-md bg-amber-500/20 border border-amber-400/50 text-amber-300 font-mono font-bold text-sm tracking-widest">
+              <span className="px-3 py-0.5 rounded-md bg-amber-100 border border-amber-300 text-amber-900 font-mono font-bold text-sm tracking-wider">
                 {exercise.keyWord}
               </span>
             </div>
           )}
           {exercise.type === 'error_correction' && (
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               💡 Puedes escribir <strong>solo las palabras corregidas</strong> o la <strong>frase entera corregida</strong>.
             </p>
           )}
@@ -216,11 +216,11 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
       {/* Target English Sentence with Gap (for Key Word Transformation) */}
       {englishTargetWithGap && (
-        <div className="bg-indigo-950/35 border border-indigo-500/35 rounded-xl p-4 mb-4">
-          <span className="text-[11px] uppercase tracking-wider text-indigo-300 font-bold block mb-1">
+        <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-4 mb-4">
+          <span className="text-[11px] uppercase tracking-wider text-indigo-800 font-bold block mb-1">
             Completa la segunda frase para que signifique lo mismo:
           </span>
-          <p className="text-base sm:text-lg text-white font-bold">
+          <p className="text-base sm:text-lg text-slate-950 font-bold">
             {englishTargetWithGap}
           </p>
         </div>
@@ -228,11 +228,11 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
       {/* Direct Spanish Prompt (ONLY for Reverse Translation exercises) */}
       {exercise.type === 'translation' && spanishTranslation && (
-        <div className="bg-indigo-950/35 border border-indigo-500/35 rounded-xl p-4 mb-4">
-          <span className="text-[11px] uppercase tracking-wider text-indigo-300 font-bold block mb-1">
+        <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-4 mb-4">
+          <span className="text-[11px] uppercase tracking-wider text-indigo-800 font-bold block mb-1">
             Frase a traducir al inglés:
           </span>
-          <p className="text-base sm:text-lg text-white font-bold">
+          <p className="text-base sm:text-lg text-slate-950 font-bold">
             "{spanishTranslation}"
           </p>
         </div>
@@ -240,8 +240,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
       {/* Optional Spanish Translation Box (when user clicks "Mostrar traducción") */}
       {showTranslation && spanishTranslation && exercise.type !== 'translation' && (
-        <div className="bg-slate-950/80 border border-indigo-500/30 rounded-xl p-3.5 mb-4 flex items-center gap-2.5 text-sm text-indigo-200">
-          <Languages className="w-4 h-4 text-indigo-400 shrink-0" />
+        <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 mb-4 flex items-center gap-2.5 text-sm text-amber-950">
+          <Languages className="w-4 h-4 text-amber-700 shrink-0" />
           <span>
             <strong>Traducción:</strong> {spanishTranslation}
           </span>
@@ -256,10 +256,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               key={opt}
               type="button"
               onClick={() => handleCheck(undefined, opt)}
-              className="text-left px-4 py-3 rounded-xl bg-slate-800/70 hover:bg-indigo-600/30 border border-slate-700 hover:border-indigo-500/60 text-slate-100 font-medium transition-all flex items-center justify-between group cursor-pointer"
+              className="text-left px-4 py-3.5 rounded-xl bg-slate-50 hover:bg-indigo-50/80 border border-slate-200 hover:border-indigo-300 text-slate-900 font-semibold transition-all flex items-center justify-between group cursor-pointer min-h-[48px]"
             >
               <span>{opt}</span>
-              <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-indigo-300 transition-transform group-hover:translate-x-0.5" />
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-transform group-hover:translate-x-0.5" />
             </button>
           ))}
         </div>
@@ -280,7 +280,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                 ? 'Escribe la frase traducida al inglés...'
                 : 'Escribe tu respuesta para el hueco...'
             }
-            className="flex-1 bg-slate-950 border border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-xl px-4 py-3 text-white placeholder-slate-500 text-base outline-none disabled:opacity-70"
+            className="flex-1 bg-white border-2 border-slate-300 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 rounded-xl px-4 py-3.5 text-slate-900 placeholder-slate-400 text-base font-medium outline-none disabled:bg-slate-50 disabled:text-slate-400 min-h-[48px]"
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
@@ -290,7 +290,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             <div className="flex gap-2">
               <button
                 type="submit"
-                className="flex-1 sm:flex-initial px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/25 transition-all cursor-pointer"
+                className="flex-1 sm:flex-initial px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-xs transition-all cursor-pointer min-h-[48px]"
               >
                 Comprobar
               </button>
@@ -298,9 +298,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                 type="button"
                 onClick={() => setShowHint(!showHint)}
                 title="Ver pista"
-                className="px-3.5 py-3 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-xl border border-slate-700 transition-all cursor-pointer"
+                className="px-4 py-3.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl border border-amber-200 transition-all cursor-pointer min-h-[48px]"
               >
-                <HelpCircle className="w-5 h-5" />
+                <HelpCircle className="w-5 h-5 text-amber-600" />
               </button>
             </div>
           ) : (
@@ -308,7 +308,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               <button
                 type="button"
                 onClick={onNext}
-                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[48px]"
               >
                 <span>Siguiente</span>
                 <ArrowRight className="w-4 h-4" />
@@ -319,12 +319,12 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
         {/* Hint Box before submitting */}
         {showHint && !submitted && (
-          <div className="flex items-start gap-2.5 text-xs sm:text-sm bg-amber-500/10 border border-amber-500/30 text-amber-200 px-3.5 py-2.5 rounded-xl">
-            <Lightbulb className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2.5 text-xs sm:text-sm bg-amber-50 border border-amber-200 text-amber-900 px-3.5 py-2.5 rounded-xl">
+            <Lightbulb className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold">{firstLetterHint}</p>
               {exercise.grammarRule && (
-                <p className="text-amber-300/90 mt-0.5">Fórmula: {exercise.grammarRule}</p>
+                <p className="text-amber-800 mt-0.5">Fórmula: {exercise.grammarRule}</p>
               )}
             </div>
           </div>
@@ -336,16 +336,16 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         <div
           className={`mt-5 rounded-xl p-4 sm:p-5 border space-y-4 ${
             evaluation.isCorrect
-              ? 'bg-emerald-950/35 border-emerald-500/40 text-emerald-100'
-              : 'bg-rose-950/35 border-rose-500/40 text-rose-100'
+              ? 'bg-emerald-50/90 border-emerald-200 text-emerald-950'
+              : 'bg-rose-50/90 border-rose-200 text-rose-950'
           }`}
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-start gap-2.5">
               {evaluation.isCorrect ? (
-                <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
               ) : (
-                <XCircle className="w-6 h-6 text-rose-400 shrink-0 mt-0.5" />
+                <XCircle className="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
               )}
               <div>
                 <h4 className="font-bold text-base">
@@ -358,7 +358,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
                 {/* Si tenía errata de teclado en el resto de la frase pero acertó la gramática */}
                 {evaluation.hasMinorSpellingTypos && evaluation.typoNotes.length > 0 && (
-                  <p className="text-xs sm:text-sm text-amber-300 font-semibold mt-1">
+                  <p className="text-xs sm:text-sm text-amber-800 font-semibold mt-1">
                     ⚠️ Ojo solo al spelling de: {evaluation.typoNotes.join(', ')}
                   </p>
                 )}
@@ -371,8 +371,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               disabled={savedToVault}
               className={`text-xs font-semibold px-3 py-1.5 rounded-lg border flex items-center gap-1.5 transition-all cursor-pointer ${
                 savedToVault
-                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                  : 'bg-slate-900/80 hover:bg-slate-800 border-slate-700 text-slate-200'
+                  ? 'bg-amber-100 border-amber-300 text-amber-900'
+                  : 'bg-white hover:bg-slate-50 border-slate-300 text-slate-700'
               }`}
             >
               <BookmarkPlus className="w-3.5 h-3.5" />
@@ -381,25 +381,25 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           </div>
 
           {/* CAJA DE FRASE CORREGIDA COMPLETA + CAMBIO EXACTO */}
-          <div className="bg-slate-950/90 border border-white/10 rounded-xl p-4 space-y-2.5">
+          <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2.5 shadow-2xs">
             {exercise.type === 'error_correction' && exercise.errorWord && (
               <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-                <span className="text-slate-400 font-semibold">Cambio gramatical clave:</span>
-                <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 line-through font-mono">
+                <span className="text-slate-500 font-semibold">Cambio gramatical clave:</span>
+                <span className="px-2 py-0.5 rounded bg-rose-100 border border-rose-200 text-rose-800 line-through font-mono">
                   ❌ {exercise.errorWord}
                 </span>
                 <span className="text-slate-400">→</span>
-                <span className="px-2.5 py-0.5 rounded bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 font-mono font-bold">
+                <span className="px-2.5 py-0.5 rounded bg-emerald-100 border border-emerald-300 text-emerald-900 font-mono font-bold">
                   ✅ {evaluation.shortCorrection}
                 </span>
               </div>
             )}
 
             <div>
-              <span className="text-[11px] uppercase tracking-wider text-emerald-400 font-bold block mb-1">
+              <span className="text-[11px] uppercase tracking-wider text-emerald-700 font-bold block mb-1">
                 ✅ Frase completa corregida:
               </span>
-              <p className="text-base sm:text-lg text-white font-semibold leading-relaxed">
+              <p className="text-base sm:text-lg text-slate-900 font-semibold leading-relaxed">
                 {renderHighlightedFullSentence(
                   evaluation.fullCorrectedSentence,
                   evaluation.shortCorrection
@@ -410,15 +410,15 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             {/* Si el usuario cometió errores o erratas, le mostramos palabra por palabra dónde falló su frase */}
             {(!evaluation.isCorrect || evaluation.hasMinorSpellingTypos) &&
               evaluation.wordDiff.length > 0 && (
-                <div className="pt-2 border-t border-slate-800">
-                  <span className="text-[11px] uppercase tracking-wider text-slate-400 font-bold block mb-1">
+                <div className="pt-2 border-t border-slate-200">
+                  <span className="text-[11px] uppercase tracking-wider text-slate-500 font-bold block mb-1">
                     🔍 Lo que escribiste tú (revisión palabra por palabra):
                   </span>
                   <div className="flex flex-wrap gap-1.5 text-sm">
                     {evaluation.wordDiff.map((token, idx) => {
                       if (token.status === 'ok') {
                         return (
-                          <span key={idx} className="text-emerald-300 font-medium">
+                          <span key={idx} className="text-emerald-800 font-medium">
                             {token.word}
                           </span>
                         );
@@ -427,11 +427,11 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                         return (
                           <span
                             key={idx}
-                            className="px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-200 font-bold"
+                            className="px-1.5 py-0.5 rounded bg-amber-100 border border-amber-300 text-amber-900 font-bold"
                             title={`Errata: ${token.expected}`}
                           >
                             {token.word}{' '}
-                            <span className="text-emerald-300 text-xs">
+                            <span className="text-emerald-700 text-xs">
                               ({token.expected})
                             </span>
                           </span>
@@ -440,7 +440,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                       return (
                         <span
                           key={idx}
-                          className="px-1.5 py-0.5 rounded bg-rose-500/25 border border-rose-500/40 text-rose-200 line-through font-bold"
+                          className="px-1.5 py-0.5 rounded bg-rose-100 border border-rose-300 text-rose-900 line-through font-bold"
                         >
                           {token.word}
                         </span>
@@ -453,12 +453,12 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
           {/* Detailed Grammatical Explanation */}
           <div className="pt-1 text-sm space-y-1.5">
-            <p className="leading-relaxed text-slate-200">
-              <strong className="text-amber-300">Por qué: </strong>
+            <p className="leading-relaxed text-slate-800">
+              <strong className="text-amber-800">Por qué: </strong>
               {exercise.explanation}
             </p>
             {exercise.grammarRule && (
-              <p className="text-xs font-mono bg-slate-950/70 px-3 py-1.5 rounded-lg text-indigo-300 inline-block">
+              <p className="text-xs font-mono bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg text-indigo-800 inline-block font-semibold">
                 📐 Regla: {exercise.grammarRule}
               </p>
             )}
@@ -466,8 +466,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
           {/* Instant Re-type Box when the user fails */}
           {!evaluation.isCorrect && (
-            <form onSubmit={handlePracticeAgainCheck} className="pt-3 border-t border-white/10">
-              <label className="block text-xs font-bold uppercase tracking-wider text-amber-300 mb-1.5">
+            <form onSubmit={handlePracticeAgainCheck} className="pt-3 border-t border-slate-200">
+              <label className="block text-xs font-bold uppercase tracking-wider text-amber-800 mb-1.5">
                 ✍️ Escribe ahora "{evaluation.shortCorrection}" (o la frase entera) para fijarlo:
               </label>
               <div className="flex gap-2">
@@ -476,18 +476,18 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                   value={practiceAgainInput}
                   onChange={(e) => setPracticeAgainInput(e.target.value)}
                   placeholder={`Escribe: ${evaluation.shortCorrection}`}
-                  className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-amber-400"
+                  className="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-500"
                 />
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1"
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   Fijar
                 </button>
               </div>
               {practiceAgainSuccess && (
-                <p className="text-xs text-emerald-300 font-semibold mt-1.5">
+                <p className="text-xs text-emerald-700 font-semibold mt-1.5">
                   ✅ ¡Perfecto! Ya la tienes en la memoria muscular.
                 </p>
               )}

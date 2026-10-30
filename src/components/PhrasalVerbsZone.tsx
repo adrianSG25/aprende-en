@@ -36,7 +36,7 @@ export const PhrasalVerbsZone: React.FC<PhrasalVerbsZoneProps> = ({
   const [onlyBookmarked, setOnlyBookmarked] = useState(false);
   const [currentExIdx, setCurrentExIdx] = useState(0);
 
-  // Construimos un banco masivo combinando los ejercicios curados + ejercicios generados de cada Phrasal Verb
+  // Construimos un banco combinando los ejercicios curados + ejercicios generados de cada Phrasal Verb
   const dynamicPhrasalExercises = useMemo(() => {
     const generated: Exercise[] = [];
 
@@ -116,15 +116,15 @@ export const PhrasalVerbsZone: React.FC<PhrasalVerbsZoneProps> = ({
     filteredDrillPool[currentExIdx % Math.max(1, filteredDrillPool.length)];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Sub-navigation Header */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Rocket className="w-5 h-5 text-amber-400" />
+          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center gap-2">
+            <Rocket className="w-5 h-5 text-amber-500" />
             Zona Intensiva de Phrasal Verbs (A2+ → B2+)
           </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-600 mt-1">
             Domina las partículas por lógica, busca equivalentes formales y machaca decenas de ejercicios.
           </p>
         </div>
@@ -133,47 +133,47 @@ export const PhrasalVerbsZone: React.FC<PhrasalVerbsZoneProps> = ({
           <button
             type="button"
             onClick={() => setSubTab('drill')}
-            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
+            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
               subTab === 'drill'
-                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <Dumbbell className="w-4 h-4" />
-            Ejercicios de Phrasal Verbs ({filteredDrillPool.length})
+            <span>Ejercicios ({filteredDrillPool.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setSubTab('explorer')}
-            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
+            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
               subTab === 'explorer'
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <BookOpen className="w-4 h-4" />
-            Diccionario y Mis Difíciles ({PHRASAL_VERBS_LIST.length})
+            <span>Diccionario ({PHRASAL_VERBS_LIST.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setSubTab('particles')}
-            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
+            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
               subTab === 'particles'
-                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <Compass className="w-4 h-4" />
-            Lógica de las Partículas
+            <span>Lógica Partículas</span>
           </button>
         </div>
       </div>
 
       {/* Level Filter Bar (for Drill & Explorer) */}
       {subTab !== 'particles' && (
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3 shadow-sm">
           <div className="flex flex-wrap gap-1.5">
             {LEVELS.map((lvl) => (
               <button
@@ -185,11 +185,11 @@ export const PhrasalVerbsZone: React.FC<PhrasalVerbsZoneProps> = ({
                 }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   selectedLevel === lvl
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-slate-800 text-slate-400 hover:text-white'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200'
                 }`}
               >
-                {lvl === 'ALL' ? 'Todos los Niveles' : `Nivel ${lvl}`}
+                {lvl === 'ALL' ? 'Todos' : lvl}
               </button>
             ))}
           </div>
@@ -202,12 +202,12 @@ export const PhrasalVerbsZone: React.FC<PhrasalVerbsZoneProps> = ({
                   setDrillFormat(e.target.value as 'all' | 'particle' | 'formal' | 'bookmarked');
                   setCurrentExIdx(0);
                 }}
-                className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-200 outline-none"
+                className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-800 outline-none focus:border-indigo-600"
               >
-                <option value="all">Modo Mixto Completo (Transformaciones + Partículas + Equivalentes)</option>
-                <option value="particle">Solo Rellenar la Partícula (up / down / out / off...)</option>
-                <option value="formal">Solo Verbo Formal → Phrasal Verb (postpone → put off)</option>
-                <option value="bookmarked">Solo Mis Phrasal Verbs Guardados ({bookmarkedIds.length})</option>
+                <option value="all">Modo Mixto (Transformaciones + Partículas)</option>
+                <option value="particle">Solo Rellenar la Partícula</option>
+                <option value="formal">Solo Verbo Formal → Phrasal Verb</option>
+                <option value="bookmarked">Solo Mis Guardados ({bookmarkedIds.length})</option>
               </select>
 
               <button
@@ -215,10 +215,10 @@ export const PhrasalVerbsZone: React.FC<PhrasalVerbsZoneProps> = ({
                 onClick={() =>
                   setCurrentExIdx(Math.floor(Math.random() * Math.max(1, filteredDrillPool.length)))
                 }
-                className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 flex items-center gap-1.5 cursor-pointer border border-slate-200"
               >
                 <Shuffle className="w-3.5 h-3.5" />
-                Mezclar
+                <span>Mezclar</span>
               </button>
             </div>
           )}
@@ -233,19 +233,19 @@ export const PhrasalVerbsZone: React.FC<PhrasalVerbsZoneProps> = ({
               exercise={currentExercise}
               onAttempt={onExerciseAttempt}
               onNext={() => setCurrentExIdx((i) => i + 1)}
-              indexLabel={`Phrasal Verb Drill ${(currentExIdx % filteredDrillPool.length) + 1} / ${filteredDrillPool.length}`}
+              indexLabel={`Drill #${(currentExIdx % filteredDrillPool.length) + 1} de ${filteredDrillPool.length}`}
             />
           ) : (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-3">
-              <p className="text-slate-300 font-medium">
+            <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center space-y-3 shadow-sm">
+              <p className="text-slate-700 font-medium">
                 No hay Phrasal Verbs marcados en este filtro todavía.
               </p>
               <button
                 type="button"
                 onClick={() => setDrillFormat('all')}
-                className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl cursor-pointer"
+                className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl cursor-pointer hover:bg-indigo-700"
               >
-                Ver todos los ejercicios de Phrasal Verbs
+                Ver todos los ejercicios
               </button>
             </div>
           )}
@@ -262,22 +262,22 @@ export const PhrasalVerbsZone: React.FC<PhrasalVerbsZoneProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar por verbo (put, take, get...), partícula (up, off), significado en español o equivalente..."
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-sm text-white outline-none focus:border-indigo-500"
+                placeholder="Buscar por verbo (put, take, get...), partícula o significado..."
+                className="w-full bg-white border border-slate-300 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-900 outline-none focus:border-indigo-600 shadow-2xs"
               />
             </div>
 
             <button
               type="button"
               onClick={() => setOnlyBookmarked(!onlyBookmarked)}
-              className={`px-4 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 border cursor-pointer ${
+              className={`px-4 py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 border cursor-pointer transition-colors shadow-2xs ${
                 onlyBookmarked
-                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                  : 'bg-slate-900 border-slate-800 text-slate-300'
+                  ? 'bg-amber-50 border-amber-300 text-amber-800'
+                  : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
               }`}
             >
               <Bookmark className="w-4 h-4" />
-              Solo Mis Guardados ({bookmarkedIds.length})
+              <span>Solo Guardados ({bookmarkedIds.length})</span>
             </button>
           </div>
 
@@ -287,23 +287,23 @@ export const PhrasalVerbsZone: React.FC<PhrasalVerbsZoneProps> = ({
               return (
                 <div
                   key={pv.id}
-                  className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between gap-3 hover:border-slate-700 transition-all"
+                  className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 flex flex-col justify-between gap-3 hover:border-slate-300 transition-all shadow-xs"
                 >
                   <div>
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-lg font-extrabold text-amber-300">
+                          <span className="text-lg font-extrabold text-amber-700">
                             {pv.verb}
                           </span>
-                          <span className="text-xs font-bold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
+                          <span className="text-xs font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
                             {pv.level}
                           </span>
-                          <span className="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                          <span className="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">
                             {pv.separable ? 'Separable' : 'Inseparable'}
                           </span>
                         </div>
-                        <p className="text-sm font-semibold text-white mt-1">
+                        <p className="text-sm font-semibold text-slate-800 mt-1">
                           {pv.meaningEs}
                         </p>
                       </div>
@@ -314,29 +314,29 @@ export const PhrasalVerbsZone: React.FC<PhrasalVerbsZoneProps> = ({
                         title="Guardar para repasar"
                         className={`p-2 rounded-lg border transition-colors cursor-pointer ${
                           isSaved
-                            ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                            : 'bg-slate-800/70 border-slate-700 text-slate-400 hover:text-white'
+                            ? 'bg-amber-50 border-amber-300 text-amber-700'
+                            : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-slate-800'
                         }`}
                       >
                         <Bookmark className="w-4 h-4" />
                       </button>
                     </div>
 
-                    <p className="text-xs text-indigo-300 font-mono mt-2">
+                    <p className="text-xs text-indigo-800 font-mono mt-2 font-medium">
                       🎓 Equivalente formal: <strong>{pv.formalEquivalent}</strong>
                     </p>
 
-                    <div className="mt-3 space-y-1.5 bg-slate-950/70 p-3 rounded-xl border border-slate-800/80">
+                    <div className="mt-3 space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
                       {pv.examples.map((ex, i) => (
                         <div key={i} className="text-xs sm:text-sm">
-                          <p className="text-slate-100 font-medium">• "{ex.en}"</p>
-                          <p className="text-slate-400 text-xs">{ex.es}</p>
+                          <p className="text-slate-900 font-medium">• "{ex.en}"</p>
+                          <p className="text-slate-500 text-xs">{ex.es}</p>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div className="text-xs bg-emerald-950/25 border border-emerald-500/25 text-emerald-200 px-3 py-2 rounded-lg">
+                  <div className="text-xs bg-emerald-50 border border-emerald-200 text-emerald-950 px-3 py-2 rounded-lg">
                     💡 <strong>Truco mental:</strong> {pv.memoryTrick}
                   </div>
                 </div>
@@ -352,21 +352,21 @@ export const PhrasalVerbsZone: React.FC<PhrasalVerbsZoneProps> = ({
           {PARTICLE_LOGIC_GUIDE.map((item) => (
             <div
               key={item.particle}
-              className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3"
+              className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 space-y-3 shadow-sm"
             >
               <div className="flex items-center gap-3">
-                <span className="px-3.5 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-extrabold text-base">
+                <span className="px-3 py-1.5 rounded-xl bg-amber-100 border border-amber-300 text-amber-900 font-extrabold text-base">
                   {item.particle}
                 </span>
-                <h3 className="font-bold text-white text-sm sm:text-base">
+                <h3 className="font-bold text-slate-900 text-sm sm:text-base">
                   {item.coreMeaning}
                 </h3>
               </div>
 
-              <ul className="space-y-2 text-xs sm:text-sm text-slate-300 bg-slate-950/70 p-3.5 rounded-xl border border-slate-800">
+              <ul className="space-y-2 text-xs sm:text-sm text-slate-700 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                 {item.examples.map((ex, i) => (
                   <li key={i} className="flex items-start gap-2">
-                    <span className="text-amber-400 font-bold">→</span>
+                    <span className="text-amber-600 font-bold">→</span>
                     <span>{ex}</span>
                   </li>
                 ))}

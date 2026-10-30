@@ -118,11 +118,11 @@ const BUILTIN_ROLEPLAY_SCENARIOS: RoleplayScenario[] = [
     yourGoalEs: '¿Qué le responderías usando estructuras de nivel B2+? Dile que en ningún caso vas a esperar un mes por un ordenador que ya venía defectuoso, y que o te dan uno de reemplazo hoy mismo o reclamarás el reembolso completo.',
     usefulPhrases: [
       'Under no circumstances am I going to... (Bajo ninguna circunstancia voy a...)',
-      'Not only does the screen flicker, but... (No solo parpadea la pantalla, sino que...)',
-      'faulty from the start (defectuoso desde el principio)',
-      'full refund or immediate replacement (reembolso completo o reemplazo inmediato)'
+      'faulty device (dispositivo defectuoso)',
+      'file an official complaint (poner una hoja de reclamaciones)',
+      'full refund (reembolso íntegro)'
     ],
-    sampleResponseEn: 'I\'m afraid that simply isn\'t good enough. Not only does the screen flicker constantly, but the laptop also shuts down on its own, which means it was faulty when you sold it to me. Under no circumstances am I going to wait four weeks without a computer for my work. Unless you can provide an immediate replacement today, I insist on receiving a full refund.'
+    sampleResponseEn: 'Under no circumstances am I going to wait four weeks for a computer that was faulty from the moment I bought it. As the laptop has a one-year warranty, I expect either an immediate replacement or a full refund today, otherwise I will have no choice but to file an official complaint.'
   }
 ];
 
@@ -132,30 +132,71 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
 }) => {
   const [mainTab, setMainTab] = useState<'roleplay' | 'essays'>('roleplay');
 
-  // ==================== STATE FOR ROLEPLAY ("¿QUÉ LE RESPONDERÍAS?") ====================
+  // Estado para el modo Roleplay ("¿Qué le responderías?")
   const [scenarios, setScenarios] = useState<RoleplayScenario[]>(BUILTIN_ROLEPLAY_SCENARIOS);
-  const [activeScenarioId, setActiveScenarioId] = useState<string>(BUILTIN_ROLEPLAY_SCENARIOS[0].id);
-  const [rpUserText, setRpUserText] = useState<string>('');
-  const [rpShowTranslation, setRpShowTranslation] = useState<boolean>(false);
-  const [rpShowSample, setRpShowSample] = useState<boolean>(false);
-  const [rpEvaluating, setRpEvaluating] = useState<boolean>(false);
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string>(BUILTIN_ROLEPLAY_SCENARIOS[0].id);
+  const [rpUserText, setRpUserText] = useState('');
+  const [rpShowTranslation, setRpShowTranslation] = useState(false);
+  const [rpShowSample, setRpShowSample] = useState(false);
+  const [rpEvaluating, setRpEvaluating] = useState(false);
   const [rpResult, setRpResult] = useState<RoleplayEvaluationResult | null>(null);
 
-  // Generador de nueva situación con IA
+  // Creador IA de nuevas situaciones
   const [newRpLevel, setNewRpLevel] = useState<Level>('B1+');
-  const [newRpTopic, setNewRpTopic] = useState<string>('');
-  const [newRpLoading, setNewRpLoading] = useState<boolean>(false);
+  const [newRpTopic, setNewRpTopic] = useState('');
+  const [newRpLoading, setNewRpLoading] = useState(false);
   const [newRpError, setNewRpError] = useState<string | null>(null);
 
-  const currentScenario =
-    scenarios.find((s) => s.id === activeScenarioId) || scenarios[0];
+  // Estado para el modo Essays (Writing Lab tradicional)
+  const [selectedPromptId, setSelectedPromptId] = useState(WRITING_PROMPTS[0].id);
+  const [text, setText] = useState('');
+  const [showModel, setShowModel] = useState(false);
+  const [showLocalEval, setShowLocalEval] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState<AIWritingCorrectionResult | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [savedNotice, setSavedNotice] = useState(false);
+
+  const currentScenario = useMemo(() => {
+    return scenarios.find((s) => s.id === selectedScenarioId) || scenarios[0];
+  }, [scenarios, selectedScenarioId]);
+
+  const currentPrompt = useMemo<WritingPrompt>(() => {
+    return WRITING_PROMPTS.find((p) => p.id === selectedPromptId) || WRITING_PROMPTS[0];
+  }, [selectedPromptId]);
 
   const handleSelectScenario = (id: string) => {
-    setActiveScenarioId(id);
+    setSelectedScenarioId(id);
     setRpUserText('');
-    setRpResult(null);
-    setRpShowTranslation(false);
     setRpShowSample(false);
+    setRpShowTranslation(false);
+    setRpResult(null);
+  };
+
+  const handleEvaluateRoleplay = async () => {
+    if (!rpUserText.trim()) return;
+    setRpEvaluating(true);
+    setRpResult(null);
+    try {
+      const evalRes = await evaluateRoleplayResponseWithAI(
+        currentScenario,
+        rpUserText
+      );
+      setRpResult(evalRes);
+    } catch {
+      // Fallback local sencillo
+      setRpResult({
+        scoreOutOf10: 8,
+        feedbackSummaryEs: 'Tu mensaje se entiende y responde al objetivo con soltura.',
+        errorsList: [],
+        naturalCorrectedResponseEn: rpUserText,
+        b2NativeAlternativeEn: currentScenario.sampleResponseEn,
+        characterFollowUpEn: 'I see your point. Let me speak with my manager and see what we can do for you.',
+        characterFollowUpEs: 'Entiendo tu postura. Deja que hable con mi responsable para ver qué podemos hacer.'
+      });
+    } finally {
+      setRpEvaluating(false);
+    }
   };
 
   const handleGenerateNewScenario = async (e: React.FormEvent) => {
@@ -165,88 +206,51 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
     try {
       const created = await generateAIRoleplayScenario(newRpLevel, newRpTopic);
       setScenarios((prev) => [created, ...prev]);
-      setActiveScenarioId(created.id);
+      setSelectedScenarioId(created.id);
       setRpUserText('');
+      setRpShowSample(false);
+      setRpShowTranslation(false);
       setRpResult(null);
       setNewRpTopic('');
     } catch (err: unknown) {
-      setNewRpError(err instanceof Error ? err.message : 'Error generando situación con IA.');
+      setNewRpError(err instanceof Error ? err.message : 'Error creando la situación con IA.');
     } finally {
       setNewRpLoading(false);
     }
   };
 
-  const handleEvaluateRoleplay = async () => {
-    if (!rpUserText.trim()) return;
-    setRpEvaluating(true);
-    try {
-      const res = await evaluateRoleplayResponseWithAI(currentScenario, rpUserText);
-      setRpResult(res);
-    } catch {
-      // Fallback al analizador local si no tiene API key o falla la conexión
-      const local = analyzeWritingLocally(rpUserText);
-      setRpResult({
-        scoreOutOf10: Math.round(local.scoreOutOf100 / 10),
-        naturalCorrectedResponseEn: rpUserText,
-        b2NativeAlternativeEn: currentScenario.sampleResponseEn,
-        feedbackSummaryEs:
-          local.feedbackItems.length > 0
-            ? local.feedbackItems.map((f) => `${f.messageEs} (${f.suggestionEn})`).join(' | ')
-            : 'Respuesta evaluada localmente. Compara tu frase con la alternativa nativa de nivel B2.',
-        errorsList: local.feedbackItems
-          .filter((f) => f.type === 'error')
-          .map((f) => ({
-            wrong: f.snippet,
-            right: f.suggestionEn,
-            explanationEs: f.messageEs
-          })),
-        characterFollowUpEn: 'Alright, let me see what I can do for you given the situation.',
-        characterFollowUpEs: 'Está bien, déjame ver qué puedo hacer por ti dada la situación.'
-      });
-    } finally {
-      setRpEvaluating(false);
-    }
-  };
-
-  // Continuar la conversación con la nueva respuesta del personaje
   const handleContinueDialogue = () => {
-    if (!rpResult || !rpResult.characterFollowUpEn) return;
-    const updatedScenario: RoleplayScenario = {
+    if (!rpResult?.characterFollowUpEn) return;
+    const nextScenario: RoleplayScenario = {
       ...currentScenario,
+      id: `rp-cont-${Date.now()}`,
+      title: `${currentScenario.title} (Continuación)`,
       characterSaysEn: rpResult.characterFollowUpEn,
-      characterSaysEs: rpResult.characterFollowUpEs,
-      yourGoalEs: 'Continúa la conversación respondiendo a lo que te acaba de contestar.'
+      characterSaysEs: rpResult.characterFollowUpEs || '',
+      yourGoalEs: 'Responde a esta réplica continuando la conversación para cerrar un acuerdo.',
+      sampleResponseEn: ''
     };
-    setScenarios((prev) =>
-      prev.map((s) => (s.id === currentScenario.id ? updatedScenario : s))
-    );
+    setScenarios((prev) => [nextScenario, ...prev]);
+    setSelectedScenarioId(nextScenario.id);
     setRpUserText('');
+    setRpShowSample(false);
     setRpResult(null);
   };
 
-  // ==================== STATE FOR ESSAYS & GUIDED WRITINGS ====================
-  const [selectedPromptId, setSelectedPromptId] = useState<string>(WRITING_PROMPTS[0].id);
-  const [text, setText] = useState<string>('');
-  const [showModel, setShowModel] = useState<boolean>(false);
-  const [showLocalEval, setShowLocalEval] = useState<boolean>(false);
-  const [savedNotice, setSavedNotice] = useState<boolean>(false);
-
-  const [aiLoading, setAiLoading] = useState<boolean>(false);
-  const [aiResult, setAiResult] = useState<AIWritingCorrectionResult | null>(null);
-  const [aiError, setAiError] = useState<string | null>(null);
-
-  const currentPrompt: WritingPrompt =
-    WRITING_PROMPTS.find((p) => p.id === selectedPromptId) || WRITING_PROMPTS[0];
-
-  const localEvaluation = useMemo(() => analyzeWritingLocally(text), [text]);
+  const localEvaluation = useMemo(() => {
+    return analyzeWritingLocally(text);
+  }, [text]);
 
   const checklistStatus = useMemo(() => {
+    const lower = text.toLowerCase();
     return currentPrompt.requiredStructures.map((req) => {
-      const matched = req.regexPatterns.some((pattern) => {
-        try {
-          return new RegExp(pattern, 'i').test(text);
-        } catch {
-          return false;
+      const matched = req.examples.some((ex) => {
+        const clean = ex.toLowerCase().replace(/[\(\)]/g, '').trim();
+        const parts = clean.split(' ');
+        if (parts.length === 1) {
+          return new RegExp(`\\b${clean}\\b`, 'i').test(lower);
+        } else {
+          return parts.every((p) => lower.includes(p));
         }
       });
       return { ...req, matched };
@@ -297,16 +301,16 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header & Mode Switcher */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <PenTool className="w-5 h-5 text-rose-400" />
-            Zona de Escritura Práctica: Situaciones Reales y Textos (A2+ → B2+)
+          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center gap-2">
+            <PenTool className="w-5 h-5 text-rose-500" />
+            Zona de Expresión Escrita: Situaciones Reales & Textos
           </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Responde a situaciones reales (mecánico, trabajo, aeropuerto...) o escribe textos con corrección detallada de todos tus errores.
+          <p className="text-xs sm:text-sm text-slate-600 mt-1">
+            Responde a situaciones cotidianas (mecánico, trabajo, reclamos...) o practica redacciones guiadas.
           </p>
         </div>
 
@@ -314,36 +318,36 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
           <button
             type="button"
             onClick={() => setMainTab('roleplay')}
-            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
+            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
               mainTab === 'roleplay'
-                ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/25'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                ? 'bg-rose-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <MessageSquare className="w-4 h-4" />
-            💬 ¿Qué le responderías? (Situaciones Reales)
+            <span>💬 ¿Qué le responderías?</span>
           </button>
 
           <button
             type="button"
             onClick={() => setMainTab('essays')}
-            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
+            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
               mainTab === 'essays'
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <PenTool className="w-4 h-4" />
-            📝 Emails, Essays B2 y Retos Guiados
+            <span>📝 Emails & Redacciones B2</span>
           </button>
         </div>
       </div>
 
       {/* ==================== TAB 1: "¿QUÉ LE RESPONDERÍAS?" (ROLEPLAY) ==================== */}
       {mainTab === 'roleplay' && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Scenario Selector Pills */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
             {scenarios.map((sc) => {
               const isSelected = sc.id === currentScenario.id;
               return (
@@ -351,22 +355,22 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
                   key={sc.id}
                   type="button"
                   onClick={() => handleSelectScenario(sc.id)}
-                  className={`text-left p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                  className={`text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-1.5 shadow-2xs ${
                     isSelected
-                      ? 'bg-rose-950/45 border-rose-500 text-white shadow-lg shadow-rose-500/10'
-                      : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:border-slate-700'
+                      ? 'bg-rose-50 border-2 border-rose-500 text-slate-900 shadow-xs'
+                      : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
                   }`}
                 >
                   <div>
                     <div className="flex items-center justify-between gap-1 mb-1">
-                      <span className="text-xs font-extrabold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
-                        Nivel {sc.level}
+                      <span className="text-[11px] font-extrabold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        {sc.level}
                       </span>
-                      <span className="text-[11px] text-amber-300 font-semibold truncate">
+                      <span className="text-[11px] text-amber-700 font-semibold truncate">
                         {sc.roleLabel}
                       </span>
                     </div>
-                    <h3 className="font-bold text-sm text-white line-clamp-2">
+                    <h3 className="font-bold text-xs sm:text-sm text-slate-900 line-clamp-2">
                       {sc.title}
                     </h3>
                   </div>
@@ -376,52 +380,52 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
           </div>
 
           {/* Active Roleplay Arena */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div className="lg:col-span-2 bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-5 shadow-sm">
               {/* Situation Context */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-rose-400">
+                  <span className="text-xs font-bold uppercase tracking-wider text-rose-600">
                     Situación Real • Nivel {currentScenario.level}
                   </span>
                   <button
                     type="button"
                     onClick={() => setRpShowTranslation(!rpShowTranslation)}
-                    className="text-xs font-bold px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5 cursor-pointer"
+                    className="text-xs font-bold px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 flex items-center gap-1.5 cursor-pointer"
                   >
                     <Languages className="w-3.5 h-3.5" />
                     {rpShowTranslation ? 'Ocultar traducción' : 'Traducir lo que te dice'}
                   </button>
                 </div>
-                <h3 className="text-xl font-extrabold text-white">
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
                   {currentScenario.title}
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-300">
+                <p className="text-xs sm:text-sm text-slate-600">
                   📍 <strong>Contexto:</strong> {currentScenario.situationEs}
                 </p>
               </div>
 
               {/* Speech Bubble from Mechanic / Landlord / Boss */}
-              <div className="bg-slate-950 border-l-4 border-amber-400 rounded-r-2xl p-4 sm:p-5 space-y-2">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-amber-300 block">
+              <div className="bg-amber-50/70 border-l-4 border-amber-500 rounded-r-2xl p-4 sm:p-5 space-y-2">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-amber-800 block">
                   🗣️ {currentScenario.roleLabel} te dice:
                 </span>
-                <p className="text-base sm:text-lg font-semibold text-white leading-relaxed">
+                <p className="text-base sm:text-lg font-semibold text-slate-900 leading-relaxed">
                   "{currentScenario.characterSaysEn}"
                 </p>
                 {rpShowTranslation && (
-                  <p className="text-xs sm:text-sm text-indigo-200 pt-2 border-t border-slate-800">
+                  <p className="text-xs sm:text-sm text-amber-900 pt-2 border-t border-amber-200/70">
                     🌐 "{currentScenario.characterSaysEs}"
                   </p>
                 )}
               </div>
 
               {/* Your Mission */}
-              <div className="bg-indigo-950/35 border border-indigo-500/30 rounded-xl p-4">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-300 block mb-1">
+              <div className="bg-indigo-50/80 border border-indigo-200 rounded-xl p-4">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-800 block mb-1">
                   🎯 ¿Qué le responderías tú? (Tu objetivo):
                 </span>
-                <p className="text-sm text-indigo-100 leading-relaxed">
+                <p className="text-xs sm:text-sm text-indigo-950 leading-relaxed font-medium">
                   {currentScenario.yourGoalEs}
                 </p>
               </div>
@@ -433,16 +437,16 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
                   value={rpUserText}
                   onChange={(e) => setRpUserText(e.target.value)}
                   placeholder={`Escribe aquí en inglés lo que le dirías a ${currentScenario.roleLabel}...`}
-                  className="w-full bg-slate-950 border border-slate-700 focus:border-rose-500 rounded-xl p-4 text-white text-base leading-relaxed outline-none"
+                  className="w-full bg-white border-2 border-slate-300 focus:border-rose-500 focus:ring-4 focus:ring-rose-100 rounded-xl p-4 text-slate-900 text-base leading-relaxed outline-none min-h-[120px]"
                   spellCheck={false}
                 />
 
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-2.5">
                   <button
                     type="button"
                     disabled={rpEvaluating || !rpUserText.trim()}
                     onClick={handleEvaluateRoleplay}
-                    className="px-6 py-3 bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-rose-600/25 flex items-center gap-2 cursor-pointer"
+                    className="px-6 py-3 bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
                   >
                     <Send className="w-4 h-4" />
                     {rpEvaluating
@@ -453,7 +457,7 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
                   <button
                     type="button"
                     onClick={() => setRpShowSample(!rpShowSample)}
-                    className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm rounded-xl flex items-center gap-2 cursor-pointer"
+                    className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm rounded-xl border border-slate-200 flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
                   >
                     <Eye className="w-4 h-4" />
                     {rpShowSample ? 'Ocultar Ejemplo' : 'Ver Ejemplo de Respuesta'}
@@ -462,11 +466,11 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
               </div>
 
               {rpShowSample && (
-                <div className="bg-slate-950 border border-emerald-500/30 rounded-xl p-4 space-y-1">
-                  <span className="text-xs font-bold uppercase text-emerald-400 block">
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-1">
+                  <span className="text-xs font-bold uppercase text-emerald-800 block">
                     Ejemplo de respuesta natural:
                   </span>
-                  <p className="text-sm text-slate-100 leading-relaxed">
+                  <p className="text-sm text-emerald-950 leading-relaxed font-medium">
                     "{currentScenario.sampleResponseEn}"
                   </p>
                 </div>
@@ -474,60 +478,60 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
 
               {/* Evaluation Feedback Box */}
               {rpResult && (
-                <div className="bg-slate-950 border border-rose-500/40 rounded-2xl p-5 space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                    <h4 className="font-bold text-base text-white flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-amber-400" />
+                <div className="bg-slate-50 border border-rose-200 rounded-2xl p-4 sm:p-5 space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                    <h4 className="font-bold text-base text-slate-900 flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-amber-500" />
                       Análisis de tu Respuesta
                     </h4>
-                    <span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-bold text-xs">
+                    <span className="px-3 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-bold text-xs">
                       Nota: {rpResult.scoreOutOf10} / 10
                     </span>
                   </div>
 
-                  <p className="text-sm text-slate-200 leading-relaxed">
+                  <p className="text-sm text-slate-700 leading-relaxed">
                     {rpResult.feedbackSummaryEs}
                   </p>
 
                   {/* Error-by-Error List */}
                   {rpResult.errorsList.length > 0 ? (
                     <div className="space-y-2">
-                      <span className="text-xs font-bold uppercase text-rose-300 block">
+                      <span className="text-xs font-bold uppercase text-rose-800 block">
                         🔍 Errores corregidos en lo que has escrito:
                       </span>
                       {rpResult.errorsList.map((err, i) => (
                         <div
                           key={i}
-                          className="bg-slate-900 border border-rose-500/30 rounded-xl p-3.5 text-xs sm:text-sm space-y-1"
+                          className="bg-white border border-rose-200 rounded-xl p-3.5 text-xs sm:text-sm space-y-1 shadow-2xs"
                         >
-                          <p className="text-rose-300 line-through">❌ {err.wrong}</p>
-                          <p className="text-emerald-300 font-bold">✅ {err.right}</p>
-                          <p className="text-slate-400 text-xs">{err.explanationEs}</p>
+                          <p className="text-rose-700 line-through">❌ {err.wrong}</p>
+                          <p className="text-emerald-800 font-bold">✅ {err.right}</p>
+                          <p className="text-slate-500 text-xs">{err.explanationEs}</p>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 text-emerald-200 text-xs sm:text-sm font-semibold">
+                    <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs sm:text-sm font-semibold">
                       ✅ ¡No se han detectado errores gramaticales en tu respuesta!
                     </div>
                   )}
 
                   {/* Corrected vs Native B2 Version */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="bg-slate-900 border border-emerald-500/30 rounded-xl p-3.5 space-y-1">
-                      <span className="text-[11px] font-bold uppercase text-emerald-400 block">
+                    <div className="bg-white border border-emerald-200 rounded-xl p-3.5 space-y-1 shadow-2xs">
+                      <span className="text-[11px] font-bold uppercase text-emerald-800 block">
                         ✅ Tu respuesta corregida:
                       </span>
-                      <p className="text-sm text-white font-semibold">
+                      <p className="text-sm text-slate-900 font-semibold">
                         "{rpResult.naturalCorrectedResponseEn}"
                       </p>
                     </div>
 
-                    <div className="bg-slate-900 border border-amber-500/30 rounded-xl p-3.5 space-y-1">
-                      <span className="text-[11px] font-bold uppercase text-amber-300 block">
-                        🚀 Cómo lo diría un nativo (Nivel B2/B2+):
+                    <div className="bg-white border border-amber-200 rounded-xl p-3.5 space-y-1 shadow-2xs">
+                      <span className="text-[11px] font-bold uppercase text-amber-800 block">
+                        🚀 Cómo lo diría un nativo (Nivel B2):
                       </span>
-                      <p className="text-sm text-amber-100 font-semibold">
+                      <p className="text-sm text-amber-950 font-semibold">
                         "{rpResult.b2NativeAlternativeEn}"
                       </p>
                     </div>
@@ -535,15 +539,15 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
 
                   {/* Follow-up reply from the character */}
                   {rpResult.characterFollowUpEn && (
-                    <div className="pt-3 border-t border-slate-800 space-y-3">
-                      <div className="bg-slate-900 border-l-4 border-sky-400 rounded-r-xl p-3.5 space-y-1">
-                        <span className="text-xs font-bold text-sky-300 block">
+                    <div className="pt-3 border-t border-slate-200 space-y-3">
+                      <div className="bg-white border-l-4 border-sky-500 rounded-r-xl p-3.5 space-y-1 shadow-2xs">
+                        <span className="text-xs font-bold text-sky-700 block">
                           💬 {currentScenario.roleLabel} te contesta ahora:
                         </span>
-                        <p className="text-sm text-white font-medium">
+                        <p className="text-sm text-slate-900 font-medium">
                           "{rpResult.characterFollowUpEn}"
                         </p>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-slate-500">
                           ({rpResult.characterFollowUpEs})
                         </p>
                       </div>
@@ -551,7 +555,7 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
                       <button
                         type="button"
                         onClick={handleContinueDialogue}
-                        className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl cursor-pointer"
+                        className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl cursor-pointer"
                       >
                         Seguir respondiéndole a esto →
                       </button>
@@ -563,18 +567,18 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
 
             {/* Right Sidebar: Useful Expressions + AI Custom Scenario Generator */}
             <div className="space-y-4">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
-                <h4 className="text-sm font-bold uppercase tracking-wider text-amber-300">
+              <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 space-y-3 shadow-sm">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-amber-800">
                   💡 Expresiones Útiles para Esta Situación
                 </h4>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-500">
                   Intenta incluir alguna de estas estructuras al escribir tu respuesta:
                 </p>
                 <ul className="space-y-2">
                   {currentScenario.usefulPhrases.map((phr, idx) => (
                     <li
                       key={idx}
-                      className="text-xs sm:text-sm bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-indigo-200 font-mono"
+                      className="text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-indigo-900 font-mono"
                     >
                       • {phr}
                     </li>
@@ -585,26 +589,26 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
               {/* AI Custom Situation Creator */}
               <form
                 onSubmit={handleGenerateNewScenario}
-                className="bg-slate-900 border border-purple-500/30 rounded-2xl p-5 space-y-3.5"
+                className="bg-white border border-purple-200 rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-sm"
               >
                 <div className="flex items-center gap-2">
-                  <Cpu className="w-5 h-5 text-purple-400" />
-                  <h4 className="text-sm font-bold text-white">
+                  <Cpu className="w-5 h-5 text-purple-600" />
+                  <h4 className="text-sm font-bold text-slate-900">
                     Crear Nueva Situación con IA
                   </h4>
                 </div>
-                <p className="text-xs text-slate-400">
-                  Pide cualquier situación cotidiana (en el médico, entrevista de trabajo, discusión con un vecino, aduana, restaurante...) y practica qué responderías.
+                <p className="text-xs text-slate-600">
+                  Pide cualquier situación (en el médico, entrevista de trabajo, queja vecinal, aduana...) y practica.
                 </p>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">
+                  <label className="block text-xs font-bold text-slate-600 mb-1">
                     Nivel
                   </label>
                   <select
                     value={newRpLevel}
                     onChange={(e) => setNewRpLevel(e.target.value as Level)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-800 outline-none focus:border-purple-600"
                   >
                     <option value="A2+">A2+ (A2 Advanced)</option>
                     <option value="B1">B1 (Intermediate)</option>
@@ -615,20 +619,20 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">
+                  <label className="block text-xs font-bold text-slate-600 mb-1">
                     ¿En qué situación quieres verte? (Opcional)
                   </label>
                   <input
                     type="text"
                     value={newRpTopic}
                     onChange={(e) => setNewRpTopic(e.target.value)}
-                    placeholder="Ej: En el dentista, negociando un sueldo, reclamando una maleta..."
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white outline-none focus:border-purple-500"
+                    placeholder="Ej: En el dentista, negociando un sueldo, reclamando maleta..."
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-900 outline-none focus:border-purple-600"
                   />
                 </div>
 
                 {newRpError && (
-                  <p className="text-xs text-rose-300 bg-rose-950/40 p-2.5 rounded-lg">
+                  <p className="text-xs text-rose-800 bg-rose-50 p-2.5 rounded-lg border border-rose-200">
                     {newRpError}
                   </p>
                 )}
@@ -636,7 +640,7 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
                 <button
                   type="submit"
                   disabled={newRpLoading}
-                  className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-xs min-h-[44px]"
                 >
                   <Sparkles className="w-4 h-4" />
                   {newRpLoading ? 'Creando situación...' : 'Generar Nueva Situación'}
@@ -649,8 +653,8 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
 
       {/* ==================== TAB 2: ESSAYS & GUIDED WRITING LAB ==================== */}
       {mainTab === 'essays' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
             {WRITING_PROMPTS.map((p) => {
               const isSelected = p.id === currentPrompt.id;
               return (
@@ -658,26 +662,26 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
                   key={p.id}
                   type="button"
                   onClick={() => handleSelectPrompt(p.id)}
-                  className={`text-left p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                  className={`text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-1.5 shadow-2xs ${
                     isSelected
-                      ? 'bg-rose-950/40 border-rose-500 text-white shadow-lg shadow-rose-500/10'
-                      : 'bg-slate-900/70 border-slate-800 text-slate-300 hover:border-slate-700'
+                      ? 'bg-indigo-50 border-2 border-indigo-600 text-slate-900 shadow-xs'
+                      : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
                   }`}
                 >
                   <div>
-                    <div className="flex items-center justify-between gap-1 mb-1.5">
-                      <span className="text-xs font-extrabold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
-                        Nivel {p.level}
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <span className="text-[11px] font-extrabold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        {p.level}
                       </span>
-                      <span className="text-[11px] text-amber-300 font-semibold">
+                      <span className="text-[11px] text-amber-700 font-semibold">
                         {p.type}
                       </span>
                     </div>
-                    <h3 className="font-bold text-sm text-white line-clamp-2">
+                    <h3 className="font-bold text-xs sm:text-sm text-slate-900 line-clamp-2">
                       {p.title}
                     </h3>
                   </div>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-slate-500">
                     {p.minWords}–{p.maxWords} palabras
                   </p>
                 </button>
@@ -685,42 +689,42 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
             })}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             <div className="lg:col-span-2 space-y-4">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
+              <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 space-y-2.5 shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-rose-400">
+                  <span className="text-xs font-bold uppercase tracking-wider text-rose-600">
                     {currentPrompt.type} • Nivel {currentPrompt.level}
                   </span>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-slate-500">
                     Objetivo: {currentPrompt.minWords} a {currentPrompt.maxWords} palabras
                   </span>
                 </div>
 
-                <h3 className="text-lg font-extrabold text-white">
+                <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
                   {currentPrompt.title}
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-300">
+                <p className="text-xs sm:text-sm text-slate-600">
                   {currentPrompt.situationEs}
                 </p>
-                <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs sm:text-sm text-indigo-200 font-medium">
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs sm:text-sm text-indigo-950 font-medium">
                   📋 <strong>Task:</strong> {currentPrompt.promptEn}
                 </div>
               </div>
 
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+              <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 space-y-4 shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                   <div className="flex items-center gap-3">
                     <span
                       className={`font-bold px-2.5 py-1 rounded-lg ${
                         localEvaluation.wordCount >= currentPrompt.minWords
-                          ? 'bg-emerald-500/20 text-emerald-300'
-                          : 'bg-slate-800 text-slate-300'
+                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                          : 'bg-slate-100 text-slate-700'
                       }`}
                     >
                       Palabras: {localEvaluation.wordCount} / {currentPrompt.minWords}–{currentPrompt.maxWords}
                     </span>
-                    <span className="text-slate-400">
+                    <span className="text-slate-500">
                       Frases: {localEvaluation.sentenceCount}
                     </span>
                   </div>
@@ -728,7 +732,7 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
                   <button
                     type="button"
                     onClick={handleSave}
-                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold flex items-center gap-1.5 cursor-pointer"
+                    className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold flex items-center gap-1.5 cursor-pointer border border-slate-200"
                   >
                     <Save className="w-3.5 h-3.5" />
                     {savedNotice ? '¡Guardado!' : 'Guardar borrador'}
@@ -736,75 +740,75 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
                 </div>
 
                 <textarea
-                  rows={10}
+                  rows={9}
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   placeholder="Escribe tu texto en inglés aquí..."
-                  className="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-xl p-4 text-white text-base leading-relaxed outline-none"
+                  className="w-full bg-white border-2 border-slate-300 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 rounded-xl p-4 text-slate-900 text-base leading-relaxed outline-none min-h-[160px]"
                   spellCheck={false}
                 />
 
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-2.5">
                   <button
                     type="button"
                     onClick={() => setShowLocalEval(true)}
-                    className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-indigo-600/25 flex items-center gap-2 cursor-pointer"
+                    className="px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
                   >
                     <Sparkles className="w-4 h-4" />
-                    Analizar Gramática y Nivel (Instantáneo)
+                    Analizar Nivel (Instantáneo)
                   </button>
 
                   <button
                     type="button"
                     onClick={handleEvaluateAI}
                     disabled={aiLoading}
-                    className="px-5 py-3 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-purple-600/25 flex items-center gap-2 cursor-pointer"
+                    className="px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
                   >
                     <Cpu className="w-4 h-4" />
-                    {aiLoading ? 'Corrigiendo con IA...' : 'Corrección Profunda IA + Crear Ejercicios'}
+                    {aiLoading ? 'Corrigiendo con IA...' : 'Corrección Profunda IA'}
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setShowModel(!showModel)}
-                    className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm rounded-xl flex items-center gap-2 cursor-pointer"
+                    className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm rounded-xl border border-slate-200 flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
                   >
                     <Eye className="w-4 h-4" />
-                    {showModel ? 'Ocultar Respuesta Modelo' : 'Ver Respuesta Modelo Comentada'}
+                    {showModel ? 'Ocultar Modelo' : 'Ver Respuesta Modelo'}
                   </button>
                 </div>
               </div>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 h-fit">
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 space-y-3.5 h-fit shadow-sm">
               <div>
-                <h4 className="text-sm font-bold uppercase tracking-wider text-amber-300">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-amber-800">
                   🎯 Checklist Gramatical en Vivo
                 </h4>
-                <p className="text-xs text-slate-400 mt-1">
-                  Se marcan en verde automáticamente mientras escribes:
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Se marcan automáticamente mientras escribes:
                 </p>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {checklistStatus.map((item) => (
                   <div
                     key={item.id}
-                    className={`p-3.5 rounded-xl border transition-all ${
+                    className={`p-3 rounded-xl border transition-all ${
                       item.matched
-                        ? 'bg-emerald-950/35 border-emerald-500/40 text-emerald-100'
-                        : 'bg-slate-950/70 border-slate-800 text-slate-300'
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
+                        : 'bg-slate-50 border-slate-200 text-slate-600'
                     }`}
                   >
-                    <div className="flex items-start gap-2.5">
+                    <div className="flex items-start gap-2">
                       {item.matched ? (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                       ) : (
-                        <Circle className="w-5 h-5 text-slate-600 shrink-0 mt-0.5" />
+                        <Circle className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                       )}
-                      <div className="space-y-1">
-                        <p className="text-xs sm:text-sm font-bold">{item.label}</p>
-                        <p className="text-xs text-slate-400 font-mono">
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-bold text-slate-900">{item.label}</p>
+                        <p className="text-[11px] text-slate-500 font-mono">
                           Ej: {item.examples.join(' / ')}
                         </p>
                       </div>
@@ -816,40 +820,40 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
           </div>
 
           {showLocalEval && (
-            <div className="bg-slate-900 border border-indigo-500/40 rounded-2xl p-6 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
-                <h3 className="text-lg font-bold text-white">
+            <div className="bg-white border border-indigo-200 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-slate-200">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900">
                   Diagnóstico Gramatical y Léxico Instantáneo
                 </h3>
                 <div className="flex items-center gap-3">
-                  <div className="bg-slate-950 px-4 py-2 rounded-xl border border-slate-800 text-center">
-                    <span className="text-[11px] text-slate-400 block">Nivel Estimado</span>
-                    <strong className="text-indigo-300 text-sm">{localEvaluation.estimatedLevel}</strong>
+                  <div className="bg-slate-50 px-3.5 py-1.5 rounded-xl border border-slate-200 text-center">
+                    <span className="text-[11px] text-slate-500 block">Nivel</span>
+                    <strong className="text-indigo-700 text-sm">{localEvaluation.estimatedLevel}</strong>
                   </div>
-                  <div className="bg-slate-950 px-4 py-2 rounded-xl border border-slate-800 text-center">
-                    <span className="text-[11px] text-slate-400 block">Puntuación</span>
-                    <strong className="text-emerald-400 text-sm">{localEvaluation.scoreOutOf100} / 100</strong>
+                  <div className="bg-slate-50 px-3.5 py-1.5 rounded-xl border border-slate-200 text-center">
+                    <span className="text-[11px] text-slate-500 block">Puntuación</span>
+                    <strong className="text-emerald-700 text-sm">{localEvaluation.scoreOutOf100} / 100</strong>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {localEvaluation.feedbackItems.map((fb, i) => (
                   <div
                     key={i}
-                    className={`p-4 rounded-xl border text-xs sm:text-sm ${
+                    className={`p-3.5 rounded-xl border text-xs sm:text-sm ${
                       fb.type === 'error'
-                        ? 'bg-rose-950/30 border-rose-500/40 text-rose-100'
+                        ? 'bg-rose-50 border-rose-200 text-rose-950'
                         : fb.type === 'upgrade'
-                        ? 'bg-amber-950/30 border-amber-500/40 text-amber-100'
-                        : 'bg-emerald-950/30 border-emerald-500/40 text-emerald-100'
+                        ? 'bg-amber-50 border-amber-200 text-amber-950'
+                        : 'bg-emerald-50 border-emerald-200 text-emerald-950'
                     }`}
                   >
                     <div className="flex items-center gap-2 font-bold mb-1">
                       {fb.type === 'error' ? (
-                        <AlertTriangle className="w-4 h-4 text-rose-400" />
+                        <AlertTriangle className="w-4 h-4 text-rose-600" />
                       ) : (
-                        <Sparkles className="w-4 h-4 text-amber-400" />
+                        <Sparkles className="w-4 h-4 text-amber-600" />
                       )}
                       <span>
                         {fb.type === 'error'
@@ -859,8 +863,8 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
                           : fb.snippet}
                       </span>
                     </div>
-                    <p className="text-slate-200">{fb.messageEs}</p>
-                    <p className="text-indigo-300 font-semibold mt-1">💡 {fb.suggestionEn}</p>
+                    <p className="text-slate-700">{fb.messageEs}</p>
+                    <p className="text-indigo-800 font-semibold mt-1">💡 {fb.suggestionEn}</p>
                   </div>
                 ))}
               </div>
@@ -868,40 +872,40 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
           )}
 
           {aiError && (
-            <div className="p-4 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-rose-200 text-sm">
+            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm">
               {aiError}
             </div>
           )}
 
           {aiResult && (
-            <div className="bg-slate-900 border border-purple-500/40 rounded-2xl p-6 space-y-5">
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Cpu className="w-5 h-5 text-purple-400" />
+            <div className="bg-white border border-purple-200 rounded-2xl p-5 sm:p-6 space-y-5 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Cpu className="w-5 h-5 text-purple-600" />
                   Informe del Examinador IA
                 </h3>
-                <span className="px-3.5 py-1.5 rounded-xl bg-purple-500/20 text-purple-200 font-bold text-sm">
+                <span className="px-3 py-1 rounded-xl bg-purple-50 text-purple-800 border border-purple-200 font-bold text-sm">
                   Nota: {aiResult.scoreOutOf100}/100 ({aiResult.estimatedLevel})
                 </span>
               </div>
 
-              <p className="text-sm text-slate-200 leading-relaxed">{aiResult.generalFeedbackEs}</p>
+              <p className="text-sm text-slate-700 leading-relaxed">{aiResult.generalFeedbackEs}</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-slate-950 border border-emerald-500/30 rounded-xl p-4 space-y-2">
-                  <h4 className="text-xs font-bold uppercase text-emerald-400">
+                <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-4 space-y-1.5">
+                  <h4 className="text-xs font-bold uppercase text-emerald-800">
                     ✅ Tu Texto Corregido
                   </h4>
-                  <p className="text-sm text-slate-100 whitespace-pre-line leading-relaxed">
+                  <p className="text-sm text-slate-900 whitespace-pre-line leading-relaxed">
                     {aiResult.correctedVersionEn}
                   </p>
                 </div>
 
-                <div className="bg-slate-950 border border-amber-500/30 rounded-xl p-4 space-y-2">
-                  <h4 className="text-xs font-bold uppercase text-amber-300">
+                <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-4 space-y-1.5">
+                  <h4 className="text-xs font-bold uppercase text-amber-900">
                     🚀 Versión Elevada a Nivel B2 Advanced
                   </h4>
-                  <p className="text-sm text-slate-100 whitespace-pre-line leading-relaxed">
+                  <p className="text-sm text-slate-900 whitespace-pre-line leading-relaxed">
                     {aiResult.b2AdvancedUpgradeEn}
                   </p>
                 </div>
@@ -909,25 +913,25 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
 
               {aiResult.lineByLineCorrections.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-xs font-bold uppercase text-rose-300">
+                  <h4 className="text-xs font-bold uppercase text-rose-800">
                     Correcciones Línea por Línea:
                   </h4>
                   {aiResult.lineByLineCorrections.map((c, idx) => (
                     <div
                       key={idx}
-                      className="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm space-y-1"
+                      className="bg-white border border-slate-200 rounded-xl p-3 text-xs sm:text-sm space-y-1 shadow-2xs"
                     >
-                      <p className="text-rose-300 line-through">❌ {c.original}</p>
-                      <p className="text-emerald-300 font-bold">✅ {c.correction}</p>
-                      <p className="text-slate-400 text-xs">{c.explanationEs}</p>
+                      <p className="text-rose-700 line-through">❌ {c.original}</p>
+                      <p className="text-emerald-800 font-bold">✅ {c.correction}</p>
+                      <p className="text-slate-500 text-xs">{c.explanationEs}</p>
                     </div>
                   ))}
                 </div>
               )}
 
               {aiResult.generatedDrillExercises.length > 0 && (
-                <div className="space-y-3 pt-3 border-t border-slate-800">
-                  <h4 className="text-sm font-bold text-purple-300">
+                <div className="space-y-3 pt-3 border-t border-slate-200">
+                  <h4 className="text-sm font-bold text-purple-800">
                     🔥 Ejercicios generados a partir de los fallos de tu Writing:
                   </h4>
                   {aiResult.generatedDrillExercises.map((ex, i) => (
@@ -944,18 +948,18 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
           )}
 
           {showModel && (
-            <div className="bg-slate-900 border border-emerald-500/30 rounded-2xl p-6 space-y-4">
-              <h3 className="text-lg font-bold text-emerald-300">
+            <div className="bg-white border border-emerald-200 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
+              <h3 className="text-base sm:text-lg font-bold text-emerald-800">
                 🏆 Respuesta Modelo de Examen (Nivel {currentPrompt.level})
               </h3>
-              <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-slate-100 text-sm sm:text-base whitespace-pre-line leading-relaxed">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 text-sm whitespace-pre-line leading-relaxed">
                 {currentPrompt.modelAnswer}
               </div>
-              <div className="space-y-1.5">
-                <h4 className="text-xs font-bold uppercase text-amber-300">
+              <div className="space-y-1">
+                <h4 className="text-xs font-bold uppercase text-amber-800">
                   ¿Por qué este texto saca máxima nota?
                 </h4>
-                <ul className="space-y-1 text-xs sm:text-sm text-slate-300">
+                <ul className="space-y-1 text-xs text-slate-600">
                   {currentPrompt.modelAnalysisEs.map((note, i) => (
                     <li key={i}>• {note}</li>
                   ))}

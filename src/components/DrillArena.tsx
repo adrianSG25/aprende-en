@@ -25,7 +25,9 @@ import {
   CheckCircle2,
   Shuffle,
   Cpu,
-  Trash2
+  Trash2,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface DrillArenaProps {
@@ -69,6 +71,7 @@ export const DrillArena: React.FC<DrillArenaProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<ExerciseCategory | 'ALL'>('ALL');
   const [selectedType, setSelectedType] = useState<ExerciseType | 'ALL'>('ALL');
   const [topicFilter, setTopicFilter] = useState<string | null>(initialTopicId);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const [customBank, setCustomBank] = useState<Exercise[]>(() => loadCustomAIExercises());
   const [proceduralExtras, setProceduralExtras] = useState<Exercise[]>([]);
@@ -78,72 +81,79 @@ export const DrillArena: React.FC<DrillArenaProps> = ({
   const [sessionRight, setSessionRight] = useState(0);
 
   // Estado para el Generador IA
-  const [aiLevel, setAiLevel] = useState<Level>('B2');
+  const [aiLevel, setAiLevel] = useState<Level>('B1+');
   const [aiCategory, setAiCategory] = useState<ExerciseCategory>('grammar');
   const [aiCustomFocus, setAiCustomFocus] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
-  const staticBank = useMemo(() => getAllStaticExercises(), []);
+  // Banco combinado: estáticos + generados en sesión + guardados IA
+  const allExercises = useMemo(() => {
+    const statics = getAllStaticExercises();
+    return [...proceduralExtras, ...customBank, ...statics];
+  }, [proceduralExtras, customBank]);
 
+  // Fallos activos del usuario (no dominados)
+  const activeMistakes = useMemo(() => {
+    return mistakes.filter((m) => !m.mastered);
+  }, [mistakes]);
+
+  // Pool filtrado para el modo Infinite
   const filteredPool = useMemo(() => {
-    const all = [...proceduralExtras, ...customBank, ...staticBank];
-    return all.filter((ex) => {
-      if (topicFilter && ex.topicId !== topicFilter) return false;
+    return allExercises.filter((ex) => {
       if (selectedLevel !== 'ALL' && ex.level !== selectedLevel) return false;
       if (selectedCategory !== 'ALL' && ex.category !== selectedCategory) return false;
       if (selectedType !== 'ALL' && ex.type !== selectedType) return false;
+      if (topicFilter && ex.topicId !== topicFilter) return false;
       return true;
     });
-  }, [staticBank, customBank, proceduralExtras, selectedLevel, selectedCategory, selectedType, topicFilter]);
+  }, [allExercises, selectedLevel, selectedCategory, selectedType, topicFilter]);
 
-  const activeMistakes = useMemo(
-    () => mistakes.filter((m) => !m.mastered),
-    [mistakes]
-  );
-
-  const currentExercise =
-    drillMode === 'mistakes'
-      ? activeMistakes[currentIndex % Math.max(1, activeMistakes.length)]?.exercise
-      : filteredPool[currentIndex % Math.max(1, filteredPool.length)];
-
-  const handleAttempt = (ex: Exercise, isCorrect: boolean, forceAddToVault?: boolean) => {
-    onExerciseAttempt(ex, isCorrect, forceAddToVault);
-    if (!forceAddToVault) {
-      setSessionDone((d) => d + 1);
-      if (isCorrect) {
-        setSessionRight((r) => r + 1);
-        setStreak((s) => s + 1);
-      } else {
-        setStreak(0);
-      }
+  // Ejercicio activo según el modo
+  const currentExercise = useMemo<Exercise | null>(() => {
+    if (drillMode === 'mistakes') {
+      if (activeMistakes.length === 0) return null;
+      const idx = currentIndex % activeMistakes.length;
+      return activeMistakes[idx].exercise;
     }
+    if (filteredPool.length === 0) return null;
+    const idx = currentIndex % filteredPool.length;
+    return filteredPool[idx];
+  }, [drillMode, activeMistakes, filteredPool, currentIndex]);
+
+  const handleAttempt = (
+    exercise: Exercise,
+    isCorrect: boolean,
+    forceAddToVault = false
+  ) => {
+    setSessionDone((d) => d + 1);
+    if (isCorrect) {
+      setSessionRight((r) => r + 1);
+      setStreak((s) => s + 1);
+    } else {
+      setStreak(0);
+    }
+    onExerciseAttempt(exercise, isCorrect, forceAddToVault);
   };
 
   const handleNext = () => {
-    if (drillMode === 'infinite' && currentIndex + 1 >= filteredPool.length) {
-      // Generar automáticamente un nuevo ejercicio procedural para que nunca se acaben
-      const fresh = generateProceduralVariation(selectedLevel, selectedCategory);
-      setProceduralExtras((prev) => [fresh, ...prev]);
-      setCurrentIndex(0);
-    } else {
-      setCurrentIndex((i) => i + 1);
-    }
+    setCurrentIndex((i) => i + 1);
   };
 
   const handleShuffle = () => {
-    const poolLen = drillMode === 'mistakes' ? activeMistakes.length : filteredPool.length;
-    if (poolLen > 1) {
-      const nextIdx = Math.floor(Math.random() * poolLen);
-      setCurrentIndex(nextIdx === currentIndex ? (currentIndex + 1) % poolLen : nextIdx);
+    if (filteredPool.length > 1) {
+      const rand = Math.floor(Math.random() * filteredPool.length);
+      setCurrentIndex(rand);
     }
   };
 
   const handleSpawnProceduralNow = () => {
-    const fresh = generateProceduralVariation(selectedLevel, selectedCategory);
-    setProceduralExtras((prev) => [fresh, ...prev]);
-    setTopicFilter(null);
+    const variation = generateProceduralVariation(selectedLevel, selectedCategory);
+    setProceduralExtras((prev) => [variation, ...prev]);
+    setSelectedLevel('ALL');
+    setSelectedCategory('ALL');
     setSelectedType('ALL');
+    setTopicFilter(null);
     setCurrentIndex(0);
   };
 
@@ -169,9 +179,9 @@ export const DrillArena: React.FC<DrillArenaProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Top Mode Switcher & Session Counter */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -179,14 +189,17 @@ export const DrillArena: React.FC<DrillArenaProps> = ({
               setDrillMode('infinite');
               setCurrentIndex(0);
             }}
-            className={`px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all cursor-pointer ${
               drillMode === 'infinite'
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
-            <Flame className="w-4 h-4 text-amber-300" />
-            Práctica Infinita ({filteredPool.length} en filtro)
+            <Flame className="w-4 h-4 text-amber-500" />
+            <span>Práctica Infinita</span>
+            <span className="text-xs px-1.5 py-0.5 rounded-md bg-black/10">
+              {filteredPool.length}
+            </span>
           </button>
 
           <button
@@ -195,15 +208,15 @@ export const DrillArena: React.FC<DrillArenaProps> = ({
               setDrillMode('mistakes');
               setCurrentIndex(0);
             }}
-            className={`px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all cursor-pointer ${
               drillMode === 'mistakes'
-                ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/30'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                ? 'bg-rose-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <RefreshCw className="w-4 h-4" />
-            Machacar Mis Fallos
-            <span className="px-2 py-0.5 text-xs rounded-full bg-black/30">
+            <span>Repetir Fallos</span>
+            <span className="px-2 py-0.5 text-xs rounded-full bg-black/10 font-bold">
               {activeMistakes.length}
             </span>
           </button>
@@ -211,27 +224,27 @@ export const DrillArena: React.FC<DrillArenaProps> = ({
           <button
             type="button"
             onClick={() => setDrillMode('ai_generator')}
-            className={`px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all cursor-pointer ${
               drillMode === 'ai_generator'
-                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                ? 'bg-purple-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
-            <Cpu className="w-4 h-4" />
-            Crear Tanda IA a Medida
+            <Cpu className="w-4 h-4 text-purple-600" />
+            <span>Tanda IA</span>
           </button>
         </div>
 
         {/* Mini Session Stats */}
-        <div className="flex items-center gap-4 text-xs sm:text-sm bg-slate-950/80 px-4 py-2.5 rounded-xl border border-slate-800">
+        <div className="flex items-center justify-between sm:justify-end gap-3 text-xs bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
           <div>
-            <span className="text-slate-400">Sesión hoy: </span>
-            <strong className="text-white">{sessionDone} hechos</strong>
+            <span className="text-slate-500">Sesión: </span>
+            <strong className="text-slate-900">{sessionDone} hechos</strong>
           </div>
-          <div className="h-4 w-px bg-slate-800" />
+          <div className="h-3 w-px bg-slate-300" />
           <div>
-            <span className="text-slate-400">Precisión: </span>
-            <strong className="text-emerald-400">
+            <span className="text-slate-500">Acierto: </span>
+            <strong className="text-emerald-700">
               {sessionDone > 0 ? Math.round((sessionRight / sessionDone) * 100) : 100}%
             </strong>
           </div>
@@ -241,94 +254,105 @@ export const DrillArena: React.FC<DrillArenaProps> = ({
       {/* Mode 1: Infinite Drill Filters & Card */}
       {drillMode === 'infinite' && (
         <>
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 space-y-3">
+          {/* Mobile Filter Toggle & Quick Actions (Prevents scrolling past heavy filters on phone) */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-4 shadow-sm space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
-                <Filter className="w-3.5 h-3.5 text-indigo-400" />
-                Filtra tu machaque (A2+ hasta B2+)
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700 sm:cursor-default"
+              >
+                <Filter className="w-3.5 h-3.5 text-indigo-600" />
+                <span>
+                  Filtros: {selectedLevel === 'ALL' ? 'Todos los niveles' : `Nivel ${selectedLevel}`}
+                </span>
+                <span className="sm:hidden text-slate-400">
+                  {showMobileFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </span>
+              </button>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex items-center gap-2">
                 {topicFilter && (
                   <button
                     type="button"
                     onClick={() => setTopicFilter(null)}
-                    className="text-xs px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 cursor-pointer"
+                    className="text-xs px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 cursor-pointer font-semibold"
                   >
-                    Quitar filtro de tema específico ✕
+                    Quitar tema ✕
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={handleShuffle}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center gap-1.5 cursor-pointer"
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1.5 cursor-pointer"
                 >
                   <Shuffle className="w-3.5 h-3.5" />
-                  Aleatorio
+                  <span className="hidden sm:inline">Aleatorio</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleSpawnProceduralNow}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 flex items-center gap-1.5 cursor-pointer"
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 flex items-center gap-1.5 cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  + Generar Variación Nueva
+                  <span>+ Variación</span>
                 </button>
               </div>
             </div>
 
-            {/* Level Pills */}
-            <div className="flex flex-wrap gap-1.5">
-              {LEVELS.map((lvl) => (
-                <button
-                  key={lvl}
-                  type="button"
-                  onClick={() => {
-                    setSelectedLevel(lvl);
+            {/* Level Pills & Selects (visible on sm screens or when expanded on mobile) */}
+            <div className={`${showMobileFilters ? 'block' : 'hidden sm:block'} space-y-3 pt-1 border-t sm:border-0 border-slate-100`}>
+              <div className="flex flex-wrap gap-1.5">
+                {LEVELS.map((lvl) => (
+                  <button
+                    key={lvl}
+                    type="button"
+                    onClick={() => {
+                      setSelectedLevel(lvl);
+                      setCurrentIndex(0);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      selectedLevel === lvl
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                    }`}
+                  >
+                    {lvl === 'ALL' ? 'Todos' : lvl}
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => {
+                    setSelectedCategory(e.target.value as ExerciseCategory | 'ALL');
                     setCurrentIndex(0);
                   }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    selectedLevel === lvl
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-slate-800/80 text-slate-400 hover:text-white'
-                  }`}
+                  className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-800 outline-none focus:border-indigo-600"
                 >
-                  {lvl === 'ALL' ? 'Todos los Niveles' : `Nivel ${lvl}`}
-                </button>
-              ))}
-            </div>
+                  {CATEGORIES.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
 
-            {/* Category & Format Selects */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-              <select
-                value={selectedCategory}
-                onChange={(e) => {
-                  setSelectedCategory(e.target.value as ExerciseCategory | 'ALL');
-                  setCurrentIndex(0);
-                }}
-                className="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 outline-none focus:border-indigo-500"
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={selectedType}
-                onChange={(e) => {
-                  setSelectedType(e.target.value as ExerciseType | 'ALL');
-                  setCurrentIndex(0);
-                }}
-                className="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 outline-none focus:border-indigo-500"
-              >
-                {TYPES.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
+                <select
+                  value={selectedType}
+                  onChange={(e) => {
+                    setSelectedType(e.target.value as ExerciseType | 'ALL');
+                    setCurrentIndex(0);
+                  }}
+                  className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-800 outline-none focus:border-indigo-600"
+                >
+                  {TYPES.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
@@ -337,12 +361,12 @@ export const DrillArena: React.FC<DrillArenaProps> = ({
               exercise={currentExercise}
               onAttempt={handleAttempt}
               onNext={handleNext}
-              indexLabel={`Ejercicio ${(currentIndex % filteredPool.length) + 1} de ${filteredPool.length}`}
+              indexLabel={`#${(currentIndex % filteredPool.length) + 1} de ${filteredPool.length}`}
               streakCount={streak}
             />
           ) : (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-3">
-              <p className="text-slate-300 font-medium">
+            <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center space-y-3 shadow-sm">
+              <p className="text-slate-700 font-medium">
                 No hay ejercicios con esta combinación exacta de filtros.
               </p>
               <button
@@ -353,7 +377,7 @@ export const DrillArena: React.FC<DrillArenaProps> = ({
                   setSelectedType('ALL');
                   setTopicFilter(null);
                 }}
-                className="px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl cursor-pointer"
+                className="px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl cursor-pointer hover:bg-indigo-700"
               >
                 Restablecer filtros
               </button>
@@ -365,23 +389,23 @@ export const DrillArena: React.FC<DrillArenaProps> = ({
       {/* Mode 2: Mistake Vault (SRS) */}
       {drillMode === 'mistakes' && (
         <div className="space-y-4">
-          <div className="bg-rose-950/20 border border-rose-500/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="font-bold text-rose-200 flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-rose-400" />
+              <h3 className="font-bold text-rose-950 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-rose-600" />
                 Cámara de Repetición Espaciada (Tus Fallos)
               </h3>
-              <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
-                Cada ejercicio que fallas se guarda aquí. Debes acertarlo <strong>3 veces seguidas</strong> en momentos distintos para que se marque como Dominado.
+              <p className="text-xs sm:text-sm text-slate-700 mt-0.5">
+                Cada ejercicio que fallas se guarda aquí. Debes acertarlo <strong>3 veces seguidas</strong> para que se marque como Dominado.
               </p>
             </div>
             {mistakes.some((m) => m.mastered) && (
               <button
                 type="button"
                 onClick={onClearMasteredMistakes}
-                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 flex items-center gap-1.5 shrink-0 cursor-pointer"
+                className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-rose-300 text-xs font-bold text-rose-800 flex items-center gap-1.5 shrink-0 cursor-pointer shadow-xs"
               >
-                <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
                 Limpiar ya dominados
               </button>
             )}
@@ -389,12 +413,12 @@ export const DrillArena: React.FC<DrillArenaProps> = ({
 
           {activeMistakes.length > 0 && currentExercise ? (
             <>
-              <div className="flex items-center justify-between text-xs text-slate-400 px-1">
+              <div className="flex items-center justify-between text-xs text-slate-600 px-1">
                 <span>
                   Repasando fallo {(currentIndex % activeMistakes.length) + 1} de {activeMistakes.length}
                 </span>
-                <span className="text-amber-300 font-semibold">
-                  Aciertos consecutivos en este ítem:{' '}
+                <span className="text-amber-800 font-semibold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                  Aciertos seguidos:{' '}
                   {activeMistakes[currentIndex % activeMistakes.length]?.consecutiveCorrect || 0} / 3
                 </span>
               </div>
@@ -406,18 +430,18 @@ export const DrillArena: React.FC<DrillArenaProps> = ({
               />
             </>
           ) : (
-            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-8 text-center space-y-3">
-              <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
-              <h4 className="text-lg font-bold text-white">
+            <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center space-y-3 shadow-sm">
+              <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
+              <h4 className="text-lg font-bold text-slate-900">
                 ¡Tienes tu lista de fallos limpia ahora mismo!
               </h4>
-              <p className="text-sm text-slate-400 max-w-md mx-auto">
+              <p className="text-sm text-slate-600 max-w-md mx-auto">
                 Cuando falles un ejercicio en cualquier zona o pulses el botón "Forzar Repetición", aparecerá aquí para que puedas machacarlo hasta dominarlo.
               </p>
               <button
                 type="button"
                 onClick={() => setDrillMode('infinite')}
-                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl cursor-pointer"
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl cursor-pointer shadow-xs"
               >
                 Volver a Práctica Infinita
               </button>
@@ -430,29 +454,29 @@ export const DrillArena: React.FC<DrillArenaProps> = ({
       {drillMode === 'ai_generator' && (
         <form
           onSubmit={handleGenerateAIBatch}
-          className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4"
+          className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm"
         >
           <div className="flex items-center gap-2.5">
-            <Cpu className="w-6 h-6 text-purple-400" />
+            <Cpu className="w-6 h-6 text-purple-600" />
             <div>
-              <h3 className="text-lg font-bold text-white">
-                Generador de Ejercicios Infinitos con IA (Híbrido)
+              <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                Generador de Ejercicios Infinitos con IA
               </h3>
-              <p className="text-xs sm:text-sm text-slate-400">
-                Pide 5 ejercicios nuevos sobre cualquier punto gramatical, phrasal verb o transformación y se guardarán permanentemente en tu banco.
+              <p className="text-xs sm:text-sm text-slate-600">
+                Pide 5 ejercicios nuevos sobre cualquier punto gramatical, phrasal verb o transformación y se guardarán en tu banco.
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase text-slate-400 mb-1.5">
+              <label className="block text-xs font-bold uppercase text-slate-600 mb-1.5">
                 Nivel Objetivo
               </label>
               <select
                 value={aiLevel}
                 onChange={(e) => setAiLevel(e.target.value as Level)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-sm"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-sm outline-none focus:border-indigo-600"
               >
                 <option value="A2+">A2+ (A2 Advanced)</option>
                 <option value="B1">B1 (Intermediate)</option>
@@ -463,13 +487,13 @@ export const DrillArena: React.FC<DrillArenaProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase text-slate-400 mb-1.5">
+              <label className="block text-xs font-bold uppercase text-slate-600 mb-1.5">
                 Categoría Principal
               </label>
               <select
                 value={aiCategory}
                 onChange={(e) => setAiCategory(e.target.value as ExerciseCategory)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-sm"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-sm outline-none focus:border-indigo-600"
               >
                 <option value="grammar">Gramática & Key Word Transformations</option>
                 <option value="phrasal_verbs">Phrasal Verbs en Contexto</option>
@@ -481,20 +505,20 @@ export const DrillArena: React.FC<DrillArenaProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-400 mb-1.5">
+            <label className="block text-xs font-bold uppercase text-slate-600 mb-1.5">
               ¿Qué quieres machacar exactamente? (Opcional)
             </label>
             <input
               type="text"
               value={aiCustomFocus}
               onChange={(e) => setAiCustomFocus(e.target.value)}
-              placeholder="Ej: Inversiones con No sooner y Hardly, o Phrasal verbs con GET y PUT, o Third Conditional..."
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-purple-500"
+              placeholder="Ej: Inversiones con No sooner y Hardly, o Phrasal verbs con GET, o Third Conditional..."
+              className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-900 text-sm outline-none focus:border-purple-600"
             />
           </div>
 
           {aiError && (
-            <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-200 text-xs sm:text-sm">
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm">
               {aiError}
             </div>
           )}
@@ -502,7 +526,7 @@ export const DrillArena: React.FC<DrillArenaProps> = ({
           <button
             type="submit"
             disabled={aiLoading}
-            className="px-6 py-3 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg shadow-purple-600/25 flex items-center gap-2 cursor-pointer"
+            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-xs flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
           >
             <Sparkles className="w-4 h-4" />
             {aiLoading ? 'Generando 5 ejercicios nuevos...' : 'Generar 5 Ejercicios y Empezar a Hacerlos'}

@@ -21,11 +21,11 @@ const LEVELS: (Level | 'ALL')[] = ['ALL', 'A2+', 'B1', 'B1+', 'B2', 'B2+'];
 
 const CAT_LABELS: Record<string, string> = {
   ALL: 'Todas las áreas',
-  confusing_words: 'Confusing Words & False Friends',
-  collocations: 'Collocations (Make/Do & Adverbios B2)',
+  confusing_words: 'Palabras Confusas y False Friends',
+  collocations: 'Collocations (Make/Do y Adverbios)',
   prepositions: 'Preposiciones Dependientes (ON/IN/OF/FOR)',
   connectors: 'Conectores y Linkers (B1-B2+)',
-  word_formation: 'Word Formation (Familias de palabras)'
+  word_formation: 'Word Formation (Familias de raíces)'
 };
 
 export const VocabZone: React.FC<VocabZoneProps> = ({ onExerciseAttempt }) => {
@@ -88,21 +88,21 @@ export const VocabZone: React.FC<VocabZoneProps> = ({ onExerciseAttempt }) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Top Bar */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <Brain className="w-5 h-5 text-emerald-400" />
-              Vocabulario, Collocations, Preposiciones y Word Formation
+            <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center gap-2">
+              <Brain className="w-5 h-5 text-emerald-600" />
+              Vocabulario, Collocations, Preposiciones & Raíces
             </h2>
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-              <Sparkles className="w-3 h-3" /> Banco Ampliado
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <Sparkles className="w-3 h-3 text-emerald-600" /> Banco Ampliado
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Fija las estructuras léxicas, palabras confusas, preposiciones y colocaciones que marcan la diferencia entre A2+, B1 y B2 Advanced.
+          <p className="text-xs sm:text-sm text-slate-600 mt-1">
+            Fija estructuras léxicas, false friends, preposiciones dependientes y Word Formation.
           </p>
         </div>
 
@@ -110,14 +110,14 @@ export const VocabZone: React.FC<VocabZoneProps> = ({ onExerciseAttempt }) => {
           <button
             type="button"
             onClick={() => setMode('study')}
-            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
+            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
               mode === 'study'
-                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <BookMarked className="w-4 h-4" />
-            Tarjetas de Estudio ({filteredItems.length})
+            <span>Tarjetas ({filteredItems.length})</span>
           </button>
 
           <button
@@ -126,20 +126,20 @@ export const VocabZone: React.FC<VocabZoneProps> = ({ onExerciseAttempt }) => {
               setMode('drill');
               setExIdx(0);
             }}
-            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
+            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-all ${
               mode === 'drill'
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <Dumbbell className="w-4 h-4" />
-            Práctica Interactiva ({filteredExercises.length} ejercicios)
+            <span>Ejercicios ({filteredExercises.length})</span>
           </button>
         </div>
       </div>
 
       {/* Filters (Levels & Category selector) */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3 shadow-sm">
         <div className="flex flex-wrap gap-1.5">
           {LEVELS.map((lvl) => (
             <button
@@ -151,8 +151,8 @@ export const VocabZone: React.FC<VocabZoneProps> = ({ onExerciseAttempt }) => {
               }}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 selectedLevel === lvl
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                  : 'bg-slate-800 text-slate-400 hover:text-white'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200'
               }`}
             >
               {lvl === 'ALL' ? 'Todos' : lvl}
@@ -167,7 +167,7 @@ export const VocabZone: React.FC<VocabZoneProps> = ({ onExerciseAttempt }) => {
               setSelectedCat(e.target.value);
               setExIdx(0);
             }}
-            className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-200 outline-none cursor-pointer"
+            className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-800 outline-none focus:border-indigo-600"
           >
             {Object.entries(CAT_LABELS).map(([k, v]) => (
               <option key={k} value={k}>
@@ -183,14 +183,14 @@ export const VocabZone: React.FC<VocabZoneProps> = ({ onExerciseAttempt }) => {
                 setHideTerms(!hideTerms);
                 setRevealedIds([]);
               }}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border cursor-pointer transition-all ${
+              className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border cursor-pointer transition-all ${
                 hideTerms
-                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                  : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
+                  ? 'bg-amber-50 border-amber-300 text-amber-800'
+                  : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
               }`}
             >
               {hideTerms ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-              {hideTerms ? 'Mostrar Términos en Inglés' : 'Modo Autoevaluación (Ocultar Inglés)'}
+              <span>{hideTerms ? 'Mostrar Inglés' : 'Ocultar Inglés (Test)'}</span>
             </button>
           )}
         </div>
@@ -204,14 +204,14 @@ export const VocabZone: React.FC<VocabZoneProps> = ({ onExerciseAttempt }) => {
             return (
               <div
                 key={item.id}
-                className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between gap-3 hover:border-slate-700 transition-all"
+                className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 flex flex-col justify-between gap-3 hover:border-slate-300 transition-all shadow-xs"
               >
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold px-2.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
                       Nivel {item.level}
                     </span>
-                    <span className="text-xs text-slate-400 font-semibold">
+                    <span className="text-xs text-slate-500 font-semibold">
                       {CAT_LABELS[item.category] || item.category}
                     </span>
                   </div>
@@ -220,67 +220,67 @@ export const VocabZone: React.FC<VocabZoneProps> = ({ onExerciseAttempt }) => {
                     <button
                       type="button"
                       onClick={() => toggleReveal(item.id)}
-                      className="w-full py-2.5 px-4 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold text-sm text-left cursor-pointer"
+                      className="w-full py-2.5 px-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 font-bold text-sm text-left cursor-pointer hover:bg-amber-100"
                     >
                       👁️ Pulsa para comprobar el término en inglés...
                     </button>
                   ) : (
-                    <h3 className="text-lg font-extrabold text-white">
+                    <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
                       {item.term}
                     </h3>
                   )}
 
-                  <p className="text-sm font-semibold text-emerald-300">
+                  <p className="text-sm font-semibold text-emerald-800">
                     {item.meaningEs}
                   </p>
 
                   {/* Word Formation Family Table if present */}
                   {item.rootFamily && !isHidden && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
                       {item.rootFamily.noun && (
                         <div>
                           <span className="text-slate-500 block">Sustantivo:</span>
-                          <strong className="text-white">{item.rootFamily.noun}</strong>
+                          <strong className="text-slate-900">{item.rootFamily.noun}</strong>
                         </div>
                       )}
                       {item.rootFamily.verb && (
                         <div>
                           <span className="text-slate-500 block">Verbo:</span>
-                          <strong className="text-white">{item.rootFamily.verb}</strong>
+                          <strong className="text-slate-900">{item.rootFamily.verb}</strong>
                         </div>
                       )}
                       {item.rootFamily.adjective && (
                         <div>
                           <span className="text-slate-500 block">Adjetivo (+):</span>
-                          <strong className="text-emerald-300">{item.rootFamily.adjective}</strong>
+                          <strong className="text-emerald-700">{item.rootFamily.adjective}</strong>
                         </div>
                       )}
                       {item.rootFamily.negative && (
                         <div>
                           <span className="text-slate-500 block">Negativo (-):</span>
-                          <strong className="text-rose-300">{item.rootFamily.negative}</strong>
+                          <strong className="text-rose-700">{item.rootFamily.negative}</strong>
                         </div>
                       )}
                       {item.rootFamily.adverb && (
                         <div>
                           <span className="text-slate-500 block">Adverbio:</span>
-                          <strong className="text-amber-300">{item.rootFamily.adverb}</strong>
+                          <strong className="text-amber-800">{item.rootFamily.adverb}</strong>
                         </div>
                       )}
                     </div>
                   )}
 
                   {!isHidden && (
-                    <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 text-xs sm:text-sm space-y-1">
-                      <p className="text-slate-100 font-medium">"{item.contextExample}"</p>
-                      <p className="text-slate-400 text-xs">{item.contextTranslation}</p>
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs sm:text-sm space-y-1">
+                      <p className="text-slate-900 font-medium">"{item.contextExample}"</p>
+                      <p className="text-slate-500 text-xs">{item.contextTranslation}</p>
                     </div>
                   )}
                 </div>
 
                 {item.commonMistake && (
-                  <div className="flex items-start gap-2 text-xs bg-rose-950/25 border border-rose-500/25 text-rose-200 px-3 py-2 rounded-lg">
-                    <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2 text-xs bg-rose-50 border border-rose-200 text-rose-800 px-3 py-2 rounded-lg">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                     <span>{item.commonMistake}</span>
                   </div>
                 )}
@@ -296,13 +296,13 @@ export const VocabZone: React.FC<VocabZoneProps> = ({ onExerciseAttempt }) => {
           exercise={currentEx}
           onAttempt={onExerciseAttempt}
           onNext={() => setExIdx((i) => i + 1)}
-          indexLabel={`Ejercicio Léxico ${(exIdx % filteredExercises.length) + 1} / ${filteredExercises.length}`}
+          indexLabel={`Ejercicio Léxico ${(exIdx % filteredExercises.length) + 1} de ${filteredExercises.length}`}
         />
       )}
 
       {mode === 'drill' && !currentEx && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-3">
-          <p className="text-slate-300 font-semibold">
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center space-y-3 shadow-sm">
+          <p className="text-slate-700 font-semibold">
             No hay ejercicios específicos con esta combinación de nivel y área.
           </p>
           <button
@@ -311,7 +311,7 @@ export const VocabZone: React.FC<VocabZoneProps> = ({ onExerciseAttempt }) => {
               setSelectedLevel('ALL');
               setSelectedCat('ALL');
             }}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold cursor-pointer transition-colors"
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-colors shadow-xs"
           >
             Ver todos los ejercicios de vocabulario
           </button>
