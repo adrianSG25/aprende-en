@@ -29,6 +29,7 @@ interface ReadingZoneProps {
   completedStories: string[];
   onMarkStoryComplete: (storyId: string) => void;
   onExerciseAttempt: (exercise: Exercise, isCorrect: boolean, forceAddToVault?: boolean) => void;
+  onOpenSettings?: () => void;
 }
 
 // Preguntas abiertas de escribir para las historias integradas
@@ -118,7 +119,8 @@ const BUILTIN_OPEN_QUESTIONS: Record<string, AIStoryOpenQuestion[]> = {
 export const ReadingZone: React.FC<ReadingZoneProps> = ({
   completedStories,
   onMarkStoryComplete,
-  onExerciseAttempt
+  onExerciseAttempt,
+  onOpenSettings
 }) => {
   const [subTab, setSubTab] = useState<'stories' | 'ai_story_creator' | 'custom_analyzer'>('stories');
   const [selectedStoryId, setSelectedStoryId] = useState<string>(READING_STORIES[0].id);
@@ -583,16 +585,28 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
             onSubmit={handleCreateAIStory}
             className="bg-white border border-emerald-200 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm"
           >
-            <div className="flex items-center gap-2.5">
-              <Cpu className="w-6 h-6 text-emerald-600" />
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-slate-900">
-                  Generador IA de Historias con Preguntas Abiertas de Escribir
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-600">
-                  La IA escribirá una historia de tu nivel con estructuras clave resaltadas y preguntas abiertas debajo.
-                </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <Cpu className="w-6 h-6 text-emerald-600" />
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                    Generador IA de Historias con Preguntas Abiertas de Escribir
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600">
+                    La IA escribirá una historia de tu nivel con estructuras clave resaltadas y preguntas abiertas debajo.
+                  </p>
+                </div>
               </div>
+              {onOpenSettings && (
+                <button
+                  type="button"
+                  onClick={onOpenSettings}
+                  className="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer shrink-0"
+                >
+                  <Cpu className="w-3.5 h-3.5" />
+                  <span>⚙️ Ajustes / Cambiar API Key</span>
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

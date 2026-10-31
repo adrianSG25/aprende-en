@@ -36,6 +36,7 @@ interface WritingZoneProps {
     feedback?: string;
   }) => void;
   onExerciseAttempt: (exercise: Exercise, isCorrect: boolean, forceAddToVault?: boolean) => void;
+  onOpenSettings?: () => void;
 }
 
 const BUILTIN_ROLEPLAY_SCENARIOS: RoleplayScenario[] = [
@@ -128,7 +129,8 @@ const BUILTIN_ROLEPLAY_SCENARIOS: RoleplayScenario[] = [
 
 export const WritingZone: React.FC<WritingZoneProps> = ({
   onSaveWriting,
-  onExerciseAttempt
+  onExerciseAttempt,
+  onOpenSettings
 }) => {
   const [mainTab, setMainTab] = useState<'roleplay' | 'essays'>('roleplay');
 
@@ -591,11 +593,22 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
                 onSubmit={handleGenerateNewScenario}
                 className="bg-white border border-purple-200 rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-sm"
               >
-                <div className="flex items-center gap-2">
-                  <Cpu className="w-5 h-5 text-purple-600" />
-                  <h4 className="text-sm font-bold text-slate-900">
-                    Crear Nueva Situación con IA
-                  </h4>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Cpu className="w-5 h-5 text-purple-600" />
+                    <h4 className="text-sm font-bold text-slate-900">
+                      Crear Nueva Situación con IA
+                    </h4>
+                  </div>
+                  {onOpenSettings && (
+                    <button
+                      type="button"
+                      onClick={onOpenSettings}
+                      className="text-[11px] font-bold text-purple-700 hover:text-purple-900 bg-purple-50 px-2 py-1 rounded-lg border border-purple-200 cursor-pointer"
+                    >
+                      ⚙️ Clave IA
+                    </button>
+                  )}
                 </div>
                 <p className="text-xs text-slate-600">
                   Pide cualquier situación (en el médico, entrevista de trabajo, queja vecinal, aduana...) y practica.
@@ -767,6 +780,17 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
                     <Cpu className="w-4 h-4" />
                     {aiLoading ? 'Corrigiendo con IA...' : 'Corrección Profunda IA'}
                   </button>
+
+                  {onOpenSettings && (
+                    <button
+                      type="button"
+                      onClick={onOpenSettings}
+                      className="px-3 py-3 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs sm:text-sm rounded-xl border border-purple-200 flex items-center justify-center gap-1.5 cursor-pointer min-h-[48px]"
+                      title="Configurar tu clave API de IA"
+                    >
+                      ⚙️ Clave IA
+                    </button>
+                  )}
 
                   <button
                     type="button"

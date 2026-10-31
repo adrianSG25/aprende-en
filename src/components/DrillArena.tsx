@@ -36,6 +36,7 @@ interface DrillArenaProps {
   onClearMasteredMistakes: () => void;
   initialLevel?: Level | 'ALL';
   initialTopicId?: string | null;
+  onOpenSettings?: () => void;
 }
 
 const LEVELS: (Level | 'ALL')[] = ['ALL', 'A2+', 'B1', 'B1+', 'B2', 'B2+'];
@@ -64,7 +65,8 @@ export const DrillArena: React.FC<DrillArenaProps> = ({
   onExerciseAttempt,
   onClearMasteredMistakes,
   initialLevel = 'ALL',
-  initialTopicId = null
+  initialTopicId = null,
+  onOpenSettings
 }) => {
   const [drillMode, setDrillMode] = useState<'infinite' | 'mistakes' | 'ai_generator'>('infinite');
   const [selectedLevel, setSelectedLevel] = useState<Level | 'ALL'>(initialLevel);
@@ -456,16 +458,29 @@ export const DrillArena: React.FC<DrillArenaProps> = ({
           onSubmit={handleGenerateAIBatch}
           className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm"
         >
-          <div className="flex items-center gap-2.5">
-            <Cpu className="w-6 h-6 text-purple-600" />
-            <div>
-              <h3 className="text-base sm:text-lg font-bold text-slate-900">
-                Generador de Ejercicios Infinitos con IA
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-600">
-                Pide 5 ejercicios nuevos sobre cualquier punto gramatical, phrasal verb o transformación y se guardarán en tu banco.
-              </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <Cpu className="w-6 h-6 text-purple-600" />
+              <div>
+                <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                  Generador de Ejercicios Infinitos con IA
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600">
+                  Pide 5 ejercicios nuevos sobre cualquier punto gramatical, phrasal verb o transformación.
+                </p>
+              </div>
             </div>
+
+            {onOpenSettings && (
+              <button
+                type="button"
+                onClick={onOpenSettings}
+                className="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <Cpu className="w-3.5 h-3.5" />
+                <span>⚙️ Ajustes / Cambiar API Key</span>
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
