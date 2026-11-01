@@ -1,8 +1,45 @@
 import { Exercise, MistakeRecord, UserStats, ExamResult } from '../types';
+import { GameProgress } from '../types/streetGame';
 
 const STATS_KEY = 'engdrill_user_stats_v1';
 const MISTAKES_KEY = 'engdrill_mistake_vault_v1';
 const CUSTOM_EXERCISES_KEY = 'engdrill_custom_exercises_v1';
+const GAME_PROGRESS_KEY = 'uk_street_game_progress_v1';
+
+export const DEFAULT_GAME_PROGRESS: GameProgress = {
+  currentLevelId: 1,
+  xp: 0,
+  quids: 5, // 5 libras iniciales para el viaje
+  unlockedLevels: [1],
+  bossesDefeated: [],
+  completedTopicIds: [],
+  completedExerciseIds: [],
+  streakDays: 1,
+  lastActiveDate: new Date().toISOString().slice(0, 10)
+};
+
+export function loadGameProgress(): GameProgress {
+  try {
+    const raw = localStorage.getItem(GAME_PROGRESS_KEY);
+    if (!raw) return DEFAULT_GAME_PROGRESS;
+    const parsed = JSON.parse(raw);
+    return { ...DEFAULT_GAME_PROGRESS, ...parsed };
+  } catch {
+    return DEFAULT_GAME_PROGRESS;
+  }
+}
+
+export function saveGameProgress(progress: GameProgress): void {
+  localStorage.setItem(GAME_PROGRESS_KEY, JSON.stringify(progress));
+}
+
+export function addGameXP(amount: number, quidsAmount = 0): GameProgress {
+  const current = loadGameProgress();
+  current.xp += amount;
+  current.quids += quidsAmount;
+  saveGameProgress(current);
+  return current;
+}
 
 const DEFAULT_STATS: UserStats = {
   totalCompleted: 0,
