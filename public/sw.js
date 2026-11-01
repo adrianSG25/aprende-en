@@ -1,4 +1,4 @@
-const CACHE_NAME = 'engdrill-street-v11';
+const CACHE_NAME = 'uk-street-v12';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
