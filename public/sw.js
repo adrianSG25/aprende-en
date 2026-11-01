@@ -1,4 +1,4 @@
-const CACHE_NAME = 'uk-street-v12';
+const CACHE_NAME = 'uk-street-v13';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

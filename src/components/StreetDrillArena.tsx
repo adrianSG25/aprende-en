@@ -1,10 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { StreetExercise, GameProgress } from '../types/streetGame';
 import { STREET_LEVELS } from '../data/streetData';
+import { checkAnswer } from '../utils/answerChecker';
 import {
   CheckCircle2,
   XCircle,
-  ArrowRight
+  ArrowRight,
+  Lightbulb,
+  Send
 } from 'lucide-react';
 
 interface StreetDrillArenaProps {
@@ -18,10 +21,11 @@ export const StreetDrillArena: React.FC<StreetDrillArenaProps> = ({
   onUpdateProgress,
   onOpenSettings: _onOpenSettings
 }) => {
-  const [filterType, setFilterType] = useState<string>('all');
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [userInput, setUserInput] = useState('');
+  const [showHint, setShowHint] = useState(false);
   const [isAnswered, setIsAnswered] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
 
   // Extract all exercises from unlocked levels + boss challenges
   const availableExercises: StreetExercise[] = useMemo(() => {
@@ -34,52 +38,47 @@ export const StreetDrillArena: React.FC<StreetDrillArenaProps> = ({
         list.push(...lvl.boss.questions);
       }
     });
+    return list;
+  }, [progress.unlockedLevels]);
 
-    if (filterType === 'all') return list;
-    return list.filter((ex) => ex.type === filterType);
-  }, [progress.unlockedLevels, filterType]);
+  const currentQ: StreetExercise | undefined =
+    availableExercises[currentIndex % (availableExercises.length || 1)];
 
-  const currentQ: StreetExercise | undefined = availableExercises[currentIndex % (availableExercises.length || 1)];
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!currentQ || !userInput.trim() || isAnswered) return;
 
-  const handleSelectOption = (idx: number) => {
-    if (isAnswered || !currentQ) return;
-    setSelectedOption(idx);
+    const correct = checkAnswer(userInput, currentQ.acceptedAnswers);
+    setIsCorrect(correct);
     setIsAnswered(true);
 
-    const isCorrect = idx === currentQ.correctIndex;
     const updated: GameProgress = {
       ...progress,
-      xp: isCorrect ? progress.xp + currentQ.xpReward : progress.xp,
-      quids: isCorrect ? progress.quids + 1 : progress.quids,
-      completedExerciseIds: isCorrect && !progress.completedExerciseIds.includes(currentQ.id)
-        ? [...progress.completedExerciseIds, currentQ.id]
-        : progress.completedExerciseIds
+      xp: correct ? progress.xp + currentQ.xpReward : progress.xp,
+      quids: correct ? progress.quids + 1 : progress.quids,
+      completedExerciseIds:
+        correct && !progress.completedExerciseIds.includes(currentQ.id)
+          ? [...progress.completedExerciseIds, currentQ.id]
+          : progress.completedExerciseIds
     };
     onUpdateProgress(updated);
   };
 
   const handleNext = () => {
     setCurrentIndex((prev) => prev + 1);
-    setSelectedOption(null);
+    setUserInput('');
+    setShowHint(false);
     setIsAnswered(false);
+    setIsCorrect(false);
   };
 
   if (!currentQ) {
     return (
       <div className="bg-white rounded-3xl p-8 text-center max-w-lg mx-auto border border-slate-200">
-        <p className="text-slate-600 text-sm">No hay ejercicios para el filtro seleccionado.</p>
-        <button
-          type="button"
-          onClick={() => setFilterType('all')}
-          className="mt-3 px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs"
-        >
-          Ver todos los ejercicios
-        </button>
+        <p className="text-slate-600 text-sm">No hay ejercicios disponibles en este momento.</p>
       </div>
     );
   }
-
-  const isCorrect = selectedOption === currentQ.correctIndex;
 
   return (
     <div className="space-y-4 max-w-3xl mx-auto animate-in fade-in duration-200">
@@ -91,10 +90,10 @@ export const StreetDrillArena: React.FC<StreetDrillArenaProps> = ({
           </div>
           <div>
             <h2 className="font-extrabold text-slate-900 text-sm sm:text-base">
-              Machaque Rápido de Calle
+              Machaque de Escritura Callejera
             </h2>
             <p className="text-xs text-slate-500">
-              Entrena respuestas instantáneas y gana XP y Quids para desbloquear más barrios.
+              Escribe las respuestas en inglés cotidiano para ganar XP y Quids.
             </p>
           </div>
         </div>
@@ -109,82 +108,11 @@ export const StreetDrillArena: React.FC<StreetDrillArenaProps> = ({
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-        <button
-          type="button"
-          onClick={() => {
-            setFilterType('all');
-            setCurrentIndex(0);
-            setSelectedOption(null);
-            setIsAnswered(false);
-          }}
-          className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap cursor-pointer transition-all ${
-            filterType === 'all'
-              ? 'bg-slate-900 text-white shadow-xs'
-              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
-          }`}
-        >
-          Todos ({availableExercises.length})
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setFilterType('street_translate');
-            setCurrentIndex(0);
-            setSelectedOption(null);
-            setIsAnswered(false);
-          }}
-          className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap cursor-pointer transition-all ${
-            filterType === 'street_translate'
-              ? 'bg-indigo-600 text-white shadow-xs'
-              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
-          }`}
-        >
-          🔄 De Formal a Callejero
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setFilterType('whatsapp_decode');
-            setCurrentIndex(0);
-            setSelectedOption(null);
-            setIsAnswered(false);
-          }}
-          className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap cursor-pointer transition-all ${
-            filterType === 'whatsapp_decode'
-              ? 'bg-emerald-600 text-white shadow-xs'
-              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
-          }`}
-        >
-          📱 Descifra el WhatsApp
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setFilterType('sarcasm_radar');
-            setCurrentIndex(0);
-            setSelectedOption(null);
-            setIsAnswered(false);
-          }}
-          className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap cursor-pointer transition-all ${
-            filterType === 'sarcasm_radar'
-              ? 'bg-purple-600 text-white shadow-xs'
-              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
-          }`}
-        >
-          🎭 Radar de Sarcasmo
-        </button>
-      </div>
-
       {/* Exercise Card */}
       <div className="bg-white rounded-3xl border-2 border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
         <div className="flex items-center justify-between text-xs text-slate-500 font-bold">
           <span>
-            Pregunta {(currentIndex % availableExercises.length) + 1} de {availableExercises.length}
+            Frase {(currentIndex % availableExercises.length) + 1} de {availableExercises.length}
           </span>
           <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full font-black">
             +{currentQ.xpReward} XP ⚡
@@ -197,12 +125,6 @@ export const StreetDrillArena: React.FC<StreetDrillArenaProps> = ({
             Situación de Calle:
           </span>
           <p className="text-slate-800 font-medium">{currentQ.situation}</p>
-
-          {currentQ.incomingMessage && (
-            <div className="mt-2.5 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-emerald-950 font-mono text-xs">
-              💬 {currentQ.incomingMessage}
-            </div>
-          )}
         </div>
 
         {/* Question */}
@@ -210,38 +132,50 @@ export const StreetDrillArena: React.FC<StreetDrillArenaProps> = ({
           {currentQ.question}
         </h3>
 
-        {/* Options */}
-        <div className="space-y-2.5">
-          {currentQ.options.map((opt, idx) => {
-            let btnStyle =
-              'bg-white border-slate-200 text-slate-800 hover:border-indigo-400 hover:bg-indigo-50/50';
-
-            if (isAnswered) {
-              if (idx === currentQ.correctIndex) {
-                btnStyle = 'bg-emerald-500 border-emerald-600 text-white shadow-xs font-bold';
-              } else if (idx === selectedOption) {
-                btnStyle = 'bg-rose-500 border-rose-600 text-white font-bold';
-              } else {
-                btnStyle = 'bg-slate-100 border-slate-200 text-slate-400 opacity-60';
-              }
-            }
-
-            return (
+        {/* Hint */}
+        {currentQ.hint && (
+          <div>
+            {!showHint ? (
               <button
-                key={idx}
                 type="button"
-                onClick={() => handleSelectOption(idx)}
-                disabled={isAnswered}
-                className={`w-full text-left p-3.5 rounded-2xl border-2 text-xs sm:text-sm transition-all flex items-start gap-3 cursor-pointer ${btnStyle}`}
+                onClick={() => setShowHint(true)}
+                className="text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1.5 cursor-pointer"
               >
-                <span className="w-6 h-6 rounded-xl bg-black/10 flex items-center justify-center font-bold text-xs shrink-0">
-                  {String.fromCharCode(65 + idx)}
-                </span>
-                <span className="flex-1 leading-snug">{opt}</span>
+                <Lightbulb className="w-4 h-4 text-amber-500" />
+                <span>¿Dudas? Ver pista para escribir</span>
               </button>
-            );
-          })}
-        </div>
+            ) : (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 animate-in fade-in">
+                💡 {currentQ.hint}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Form with Input */}
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <input
+            type="text"
+            value={userInput}
+            onChange={(e) => setUserInput(e.target.value)}
+            disabled={isAnswered}
+            placeholder="Escribe cómo lo dirías en inglés cotidiano..."
+            className="w-full p-4 rounded-2xl border-2 border-slate-300 focus:border-indigo-600 focus:bg-white text-sm font-semibold text-slate-900 outline-none transition-all placeholder:text-slate-400"
+            autoComplete="off"
+            autoFocus
+          />
+
+          {!isAnswered && (
+            <button
+              type="submit"
+              disabled={!userInput.trim()}
+              className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-all"
+            >
+              <span>Comprobar respuesta</span>
+              <Send className="w-4 h-4" />
+            </button>
+          )}
+        </form>
 
         {/* Feedback Card */}
         {isAnswered && (
@@ -255,17 +189,27 @@ export const StreetDrillArena: React.FC<StreetDrillArenaProps> = ({
             <div className="flex items-center gap-2 font-black text-sm mb-1">
               {isCorrect ? (
                 <>
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                  <span>¡Totalmente acertado! (+{currentQ.xpReward} XP y +1 Quid 💷)</span>
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <span>¡Totalmente natural! (+{currentQ.xpReward} XP y +1 Quid 💷)</span>
                 </>
               ) : (
                 <>
-                  <XCircle className="w-5 h-5 text-rose-600" />
-                  <span>¡Trampa típica de extranjero!</span>
+                  <XCircle className="w-5 h-5 text-rose-600 shrink-0" />
+                  <span>No suena como lo diría un local</span>
                 </>
               )}
             </div>
-            <p className="text-xs sm:text-sm mt-1">{currentQ.explanationEs}</p>
+
+            <div className="mt-2 text-xs sm:text-sm bg-white/90 p-3 rounded-xl border border-slate-200">
+              <span className="text-[10px] font-black uppercase text-slate-500 block mb-0.5">
+                Respuesta natural ideal:
+              </span>
+              <strong className="text-emerald-900 font-black">
+                "{currentQ.sampleIdealAnswer}"
+              </strong>
+            </div>
+
+            <p className="text-xs sm:text-sm mt-2">{currentQ.explanationEs}</p>
             <div className="mt-2 text-xs font-semibold bg-white/80 p-2.5 rounded-xl text-slate-700">
               💡 <strong>Truco callejero:</strong> {currentQ.streetTip}
             </div>
@@ -275,7 +219,7 @@ export const StreetDrillArena: React.FC<StreetDrillArenaProps> = ({
               onClick={handleNext}
               className="mt-3.5 w-full py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-transform active:scale-98"
             >
-              <span>Siguiente Frase de Calle</span>
+              <span>Siguiente Frase</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

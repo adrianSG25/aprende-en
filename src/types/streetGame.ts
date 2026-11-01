@@ -8,16 +8,19 @@ export interface TextbookVsStreet {
 
 export interface StreetExercise {
   id: string;
-  type: 'street_translate' | 'whatsapp_decode' | 'situation_choice' | 'sarcasm_radar' | 'slang_cloze';
+  type: 'street_write' | 'street_translate' | 'whatsapp_decode' | 'situation_choice' | 'sarcasm_radar' | 'slang_cloze';
   situation: string;
   speaker?: string;
   incomingMessage?: string;
   question: string;
-  options: string[];
-  correctIndex: number;
+  acceptedAnswers: string[]; // Variantes aceptadas que el usuario escribe
+  sampleIdealAnswer: string;  // La mejor respuesta en inglés cotidiano
+  hint?: string;              // Pista para escribirla
   explanationEs: string;
   streetTip: string;
   xpReward: number;
+  options?: string[];         // Opcional para apoyo
+  correctIndex?: number;
 }
 
 export interface StreetBossChallenge {
@@ -71,4 +74,36 @@ export interface GameProgress {
   completedExerciseIds: string[];
   streakDays: number;
   lastActiveDate: string;
+}
+
+// WhatsApp Conversation Types
+export interface ChatMessage {
+  id: string;
+  sender: 'contact' | 'user';
+  text: string;
+  timestamp: string;
+  feedback?: {
+    isGood: boolean;
+    tip?: string;
+  };
+}
+
+export interface ChatStep {
+  contactSays: string;
+  userGoalEs: string;
+  hint: string;
+  acceptableReplies: string[]; // Palabras clave o frases aceptables
+  sampleGoodReply: string;
+  feedbackIfClose?: string;
+}
+
+export interface MultiTurnChatScenario {
+  id: string;
+  name: string;
+  role: string;
+  avatar: string;
+  initialStatus: string;
+  topicTitle: string;
+  descriptionEs: string;
+  steps: ChatStep[];
 }

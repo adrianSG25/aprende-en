@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StreetBossChallenge, StreetExercise } from '../types/streetGame';
+import { checkAnswer } from '../utils/answerChecker';
 import confetti from 'canvas-confetti';
 import {
   ShieldAlert,
@@ -7,7 +8,9 @@ import {
   XCircle,
   RotateCcw,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Lightbulb,
+  Send
 } from 'lucide-react';
 
 interface StreetBossFightProps {
@@ -22,23 +25,27 @@ export const StreetBossFight: React.FC<StreetBossFightProps> = ({
   onClose
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [userInput, setUserInput] = useState('');
+  const [showHint, setShowHint] = useState(false);
   const [isAnswered, setIsAnswered] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
   const [score, setScore] = useState(0);
   const [hearts, setHearts] = useState(3);
   const [showResult, setShowResult] = useState(false);
 
   const currentQ: StreetExercise = boss.questions[currentIndex];
   const totalQ = boss.questions.length;
-  const isCorrect = selectedOption === currentQ.correctIndex;
   const isPassed = Math.round((score / totalQ) * 100) >= boss.passPercentage;
 
-  const handleSelectOption = (idx: number) => {
-    if (isAnswered) return;
-    setSelectedOption(idx);
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!userInput.trim() || isAnswered) return;
+
+    const correct = checkAnswer(userInput, currentQ.acceptedAnswers);
+    setIsCorrect(correct);
     setIsAnswered(true);
 
-    if (idx === currentQ.correctIndex) {
+    if (correct) {
       setScore((prev) => prev + 1);
     } else {
       setHearts((prev) => Math.max(0, prev - 1));
@@ -48,11 +55,13 @@ export const StreetBossFight: React.FC<StreetBossFightProps> = ({
   const handleNext = () => {
     if (currentIndex + 1 < totalQ && hearts > 0) {
       setCurrentIndex((prev) => prev + 1);
-      setSelectedOption(null);
+      setUserInput('');
+      setShowHint(false);
       setIsAnswered(false);
+      setIsCorrect(false);
     } else {
       setShowResult(true);
-      const finalScore = isCorrect ? score : score; // already updated
+      const finalScore = isCorrect ? score : score;
       const passed = Math.round((finalScore / totalQ) * 100) >= boss.passPercentage;
       if (passed) {
         confetti({
@@ -67,8 +76,10 @@ export const StreetBossFight: React.FC<StreetBossFightProps> = ({
 
   const handleRetry = () => {
     setCurrentIndex(0);
-    setSelectedOption(null);
+    setUserInput('');
+    setShowHint(false);
     setIsAnswered(false);
+    setIsCorrect(false);
     setScore(0);
     setHearts(3);
     setShowResult(false);
@@ -82,7 +93,7 @@ export const StreetBossFight: React.FC<StreetBossFightProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-3 right-3 text-slate-400 hover:text-white text-xs bg-slate-800/80 px-2.5 py-1.5 rounded-xl border border-slate-700"
+            className="absolute top-3 right-3 text-slate-400 hover:text-white text-xs bg-slate-800/80 px-2.5 py-1.5 rounded-xl border border-slate-700 cursor-pointer"
           >
             ✕ Salir
           </button>
@@ -92,7 +103,7 @@ export const StreetBossFight: React.FC<StreetBossFightProps> = ({
           </div>
 
           <span className="inline-block text-[10px] font-black tracking-widest uppercase px-3 py-1 rounded-full bg-rose-600 text-white mb-1 shadow-sm">
-            ⚔️ Desafío de Jefe de Nivel {boss.levelId}
+            ⚔️ Prueba de Jefe de Nivel {boss.levelId} (Escribe en Inglés)
           </span>
           <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
             {boss.bossName}
@@ -130,12 +141,6 @@ export const StreetBossFight: React.FC<StreetBossFightProps> = ({
                 <span>Situación de Calle:</span>
               </div>
               <p className="text-slate-800 font-medium">{currentQ.situation}</p>
-
-              {currentQ.incomingMessage && (
-                <div className="mt-2.5 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-emerald-950 font-mono text-xs">
-                  💬 {currentQ.incomingMessage}
-                </div>
-              )}
             </div>
 
             {/* Question */}
@@ -143,38 +148,50 @@ export const StreetBossFight: React.FC<StreetBossFightProps> = ({
               {currentQ.question}
             </h3>
 
-            {/* Options */}
-            <div className="space-y-2.5">
-              {currentQ.options.map((opt, idx) => {
-                let btnStyle =
-                  'bg-white border-slate-200 text-slate-800 hover:border-indigo-400 hover:bg-indigo-50/50';
-
-                if (isAnswered) {
-                  if (idx === currentQ.correctIndex) {
-                    btnStyle = 'bg-emerald-500 border-emerald-600 text-white shadow-md font-bold';
-                  } else if (idx === selectedOption) {
-                    btnStyle = 'bg-rose-500 border-rose-600 text-white font-bold';
-                  } else {
-                    btnStyle = 'bg-slate-100 border-slate-200 text-slate-400 opacity-60';
-                  }
-                }
-
-                return (
+            {/* Hint */}
+            {currentQ.hint && (
+              <div>
+                {!showHint ? (
                   <button
-                    key={idx}
                     type="button"
-                    onClick={() => handleSelectOption(idx)}
-                    disabled={isAnswered}
-                    className={`w-full text-left p-3.5 rounded-2xl border-2 text-xs sm:text-sm transition-all flex items-start gap-3 cursor-pointer ${btnStyle}`}
+                    onClick={() => setShowHint(true)}
+                    className="text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1.5 cursor-pointer"
                   >
-                    <span className="w-6 h-6 rounded-xl bg-black/10 flex items-center justify-center font-bold text-xs shrink-0">
-                      {String.fromCharCode(65 + idx)}
-                    </span>
-                    <span className="flex-1 leading-snug">{opt}</span>
+                    <Lightbulb className="w-4 h-4 text-amber-500" />
+                    <span>Ver pista para escribirlo</span>
                   </button>
-                );
-              })}
-            </div>
+                ) : (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 animate-in fade-in">
+                    💡 {currentQ.hint}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* User Input Form */}
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <input
+                type="text"
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                disabled={isAnswered}
+                placeholder="Escribe tu respuesta aquí..."
+                className="w-full p-4 rounded-2xl border-2 border-slate-300 focus:border-indigo-600 focus:bg-white text-sm font-semibold text-slate-900 outline-none transition-all placeholder:text-slate-400"
+                autoComplete="off"
+                autoFocus
+              />
+
+              {!isAnswered && (
+                <button
+                  type="submit"
+                  disabled={!userInput.trim()}
+                  className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-all"
+                >
+                  <span>Enviar mi respuesta al Jefe</span>
+                  <Send className="w-4 h-4" />
+                </button>
+              )}
+            </form>
 
             {/* Feedback & Street Tip */}
             {isAnswered && (
@@ -188,17 +205,27 @@ export const StreetBossFight: React.FC<StreetBossFightProps> = ({
                 <div className="flex items-center gap-2 font-black text-sm mb-1">
                   {isCorrect ? (
                     <>
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                      <span>¡Respuesta Perfecta de Calle! (+{currentQ.xpReward} XP)</span>
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                      <span>¡Respuesta Natural! (+{currentQ.xpReward} XP)</span>
                     </>
                   ) : (
                     <>
-                      <XCircle className="w-5 h-5 text-rose-600" />
-                      <span>¡Cazado como un guiri! Pierdes un corazón</span>
+                      <XCircle className="w-5 h-5 text-rose-600 shrink-0" />
+                      <span>No es lo que diría un local. Pierdes un corazón</span>
                     </>
                   )}
                 </div>
-                <p className="text-xs sm:text-sm mt-1">{currentQ.explanationEs}</p>
+
+                <div className="mt-2 text-xs sm:text-sm bg-white/90 p-3 rounded-xl border border-slate-200">
+                  <span className="text-[10px] font-black uppercase text-slate-500 block mb-0.5">
+                    Respuesta ideal esperada:
+                  </span>
+                  <strong className="text-emerald-900 font-black">
+                    "{currentQ.sampleIdealAnswer}"
+                  </strong>
+                </div>
+
+                <p className="text-xs sm:text-sm mt-2">{currentQ.explanationEs}</p>
                 <div className="mt-2 text-xs font-semibold bg-white/70 p-2 rounded-xl text-slate-700">
                   💡 <strong>Truco callejero:</strong> {currentQ.streetTip}
                 </div>
@@ -208,7 +235,7 @@ export const StreetBossFight: React.FC<StreetBossFightProps> = ({
                   onClick={handleNext}
                   className="mt-3.5 w-full py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer transition-transform active:scale-95"
                 >
-                  <span>{currentIndex + 1 < totalQ && hearts > 0 ? 'Siguiente Desafío' : 'Ver Veredicto del Jefe'}</span>
+                  <span>{currentIndex + 1 < totalQ && hearts > 0 ? 'Siguiente Pregunta' : 'Ver Veredicto del Jefe'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -222,12 +249,12 @@ export const StreetBossFight: React.FC<StreetBossFightProps> = ({
             </div>
 
             <h3 className="text-2xl font-black text-slate-900">
-              {isPassed ? '¡JEFE DERROTADO!' : 'TE HAN CAZADO'}
+              {isPassed ? '¡JEFE DERROTADO!' : 'NO HAS SUPERADO EL RETO'}
             </h3>
 
             <p className="text-xs sm:text-sm text-slate-600 max-w-sm mx-auto">
               {isPassed
-                ? `Has acertado ${score} de ${totalQ} (${Math.round((score / totalQ) * 100)}%). ${boss.bossName} reconoce que tienes calle y te permite pasar al siguiente nivel.`
+                ? `Has acertado ${score} de ${totalQ} (${Math.round((score / totalQ) * 100)}%). ${boss.bossName} reconoce que te sabes desenvolver y te da paso al siguiente nivel.`
                 : `Has acertado ${score} de ${totalQ} (${Math.round((score / totalQ) * 100)}%). Necesitas al menos el ${boss.passPercentage}% de acierto para avanzar.`}
             </p>
 
@@ -252,7 +279,7 @@ export const StreetBossFight: React.FC<StreetBossFightProps> = ({
             ) : (
               <div className="bg-rose-50 border-2 border-rose-300 rounded-2xl p-4 text-rose-950 text-xs sm:text-sm">
                 <p className="font-bold">
-                  "{boss.bossName}: Repasa las frases del nivel en los temas y vuelve a intentarlo cuando estés listo, colega."
+                  "{boss.bossName}: Repasa las frases y vuelve a intentarlo cuando quieras, colega."
                 </p>
               </div>
             )}
@@ -265,7 +292,7 @@ export const StreetBossFight: React.FC<StreetBossFightProps> = ({
                   className="flex-1 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  <span>Reintentar Combate</span>
+                  <span>Reintentar con 3 Vidas</span>
                 </button>
               )}
               <button
@@ -273,7 +300,7 @@ export const StreetBossFight: React.FC<StreetBossFightProps> = ({
                 onClick={onClose}
                 className="flex-1 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer"
               >
-                <span>{isPassed ? 'Continuar al Mapa' : 'Volver a Estudiar'}</span>
+                <span>{isPassed ? 'Continuar al Mapa' : 'Volver a Repasar'}</span>
               </button>
             </div>
           </div>

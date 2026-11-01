@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StreetTopic, StreetExercise } from '../types/streetGame';
+import { checkAnswer } from '../utils/answerChecker';
 import {
   ArrowLeft,
   Sparkles,
@@ -7,7 +8,9 @@ import {
   Volume2,
   CheckCircle2,
   XCircle,
-  ArrowRight
+  ArrowRight,
+  Lightbulb,
+  Send
 } from 'lucide-react';
 
 interface StreetTopicViewProps {
@@ -25,31 +28,36 @@ export const StreetTopicView: React.FC<StreetTopicViewProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'phrases' | 'drills'>('phrases');
   const [drillIndex, setDrillIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [userInput, setUserInput] = useState('');
+  const [showHint, setShowHint] = useState(false);
   const [isAnswered, setIsAnswered] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
 
-  const currentExercise: StreetExercise = topic.exercises[drillIndex];
-  const isCompleted = completedExerciseIds.includes(currentExercise?.id);
-  const isCorrect = selectedOption === currentExercise?.correctIndex;
+  const currentExercise: StreetExercise | undefined = topic.exercises[drillIndex];
+  const isCompleted = currentExercise ? completedExerciseIds.includes(currentExercise.id) : false;
 
-  const handleSelectOption = (idx: number) => {
-    if (isAnswered) return;
-    setSelectedOption(idx);
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!currentExercise || !userInput.trim() || isAnswered) return;
+
+    const correct = checkAnswer(userInput, currentExercise.acceptedAnswers);
+    setIsCorrect(correct);
     setIsAnswered(true);
-    const correct = idx === currentExercise.correctIndex;
     onCompleteExercise(currentExercise.id, correct, correct ? currentExercise.xpReward : 0);
   };
 
   const handleNextDrill = () => {
     if (drillIndex + 1 < topic.exercises.length) {
       setDrillIndex((prev) => prev + 1);
-      setSelectedOption(null);
+      setUserInput('');
+      setShowHint(false);
       setIsAnswered(false);
+      setIsCorrect(false);
     }
   };
 
   return (
-    <div className="space-y-4 max-w-4xl mx-auto animate-in fade-in duration-200">
+    <div className="space-y-4 max-w-3xl mx-auto animate-in fade-in duration-200">
       {/* Top Bar with Back Button */}
       <div className="flex items-center justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 shadow-xs">
         <button
@@ -82,7 +90,7 @@ export const StreetTopicView: React.FC<StreetTopicViewProps> = ({
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            ⚡ Desafíos ({topic.exercises.length})
+            ✍️ Escribir ({topic.exercises.length})
           </button>
         </div>
       </div>
@@ -95,7 +103,7 @@ export const StreetTopicView: React.FC<StreetTopicViewProps> = ({
           </div>
           <div>
             <span className="text-[10px] font-black tracking-widest uppercase px-2.5 py-0.5 rounded-full bg-indigo-500/30 border border-indigo-400 text-indigo-200">
-              Tema de Calle
+              Tema Práctico de Calle
             </span>
             <h2 className="text-xl sm:text-2xl font-black mt-1 text-white tracking-tight">
               {topic.title}
@@ -117,9 +125,9 @@ export const StreetTopicView: React.FC<StreetTopicViewProps> = ({
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs sm:text-sm text-amber-950 flex items-start gap-3">
             <Sparkles className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div>
-              <strong className="font-black text-amber-900">Regla de Oro Británica:</strong>
+              <strong className="font-black text-amber-900">Inglés Cotidiano vs Academia:</strong>
               <p className="mt-0.5 text-amber-800">
-                Aprende la diferencia radical entre el inglés "encorsetado" que te enseñan en la escuela y cómo lo dice de verdad la gente en la calle en el día a día.
+                Aprende cómo lo expresa la gente real en UK para no sonar como una enciclopedia al hablar con colegas, vecinos o en tiendas.
               </p>
             </div>
           </div>
@@ -160,7 +168,7 @@ export const StreetTopicView: React.FC<StreetTopicViewProps> = ({
                 </div>
 
                 <p className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                  💡 <strong>Cuándo se usa:</strong> {item.context}
+                  💡 <strong>Contexto de uso:</strong> {item.context}
                 </p>
 
                 {item.notes && (
@@ -177,7 +185,7 @@ export const StreetTopicView: React.FC<StreetTopicViewProps> = ({
             <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-2">
               <div className="flex items-center gap-2 text-xs font-black text-slate-900">
                 <BookOpen className="w-4 h-4 text-indigo-600" />
-                <span>Secretos Culturales de Calle</span>
+                <span>Secretos Cotidianos de UK</span>
               </div>
               <ul className="space-y-1.5 text-xs text-slate-600">
                 {topic.culturalSecrets.map((secret, sIdx) => (
@@ -192,7 +200,7 @@ export const StreetTopicView: React.FC<StreetTopicViewProps> = ({
             <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-2">
               <div className="flex items-center gap-2 text-xs font-black text-slate-900">
                 <Volume2 className="w-4 h-4 text-emerald-600" />
-                <span>Pronunciación y Ritmo Real</span>
+                <span>Pronunciación y Entonación</span>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">
                 {topic.audioTips}
@@ -207,20 +215,20 @@ export const StreetTopicView: React.FC<StreetTopicViewProps> = ({
               onClick={() => setActiveTab('drills')}
               className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-98 cursor-pointer"
             >
-              <span>¡Entendido! Pasar a los Desafíos de Práctica (+XP)</span>
+              <span>¡Entendido! Escribir las respuestas en los ejercicios (+XP)</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
       )}
 
-      {/* TAB 2: DRILLS */}
+      {/* TAB 2: DRILLS (WRITE YOUR ANSWER!) */}
       {activeTab === 'drills' && currentExercise && (
-        <div className="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
+        <div className="bg-white rounded-3xl border-2 border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between text-xs font-bold text-slate-500">
             <div className="flex items-center gap-2">
               <span>
-                Desafío {drillIndex + 1} de {topic.exercises.length}
+                Ejercicio {drillIndex + 1} de {topic.exercises.length}
               </span>
               {isCompleted && (
                 <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">
@@ -228,7 +236,7 @@ export const StreetTopicView: React.FC<StreetTopicViewProps> = ({
                 </span>
               )}
             </div>
-            <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full font-black">
+            <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-full font-black">
               +{currentExercise.xpReward} XP Callejera ⚡
             </span>
           </div>
@@ -239,53 +247,61 @@ export const StreetTopicView: React.FC<StreetTopicViewProps> = ({
               Situación Real
             </span>
             <p className="text-slate-800 font-medium">{currentExercise.situation}</p>
-
-            {currentExercise.incomingMessage && (
-              <div className="mt-2.5 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-emerald-950 font-mono text-xs">
-                💬 {currentExercise.incomingMessage}
-              </div>
-            )}
           </div>
 
-          {/* Question */}
+          {/* Question / Goal */}
           <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">
             {currentExercise.question}
           </h3>
 
-          {/* Options */}
-          <div className="space-y-2.5">
-            {currentExercise.options.map((opt, idx) => {
-              let btnClass =
-                'bg-white border-slate-200 text-slate-800 hover:border-indigo-400 hover:bg-indigo-50/50';
-
-              if (isAnswered) {
-                if (idx === currentExercise.correctIndex) {
-                  btnClass = 'bg-emerald-500 border-emerald-600 text-white shadow-sm font-bold';
-                } else if (idx === selectedOption) {
-                  btnClass = 'bg-rose-500 border-rose-600 text-white font-bold';
-                } else {
-                  btnClass = 'bg-slate-100 border-slate-200 text-slate-400 opacity-60';
-                }
-              }
-
-              return (
+          {/* Hint button & Box */}
+          {currentExercise.hint && (
+            <div>
+              {!showHint ? (
                 <button
-                  key={idx}
                   type="button"
-                  onClick={() => handleSelectOption(idx)}
-                  disabled={isAnswered}
-                  className={`w-full text-left p-3.5 rounded-2xl border-2 text-xs sm:text-sm transition-all flex items-start gap-3 cursor-pointer ${btnClass}`}
+                  onClick={() => setShowHint(true)}
+                  className="text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1.5 cursor-pointer"
                 >
-                  <span className="w-6 h-6 rounded-xl bg-black/10 flex items-center justify-center font-bold text-xs shrink-0">
-                    {String.fromCharCode(65 + idx)}
-                  </span>
-                  <span className="flex-1 leading-snug">{opt}</span>
+                  <Lightbulb className="w-4 h-4 text-amber-500" />
+                  <span>¿Dudas? Ver pista para escribirlo</span>
                 </button>
-              );
-            })}
-          </div>
+              ) : (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 animate-in fade-in">
+                  💡 {currentExercise.hint}
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* Result Card */}
+          {/* Text Input Form (Type your response) */}
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="relative">
+              <input
+                type="text"
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                disabled={isAnswered}
+                placeholder="Escribe tu respuesta en inglés aquí..."
+                className="w-full p-4 rounded-2xl border-2 border-slate-300 focus:border-indigo-600 focus:bg-white text-sm font-semibold text-slate-900 outline-none transition-all placeholder:text-slate-400"
+                autoComplete="off"
+                autoFocus
+              />
+            </div>
+
+            {!isAnswered ? (
+              <button
+                type="submit"
+                disabled={!userInput.trim()}
+                className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+              >
+                <span>Comprobar lo que he escrito</span>
+                <Send className="w-4 h-4" />
+              </button>
+            ) : null}
+          </form>
+
+          {/* Feedback Card */}
           {isAnswered && (
             <div
               className={`p-4 rounded-2xl border-2 animate-in fade-in duration-200 ${
@@ -297,41 +313,52 @@ export const StreetTopicView: React.FC<StreetTopicViewProps> = ({
               <div className="flex items-center gap-2 font-black text-sm mb-1">
                 {isCorrect ? (
                   <>
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                    <span>¡Clavado! Hablas como un local</span>
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                    <span>¡Exacto! Lo has escrito de forma natural (+{currentExercise.xpReward} XP)</span>
                   </>
                 ) : (
                   <>
-                    <XCircle className="w-5 h-5 text-rose-600" />
-                    <span>¡Ojo, trampa de guiri!</span>
+                    <XCircle className="w-5 h-5 text-rose-600 shrink-0" />
+                    <span>Casi, pero en la calle se dice de otra forma</span>
                   </>
                 )}
               </div>
-              <p className="text-xs sm:text-sm mt-1">{currentExercise.explanationEs}</p>
+
+              <div className="mt-2 text-xs sm:text-sm bg-white/90 p-3 rounded-xl border border-slate-200">
+                <span className="text-[10px] font-black uppercase text-slate-500 block mb-0.5">
+                  Respuesta ideal de calle:
+                </span>
+                <strong className="text-emerald-900 text-sm font-black">
+                  "{currentExercise.sampleIdealAnswer}"
+                </strong>
+              </div>
+
+              <p className="text-xs sm:text-sm mt-2">{currentExercise.explanationEs}</p>
+
               <div className="mt-2 text-xs font-semibold bg-white/80 p-2.5 rounded-xl text-slate-700">
-                💡 <strong>Truco callejero:</strong> {currentExercise.streetTip}
+                💡 <strong>Truco:</strong> {currentExercise.streetTip}
               </div>
 
               {drillIndex + 1 < topic.exercises.length ? (
                 <button
                   type="button"
                   onClick={handleNextDrill}
-                  className="mt-3.5 w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                  className="mt-3.5 w-full py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer"
                 >
-                  <span>Siguiente Desafío</span>
+                  <span>Siguiente Ejercicio para Escribir</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               ) : (
                 <div className="mt-4 p-3 bg-white rounded-xl border border-emerald-200 text-center">
                   <span className="text-xs font-black text-emerald-800">
-                    🎉 ¡Has completado todos los ejercicios de este tema!
+                    🎉 ¡Has completado todos los ejercicios escritos de este tema!
                   </span>
                   <button
                     type="button"
                     onClick={onBack}
                     className="mt-2 w-full py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs cursor-pointer"
                   >
-                    Volver al Mapa y Desafiar al Jefe
+                    Volver al Mapa
                   </button>
                 </div>
               )}
