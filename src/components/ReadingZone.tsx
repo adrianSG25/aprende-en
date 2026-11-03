@@ -6,10 +6,16 @@ import { analyzeWritingLocally } from '../data/writingData';
 import {
   generateAIStoryWithOpenQuestions,
   evaluateStoryOpenAnswerWithAI,
+  explainWordInStoryContextWithAI,
   AIGeneratedStory,
   AIStoryOpenQuestion,
   OpenAnswerFeedback
 } from '../services/aiService';
+import {
+  appendCustomDictionaryWords,
+  DictionaryWord,
+  DICTIONARY_WORDS
+} from '../data/fieldDictionaryData';
 import { ExerciseCard } from './ExerciseCard';
 import {
   BookOpen,
@@ -22,8 +28,45 @@ import {
   Cpu,
   PenTool,
   AlertTriangle,
-  Languages
+  Languages,
+  Search,
+  Volume2,
+  Check,
+  Plus,
+  RotateCcw,
+  BookMarked
 } from 'lucide-react';
+
+// Pronunciación de voz nativa británica en navegador
+const speakEnglishText = (text: string) => {
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-GB';
+      u.rate = 0.9;
+      window.speechSynthesis.speak(u);
+    } catch {
+      // Ignorar si el navegador bloquea audio automático
+    }
+  }
+};
+
+// Normalizar texto para comparación tolerante de signos de puntuación
+const normalizeSentence = (str: string) => {
+  return str
+    .toLowerCase()
+    .replace(/[.,/#!$%^&*;:{}=\-_`~()?"'’]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+interface RepetitionStatus {
+  currentInput: string;
+  repsCompleted: number;
+  isCompleted: boolean;
+  errorNotice?: string;
+}
 
 interface ReadingZoneProps {
   completedStories: string[];
@@ -142,6 +185,21 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
   const [openLoadingId, setOpenLoadingId] = useState<string | null>(null);
   const [openFeedbacks, setOpenFeedbacks] = useState<Record<string, OpenAnswerFeedback>>({});
   const [openShowTrans, setOpenShowTrans] = useState<Record<string, boolean>>({});
+  const [repetitionMap, setRepetitionMap] = useState<Record<string, RepetitionStatus>>({});
+
+  // Estados para el buscador de palabras que no sabes de la lectura
+  const [lookupQuery, setLookupQuery] = useState('');
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupResult, setLookupResult] = useState<{
+    word: string;
+    meaningEs: string;
+    pron: string;
+    partOfSpeech: string;
+    exampleEn: string;
+    exampleEs: string;
+  } | null>(null);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [savedWords, setSavedWords] = useState<Set<string>>(new Set());
 
   // Analizador libre de texto pegado
   const [customText, setCustomText] = useState('');
@@ -158,6 +216,10 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
     setChecked({});
     setOpenInputs({});
     setOpenFeedbacks({});
+    setLookupQuery('');
+    setLookupResult(null);
+    setLookupError(null);
+    setRepetitionMap({});
   };
 
   const handleCheckStoryQuestion = (qId: string, directAnswer?: string) => {
@@ -209,6 +271,14 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
         level
       );
       setOpenFeedbacks((prev) => ({ ...prev, [q.id]: aiRes }));
+      setRepetitionMap((prev) => ({
+        ...prev,
+        [q.id]: {
+          currentInput: '',
+          repsCompleted: 0,
+          isCompleted: false
+        }
+      }));
     } catch {
       // Fallback local
       const local = analyzeWritingLocally(userText);
@@ -230,9 +300,112 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
           }))
       };
       setOpenFeedbacks((prev) => ({ ...prev, [q.id]: fallbackFeedback }));
+      setRepetitionMap((prev) => ({
+        ...prev,
+        [q.id]: {
+          currentInput: '',
+          repsCompleted: 0,
+          isCompleted: false
+        }
+      }));
     } finally {
       setOpenLoadingId(null);
     }
+  };
+
+  const handleCheckRepetition = (questionId: string, targetSentence: string) => {
+    const current = repetitionMap[questionId] || { currentInput: '', repsCompleted: 0, isCompleted: false };
+    const inputClean = normalizeSentence(current.currentInput);
+    const targetClean = normalizeSentence(targetSentence);
+
+    if (!inputClean) return;
+
+    if (inputClean === targetClean) {
+      const nextReps = current.repsCompleted + 1;
+      const isDone = nextReps >= 2;
+      setRepetitionMap((prev) => ({
+        ...prev,
+        [questionId]: {
+          currentInput: '',
+          repsCompleted: nextReps,
+          isCompleted: isDone,
+          errorNotice: undefined
+        }
+      }));
+    } else {
+      setRepetitionMap((prev) => ({
+        ...prev,
+        [questionId]: {
+          ...current,
+          errorNotice: 'No coincide exactamente. Fíjate en cada palabra de la frase corregida y vuelve a escribirla.'
+        }
+      }));
+    }
+  };
+
+  const handleLookupWord = async (storyParagraphs: string[]) => {
+    const q = lookupQuery.trim().toLowerCase();
+    if (!q) return;
+
+    setLookupLoading(true);
+    setLookupError(null);
+
+    try {
+      // 1. Coincidencia estática en el diccionario local
+      const match = DICTIONARY_WORDS.find(
+        (w) => w.en.toLowerCase() === q || w.acceptedAnswers.some((a) => a.toLowerCase() === q)
+      );
+
+      if (match) {
+        setLookupResult({
+          word: match.en,
+          meaningEs: match.es,
+          pron: match.pron,
+          partOfSpeech: match.partOfSpeech,
+          exampleEn: match.exampleEn,
+          exampleEs: match.exampleEs
+        });
+        return;
+      }
+
+      // 2. Consulta a la IA con contexto de la historia
+      const fullStory = storyParagraphs.join(' ');
+      const aiRes = await explainWordInStoryContextWithAI(q, fullStory);
+      setLookupResult({
+        word: q,
+        meaningEs: aiRes.meaningEs,
+        pron: aiRes.pron,
+        partOfSpeech: aiRes.partOfSpeech,
+        exampleEn: aiRes.exampleEn,
+        exampleEs: aiRes.exampleEs
+      });
+    } catch {
+      setLookupError('No se pudo consultar el significado. Comprueba tu conexión o clave de IA.');
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  const handleSaveWordToVocabulary = (
+    word: string,
+    meaningEs: string,
+    pron?: string,
+    exampleEn?: string,
+    exampleEs?: string
+  ) => {
+    const newWord: DictionaryWord = {
+      id: `story-custom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      es: meaningEs,
+      en: word,
+      acceptedAnswers: [word.toLowerCase().trim()],
+      pron: pron || word.toLowerCase(),
+      category: 'custom_ai',
+      partOfSpeech: 'expression',
+      exampleEn: exampleEn || `I learned "${word}" from the text.`,
+      exampleEs: exampleEs || `Aprendí "${word}" de la historia.`
+    };
+    appendCustomDictionaryWords([newWord]);
+    setSavedWords((prev) => new Set(prev).add(word.toLowerCase()));
   };
 
   const handleCreateAIStory = async (e: React.FormEvent) => {
@@ -244,6 +417,10 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
       setAiStoriesList((prev) => [newStory, ...prev]);
       setAiActiveStory(newStory);
       setActiveAnnotation(null);
+      setLookupQuery('');
+      setLookupResult(null);
+      setLookupError(null);
+      setRepetitionMap({});
     } catch (err: unknown) {
       setAiStoryError(
         err instanceof Error ? err.message : 'Error al generar la historia con IA.'
@@ -307,6 +484,228 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
       );
     });
   };
+
+  // Recuadro: Palabras que no sabes del texto + Buscador inteligente
+  const renderVocabularyExplorationBox = (
+    annotations: StoryAnnotation[],
+    paragraphs: string[]
+  ) => (
+    <div className="bg-white border-2 border-indigo-200 rounded-2xl p-4 sm:p-6 space-y-4 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
+            <BookMarked className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-base sm:text-lg font-black text-slate-900">
+              Palabras que no sabes del texto
+            </h3>
+            <p className="text-xs text-slate-600">
+              Vocabulario clave con significado en español y pronunciación. Guarda cualquier palabra en tu Machaque.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Buscador de cualquier palabra de la lectura */}
+      <div className="bg-slate-50 border border-indigo-100 rounded-xl p-3.5 space-y-2.5">
+        <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+          <Search className="w-3.5 h-3.5 text-indigo-600" />
+          <span>¿Hay alguna otra palabra de este texto que no conozcas? Escríbela:</span>
+        </label>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            value={lookupQuery}
+            onChange={(e) => setLookupQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleLookupWord(paragraphs);
+              }
+            }}
+            placeholder="Ej: delayed, inspector, refund, rushed..."
+            className="flex-1 bg-white border border-slate-300 focus:border-indigo-600 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none"
+          />
+          <button
+            type="button"
+            disabled={lookupLoading || !lookupQuery.trim()}
+            onClick={() => handleLookupWord(paragraphs)}
+            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-xs flex items-center justify-center gap-2 cursor-pointer min-h-[42px]"
+          >
+            {lookupLoading ? (
+              <span>Consultando...</span>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>¿Qué significa?</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {lookupError && (
+          <p className="text-xs text-rose-700 bg-rose-50 border border-rose-200 p-2.5 rounded-xl">
+            {lookupError}
+          </p>
+        )}
+
+        {/* Resultado del buscador */}
+        {lookupResult && (
+          <div className="mt-2 p-3.5 rounded-xl bg-white border border-indigo-200 space-y-2 shadow-2xs">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-base font-black text-indigo-900">
+                  {lookupResult.word}
+                </span>
+                {lookupResult.pron && (
+                  <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200">
+                    [{lookupResult.pron}]
+                  </span>
+                )}
+                {lookupResult.partOfSpeech && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 uppercase">
+                    {lookupResult.partOfSpeech}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => speakEnglishText(lookupResult.word)}
+                  title="Escuchar pronunciación"
+                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
+                >
+                  <Volume2 className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleSaveWordToVocabulary(
+                      lookupResult.word,
+                      lookupResult.meaningEs,
+                      lookupResult.pron,
+                      lookupResult.exampleEn,
+                      lookupResult.exampleEs
+                    )
+                  }
+                  disabled={savedWords.has(lookupResult.word.toLowerCase())}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 cursor-pointer transition-all ${
+                    savedWords.has(lookupResult.word.toLowerCase())
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  }`}
+                >
+                  {savedWords.has(lookupResult.word.toLowerCase()) ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>¡Guardada en Vocabulario!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Guardar en mi Machaque</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <p className="text-xs sm:text-sm text-slate-800 font-semibold">
+              👉 {lookupResult.meaningEs}
+            </p>
+
+            {lookupResult.exampleEn && (
+              <div className="text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-slate-600">
+                <p className="font-semibold text-slate-900">"{lookupResult.exampleEn}"</p>
+                {lookupResult.exampleEs && (
+                  <p className="italic text-slate-500 mt-0.5">{lookupResult.exampleEs}</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Expresiones y vocabulario clave del texto */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+            Vocabulario y expresiones destacadas del texto ({annotations.length}):
+          </span>
+          <span className="text-[11px] text-slate-400">
+            Pulsa '+' para guardarlas en tu vocabulario
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-72 overflow-y-auto pr-1">
+          {annotations.map((ann, idx) => {
+            const isSaved = savedWords.has(ann.phrase.toLowerCase());
+            return (
+              <div
+                key={idx}
+                className="bg-slate-50 border border-slate-200 hover:border-indigo-300 rounded-xl p-3 flex flex-col justify-between gap-2 transition-all"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      {ann.label}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => speakEnglishText(ann.phrase)}
+                      title="Escuchar pronunciación"
+                      className="p-1 rounded bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 cursor-pointer"
+                    >
+                      <Volume2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <h4 className="text-sm font-black text-slate-900">
+                    "{ann.phrase}"
+                  </h4>
+                  <p className="text-xs text-slate-600 mt-1 line-clamp-2">
+                    {ann.explanationEs}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleSaveWordToVocabulary(
+                      ann.phrase,
+                      ann.explanationEs,
+                      undefined,
+                      ann.phrase,
+                      ann.explanationEs
+                    )
+                  }
+                  disabled={isSaved}
+                  className={`w-full py-1.5 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                    isSaved
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
+                      : 'bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 hover:border-indigo-400'
+                  }`}
+                >
+                  {isSaved ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Guardada</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Añadir a mi Vocabulario</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
 
   // Bloque reutilizable para renderizar las Preguntas Abiertas de Escribir
   const renderOpenWritingQuestionsBlock = (
@@ -430,6 +829,116 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                       </p>
                     </div>
                   </div>
+
+                  {/* Sección de Repetición Activa de Fallos (2 Repeticiones obligatorias si hubo errores) */}
+                  {(() => {
+                    const targetSentence = (fb.correctedUserSentence || oq.sampleIdealAnswer).trim();
+                    const hasMistakes =
+                      (fb.errorsFound && fb.errorsFound.length > 0) ||
+                      fb.scoreOutOf10 < 8 ||
+                      normalizeSentence(val) !== normalizeSentence(targetSentence);
+                    const repState = repetitionMap[oq.id];
+
+                    if (!hasMistakes) {
+                      return (
+                        <div className="mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-300 flex items-center gap-2 text-xs sm:text-sm text-emerald-900 font-bold">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                          <span>🌟 ¡Respuesta impecable sin fallos! No necesitas repetir nada.</span>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="mt-4 p-4 rounded-xl bg-amber-50/80 border-2 border-amber-300 space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <RotateCcw className="w-4 h-4 text-amber-700" />
+                            <span className="font-extrabold text-amber-950 text-xs sm:text-sm">
+                              🔁 Repite tu frase corregida para fijarla ({repState?.repsCompleted || 0}/2)
+                            </span>
+                          </div>
+                          {repState?.isCompleted && (
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black border border-emerald-300 flex items-center gap-1">
+                              <Check className="w-3 h-3" />
+                              ¡Fallo superado!
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="text-xs text-amber-900 font-medium leading-relaxed">
+                          Has tenido algún fallo o errata. Escribe la frase completa corregida <strong>2 veces seguidas</strong> para fijar la estructura en tu memoria muscular y no olvidarla:
+                        </p>
+
+                        <div className="bg-white p-3 rounded-xl border border-amber-200 text-xs sm:text-sm font-semibold text-slate-900 flex items-center justify-between gap-2">
+                          <span>"{targetSentence}"</span>
+                          <button
+                            type="button"
+                            onClick={() => speakEnglishText(targetSentence)}
+                            title="Escuchar cómo se pronuncia"
+                            className="p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 cursor-pointer shrink-0"
+                          >
+                            <Volume2 className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {!repState?.isCompleted ? (
+                          <div className="space-y-2">
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={repState?.currentInput || ''}
+                                onChange={(e) => {
+                                  const text = e.target.value;
+                                  setRepetitionMap((prev) => ({
+                                    ...prev,
+                                    [oq.id]: {
+                                      ...(prev[oq.id] || { repsCompleted: 0, isCompleted: false }),
+                                      currentInput: text,
+                                      errorNotice: undefined
+                                    }
+                                  }));
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleCheckRepetition(oq.id, targetSentence);
+                                  }
+                                }}
+                                placeholder={`Repetición ${(repState?.repsCompleted || 0) + 1} de 2: Escribe la frase corregida...`}
+                                className="flex-1 bg-white border-2 border-amber-300 focus:border-amber-600 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleCheckRepetition(oq.id, targetSentence)}
+                                disabled={!repState?.currentInput?.trim()}
+                                className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer min-h-[42px] shrink-0"
+                              >
+                                Comprobar
+                              </button>
+                            </div>
+
+                            {repState?.errorNotice && (
+                              <p className="text-xs text-rose-700 font-semibold bg-rose-50 p-2.5 rounded-lg border border-rose-200">
+                                ⚠️ {repState.errorNotice}
+                              </p>
+                            )}
+
+                            {(repState?.repsCompleted || 0) === 1 && !repState?.isCompleted && (
+                              <p className="text-xs text-emerald-800 font-bold bg-emerald-50 p-2 rounded-lg border border-emerald-200 flex items-center gap-1.5">
+                                <Check className="w-4 h-4 text-emerald-600" />
+                                ¡1ª repetición perfecta! Escríbela 1 vez más para dominarla.
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="bg-emerald-50 border border-emerald-300 p-3 rounded-xl flex items-center gap-2 text-emerald-900 text-xs sm:text-sm font-bold">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                            <span>🎉 ¡Fallo superado con éxito! Has escrito la frase perfecta 2 veces seguidas. ¡Estructura fijada!</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>
@@ -760,6 +1269,12 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                 </div>
               </div>
 
+              {/* Recuadro de Palabras que no sabes del texto */}
+              {renderVocabularyExplorationBox(
+                activeAiStory.annotations,
+                activeAiStory.paragraphs
+              )}
+
               {/* Open Writing Questions for the AI Story */}
               {renderOpenWritingQuestionsBlock(
                 activeAiStory.openQuestions,
@@ -894,6 +1409,12 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Recuadro de Palabras que no sabes del texto */}
+          {renderVocabularyExplorationBox(
+            currentStory.annotations,
+            currentStory.paragraphs
+          )}
 
           {/* 1. Open Writing Questions for Built-in Story */}
           {BUILTIN_OPEN_QUESTIONS[currentStory.id] &&

@@ -780,3 +780,96 @@ Student replied: "${userResponseEn}"`;
     characterFollowUpEs: parsed.characterFollowUpEs || ''
   };
 }
+
+export interface GeneratedWordItem {
+  es: string;
+  en: string;
+  acceptedAnswers: string[];
+  pron: string;
+  category: string;
+  partOfSpeech: 'noun' | 'verb' | 'adjective' | 'connector' | 'expression';
+  exampleEn: string;
+  exampleEs: string;
+}
+
+export async function generateCustomVocabularyWithAI(
+  topicPrompt: string,
+  count: number = 50,
+  existingWords: string[] = []
+): Promise<GeneratedWordItem[]> {
+  const config = getAIConfig();
+  const sys = `You are a native British English teacher creating practical vocabulary cards for a Spanish speaker.
+The user requested vocabulary on: "${topicPrompt}".
+Generate ${count} distinct, useful vocabulary items or expressions.
+CRITICAL INSTRUCTION: Do NOT include any of these words that the user already learned:
+${existingWords.slice(0, 120).join(', ')}
+
+Return ONLY valid JSON with this exact structure:
+{
+  "words": [
+    {
+      "es": "Traducción clara y directa en español cotidiano",
+      "en": "English word, past verb, or expression (lowercase unless proper noun)",
+      "acceptedAnswers": ["en", "alternative form without to", "synonym"],
+      "pron": "Pronunciación fonética escrita en español con tildes para leerla tal cual (ej. 'uént', 'túk', 'nó-ledzh', 'bi-jéi-vior')",
+      "partOfSpeech": "verb" | "noun" | "adjective" | "connector" | "expression",
+      "exampleEn": "Natural everyday British English sentence using the word",
+      "exampleEs": "Traducción natural al español de la frase"
+    }
+  ]
+}`;
+
+  const usr = `Generate ${count} new words for topic: "${topicPrompt}". Make sure phonetic pronunciations are in Spanish syllables with tildes on stressed syllables (e.g. 'nó-ledzh', 'túk', 'uént').`;
+
+  const jsonStr = await callLLMJson(sys, usr, config);
+  const parsed = JSON.parse(jsonStr);
+  const list = Array.isArray(parsed.words) ? parsed.words : [];
+
+  return list.map((item: any) => ({
+    es: item.es || '',
+    en: (item.en || '').trim(),
+    acceptedAnswers: Array.isArray(item.acceptedAnswers) && item.acceptedAnswers.length > 0
+      ? item.acceptedAnswers
+      : [(item.en || '').trim()],
+    pron: item.pron || '',
+    category: topicPrompt.toLowerCase().includes('pasado') ? 'past_verbs' : 'custom_ai',
+    partOfSpeech: item.partOfSpeech || (topicPrompt.toLowerCase().includes('verbo') ? 'verb' : 'noun'),
+    exampleEn: item.exampleEn || '',
+    exampleEs: item.exampleEs || ''
+  }));
+}
+
+export async function explainWordInStoryContextWithAI(
+  word: string,
+  storySnippet: string
+): Promise<{
+  meaningEs: string;
+  pron: string;
+  partOfSpeech: string;
+  exampleEn: string;
+  exampleEs: string;
+}> {
+  const config = getAIConfig();
+  const sys = `You are a British English tutor. The student is reading a text and encountered a word or expression they don't know: "${word}".
+Provide a concise, practical breakdown for a Spanish speaker.
+Return ONLY valid JSON:
+{
+  "meaningEs": "Significado exacto en español dentro de este contexto",
+  "pron": "Pronunciación fonética en español con tildes (ej. 'nó-ledzh')",
+  "partOfSpeech": "verbo / sustantivo / adjetivo / conector / phrasal verb",
+  "exampleEn": "Another natural short sentence using this word",
+  "exampleEs": "Traducción al español de la frase"
+}`;
+
+  const usr = `Word: "${word}". Context in story: "${storySnippet.slice(0, 300)}"`;
+  const jsonStr = await callLLMJson(sys, usr, config);
+  const parsed = JSON.parse(jsonStr);
+
+  return {
+    meaningEs: parsed.meaningEs || 'Significado no disponible',
+    pron: parsed.pron || '',
+    partOfSpeech: parsed.partOfSpeech || 'palabra',
+    exampleEn: parsed.exampleEn || '',
+    exampleEs: parsed.exampleEs || ''
+  };
+}

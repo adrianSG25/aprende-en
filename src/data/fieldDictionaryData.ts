@@ -4,14 +4,14 @@ export interface DictionaryWord {
   en: string;
   acceptedAnswers: string[];
   pron: string;
-  category: 'top50' | 'verbs' | 'core_concepts' | 'connectors' | 'uk_life';
+  category: string;
   partOfSpeech: 'noun' | 'verb' | 'adjective' | 'connector' | 'expression';
   exampleEn: string;
   exampleEs: string;
 }
 
 export const DICTIONARY_CATEGORIES: {
-  id: 'top50' | 'verbs' | 'core_concepts' | 'connectors' | 'uk_life';
+  id: string;
   label: string;
   icon: string;
   color: string;
@@ -23,6 +23,13 @@ export const DICTIONARY_CATEGORIES: {
     icon: '🌟',
     color: 'amber',
     description: 'Las 50 palabras más frecuentes que representan más del 50% de todo el inglés hablado.'
+  },
+  {
+    id: 'past_verbs',
+    label: 'Verbos en Pasado',
+    icon: '⏮️',
+    color: 'rose',
+    description: 'Verbos irregulares y regulares en pasado (went, saw, took, thought...) con fonética y ejemplos.'
   },
   {
     id: 'verbs',
@@ -49,7 +56,7 @@ export const DICTIONARY_CATEGORIES: {
     id: 'uk_life',
     label: 'Vida Cotidiana en UK',
     icon: '🇬🇧',
-    color: 'rose',
+    color: 'sky',
     description: 'Palabras del día a día en Reino Unido: piso, facturas, casero, cola, etc.'
   }
 ];
@@ -1383,5 +1390,452 @@ export const DICTIONARY_WORDS: DictionaryWord[] = [
     partOfSpeech: 'noun',
     exampleEn: 'Can I have a glass of tap water, please?',
     exampleEs: '¿Me puedes poner un vaso de agua del grifo, por favor?'
+  },
+
+  // ==================== VERBOS EN PASADO (PAST SIMPLE) ====================
+  {
+    id: 'w-past-1',
+    es: 'fue / fui / fuimos (pasado de go)',
+    en: 'went',
+    acceptedAnswers: ['went'],
+    pron: 'uént',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'We went to the pub after work yesterday.',
+    exampleEs: 'Fuimos al pub después del trabajo ayer.'
+  },
+  {
+    id: 'w-past-2',
+    es: 'vio / vi / vimos (pasado de see)',
+    en: 'saw',
+    acceptedAnswers: ['saw'],
+    pron: 'só',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'I saw Sarah on the tube this morning.',
+    exampleEs: 'Vi a Sarah en el metro esta mañana.'
+  },
+  {
+    id: 'w-past-3',
+    es: 'tomó / cogió / tardó (pasado de take)',
+    en: 'took',
+    acceptedAnswers: ['took'],
+    pron: 'túk',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'The journey took almost an hour.',
+    exampleEs: 'El viaje tardó casi una hora.'
+  },
+  {
+    id: 'w-past-4',
+    es: 'vino / vine / vinimos (pasado de come)',
+    en: 'came',
+    acceptedAnswers: ['came'],
+    pron: 'kéim',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'My flatmate came home very late.',
+    exampleEs: 'Mi compañero de piso vino a casa muy tarde.'
+  },
+  {
+    id: 'w-past-5',
+    es: 'consiguió / llegó / pilló (pasado de get)',
+    en: 'got',
+    acceptedAnswers: ['got'],
+    pron: 'gót',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'I got the job at the cafe!',
+    exampleEs: '¡Conseguí el trabajo en la cafetería!'
+  },
+  {
+    id: 'w-past-6',
+    es: 'hizo / fabriqué (pasado de make)',
+    en: 'made',
+    acceptedAnswers: ['made'],
+    pron: 'méid',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'He made a mistake on the form.',
+    exampleEs: 'Cometió un error en el formulario.'
+  },
+  {
+    id: 'w-past-7',
+    es: 'hizo / hice (pasado de do)',
+    en: 'did',
+    acceptedAnswers: ['did'],
+    pron: 'díd',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'What did you do over the weekend?',
+    exampleEs: '¿Qué hiciste durante el fin de semana?'
+  },
+  {
+    id: 'w-past-8',
+    es: 'sabía / conocí (pasado de know)',
+    en: 'knew',
+    acceptedAnswers: ['knew'],
+    pron: 'niú',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'I knew the answer immediately.',
+    exampleEs: 'Sabía la respuesta inmediatamente.'
+  },
+  {
+    id: 'w-past-9',
+    es: 'pensó / creí (pasado de think)',
+    en: 'thought',
+    acceptedAnswers: ['thought'],
+    pron: 'zót',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'I thought the train was cancelled.',
+    exampleEs: 'Pensé que el tren estaba cancelado.'
+  },
+  {
+    id: 'w-past-10',
+    es: 'dijo / contó (pasado de tell)',
+    en: 'told',
+    acceptedAnswers: ['told'],
+    pron: 'tóuld',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'The landlord told us the rent is going up.',
+    exampleEs: 'El casero nos dijo que el alquiler sube.'
+  },
+  {
+    id: 'w-past-11',
+    es: 'dio / dimos (pasado de give)',
+    en: 'gave',
+    acceptedAnswers: ['gave'],
+    pron: 'guéiv',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'She gave me directions to the station.',
+    exampleEs: 'Me dio indicaciones para llegar a la estación.'
+  },
+  {
+    id: 'w-past-12',
+    es: 'encontró / encontré (pasado de find)',
+    en: 'found',
+    acceptedAnswers: ['found'],
+    pron: 'fáund',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'I found a great flat in Camden.',
+    exampleEs: 'Encontré un piso genial en Camden.'
+  },
+  {
+    id: 'w-past-13',
+    es: 'salió / dejó / marchó (pasado de leave)',
+    en: 'left',
+    acceptedAnswers: ['left'],
+    pron: 'léft',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'He left his umbrella on the bus.',
+    exampleEs: 'Se dejó el paraguas en el autobús.'
+  },
+  {
+    id: 'w-past-14',
+    es: 'sintió / sentí (pasado de feel)',
+    en: 'felt',
+    acceptedAnswers: ['felt'],
+    pron: 'félt',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'I felt knackered after moving boxes all day.',
+    exampleEs: 'Me sentí reventado tras mover cajas todo el día.'
+  },
+  {
+    id: 'w-past-15',
+    es: 'trajo / trajimos (pasado de bring)',
+    en: 'brought',
+    acceptedAnswers: ['brought'],
+    pron: 'brót',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'He brought some drinks to the flat.',
+    exampleEs: 'Trajo algunas bebidas al piso.'
+  },
+  {
+    id: 'w-past-16',
+    es: 'compró / compré (pasado de buy)',
+    en: 'bought',
+    acceptedAnswers: ['bought'],
+    pron: 'bót',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'I bought a coffee from Pret this morning.',
+    exampleEs: 'Compré un café de Pret esta mañana.'
+  },
+  {
+    id: 'w-past-17',
+    es: 'habló / hablamos (pasado de speak)',
+    en: 'spoke',
+    acceptedAnswers: ['spoke'],
+    pron: 'spóuk',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'I spoke to the manager about the refund.',
+    exampleEs: 'Hablé con el encargado sobre la devolución.'
+  },
+  {
+    id: 'w-past-18',
+    es: 'escribió / escribí (pasado de write)',
+    en: 'wrote',
+    acceptedAnswers: ['wrote'],
+    pron: 'róut',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'She wrote a message on WhatsApp.',
+    exampleEs: 'Ella escribió un mensaje por WhatsApp.'
+  },
+  {
+    id: 'w-past-19',
+    es: 'conoció / quedó (pasado de meet)',
+    en: 'met',
+    acceptedAnswers: ['met'],
+    pron: 'mét',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'We met outside the tube station.',
+    exampleEs: 'Quedamos fuera de la estación de metro.'
+  },
+  {
+    id: 'w-past-20',
+    es: 'pagó / pagué (pasado de pay)',
+    en: 'paid',
+    acceptedAnswers: ['paid'],
+    pron: 'péid',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'I paid ten quid for the ticket.',
+    exampleEs: 'Pagué diez libras por la entrada.'
+  },
+  {
+    id: 'w-past-21',
+    es: 'oyó / escuché (pasado de hear)',
+    en: 'heard',
+    acceptedAnswers: ['heard'],
+    pron: 'jérd',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'I heard the announcement on the platform.',
+    exampleEs: 'Oí el aviso en el andén.'
+  },
+  {
+    id: 'w-past-22',
+    es: 'entendió / comprendí (pasado de understand)',
+    en: 'understood',
+    acceptedAnswers: ['understood'],
+    pron: 'an-der-stúd',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'I understood his accent without any trouble.',
+    exampleEs: 'Entendí su acento sin ningún problema.'
+  },
+  {
+    id: 'w-past-23',
+    es: 'se convirtió / pasó a ser (pasado de become)',
+    en: 'became',
+    acceptedAnswers: ['became'],
+    pron: 'bi-kéim',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'He became a regular customer at the pub.',
+    exampleEs: 'Se convirtió en un cliente habitual del pub.'
+  },
+  {
+    id: 'w-past-24',
+    es: 'perdió / perdí (pasado de lose)',
+    en: 'lost',
+    acceptedAnswers: ['lost'],
+    pron: 'lóst',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'I lost my keys on the way home.',
+    exampleEs: 'Perdí mis llaves de camino a casa.'
+  },
+  {
+    id: 'w-past-25',
+    es: 'ganó / ganamos (pasado de win)',
+    en: 'won',
+    acceptedAnswers: ['won'],
+    pron: 'uón',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'Our local football team won yesterday.',
+    exampleEs: 'Nuestro equipo local de fútbol ganó ayer.'
+  },
+  {
+    id: 'w-past-26',
+    es: 'leyó / leí (pasado de read)',
+    en: 'read',
+    acceptedAnswers: ['read'],
+    pron: 'réd',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'I read the tenancy contract carefully.',
+    exampleEs: 'Leí el contrato de alquiler con atención.'
+  },
+  {
+    id: 'w-past-27',
+    es: 'gastó / pasó tiempo (pasado de spend)',
+    en: 'spent',
+    acceptedAnswers: ['spent'],
+    pron: 'spént',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'We spent the whole afternoon in Hyde Park.',
+    exampleEs: 'Pasamos toda la tarde en Hyde Park.'
+  },
+  {
+    id: 'w-past-28',
+    es: 'construyó / fabricó (pasado de build)',
+    en: 'built',
+    acceptedAnswers: ['built'],
+    pron: 'bílt',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'They built new flats down the road.',
+    exampleEs: 'Construyeron pisos nuevos al final de la calle.'
+  },
+  {
+    id: 'w-past-29',
+    es: 'envió / mandó (pasado de send)',
+    en: 'sent',
+    acceptedAnswers: ['sent'],
+    pron: 'sént',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'I sent you a WhatsApp earlier.',
+    exampleEs: 'Te envié un WhatsApp antes.'
+  },
+  {
+    id: 'w-past-30',
+    es: 'cayó / caí (pasado de fall)',
+    en: 'fell',
+    acceptedAnswers: ['fell'],
+    pron: 'fél',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'He fell off his bike on the wet street.',
+    exampleEs: 'Se cayó de la bici en la calle mojada.'
+  },
+  {
+    id: 'w-past-31',
+    es: 'rompió / rompí (pasado de break)',
+    en: 'broke',
+    acceptedAnswers: ['broke'],
+    pron: 'bróuk',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'The boiler broke down in the middle of winter.',
+    exampleEs: 'La caldera se rompió en pleno invierno.'
+  },
+  {
+    id: 'w-past-32',
+    es: 'eligió / elegí (pasado de choose)',
+    en: 'chose',
+    acceptedAnswers: ['chose'],
+    pron: 'chóus',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'I chose the second-hand car part to save money.',
+    exampleEs: 'Elegí la pieza de segunda mano para ahorrar dinero.'
+  },
+  {
+    id: 'w-past-33',
+    es: 'olvidó / olvidé (pasado de forget)',
+    en: 'forgot',
+    acceptedAnswers: ['forgot'],
+    pron: 'for-gót',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'I forgot to tap out at the station.',
+    exampleEs: 'Olvidé pasar la tarjeta al salir de la estación.'
+  },
+  {
+    id: 'w-past-34',
+    es: 'condujo / conduje (pasado de drive)',
+    en: 'drove',
+    acceptedAnswers: ['drove'],
+    pron: 'dróuv',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'He drove all the way to Manchester.',
+    exampleEs: 'Condujo todo el camino hasta Mánchester.'
+  },
+  {
+    id: 'w-past-35',
+    es: 'durmió / dormí (pasado de sleep)',
+    en: 'slept',
+    acceptedAnswers: ['slept'],
+    pron: 'slépt',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'I slept like a log after the long flight.',
+    exampleEs: 'Dormí como un tronco tras el vuelo largo.'
+  },
+  {
+    id: 'w-past-36',
+    es: 'llevó puesto / vistió (pasado de wear)',
+    en: 'wore',
+    acceptedAnswers: ['wore'],
+    pron: 'uór',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'She wore a warm coat because it was freezing.',
+    exampleEs: 'Llevó un abrigo abrigado porque estaba helando.'
+  },
+  {
+    id: 'w-past-37',
+    es: 'bebió / bebí (pasado de drink)',
+    en: 'drank',
+    acceptedAnswers: ['drank'],
+    pron: 'dránk',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'We drank a couple of pints of cider.',
+    exampleEs: 'Bebimos un par de pintas de sidra.'
+  },
+  {
+    id: 'w-past-38',
+    es: 'comió / comí (pasado de eat)',
+    en: 'ate',
+    acceptedAnswers: ['ate'],
+    pron: 'éit',
+    category: 'past_verbs',
+    partOfSpeech: 'verb',
+    exampleEn: 'We ate fish and chips near the market.',
+    exampleEs: 'Comimos fish and chips cerca del mercado.'
   }
 ];
+
+// ==================== ALMACENAMIENTO DE PALABRAS CREADAS POR IA ====================
+const CUSTOM_DICT_KEY = 'uk_street_custom_dict_words_v1';
+
+export function loadCustomDictionaryWords(): DictionaryWord[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_DICT_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomDictionaryWords(words: DictionaryWord[]): void {
+  localStorage.setItem(CUSTOM_DICT_KEY, JSON.stringify(words));
+}
+
+export function appendCustomDictionaryWords(newWords: DictionaryWord[]): DictionaryWord[] {
+  const existing = loadCustomDictionaryWords();
+  const existingEn = new Set(existing.map((w) => w.en.toLowerCase().trim()));
+  const filteredNew = newWords.filter((w) => !existingEn.has(w.en.toLowerCase().trim()));
+  const merged = [...filteredNew, ...existing];
+  saveCustomDictionaryWords(merged);
+  return merged;
+}
+

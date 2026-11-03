@@ -1,7 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { DictionaryWord, DICTIONARY_CATEGORIES, DICTIONARY_WORDS } from '../data/fieldDictionaryData';
+import {
+  DictionaryWord,
+  DICTIONARY_CATEGORIES,
+  DICTIONARY_WORDS,
+  loadCustomDictionaryWords,
+  appendCustomDictionaryWords
+} from '../data/fieldDictionaryData';
 import { GameProgress } from '../types/streetGame';
 import { checkAnswer } from '../utils/answerChecker';
+import { generateCustomVocabularyWithAI } from '../services/aiService';
 import {
   BookOpen,
   Search,
@@ -10,7 +17,9 @@ import {
   XCircle,
   ArrowRight,
   Sparkles,
-  Send
+  Send,
+  X,
+  RefreshCw
 } from 'lucide-react';
 
 interface FieldDictionaryZoneProps {
@@ -25,6 +34,15 @@ export const FieldDictionaryZone: React.FC<FieldDictionaryZoneProps> = ({
   const [activeTab, setActiveTab] = useState<'study' | 'quiz' | 'drill'>('study');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [customWords, setCustomWords] = useState<DictionaryWord[]>(() => loadCustomDictionaryWords());
+
+  // AI Generator Modal state
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [aiTopic, setAiTopic] = useState('50 verbos en pasado irregulares y cotidianos');
+  const [aiCount, setAiCount] = useState(50);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiSuccessMsg, setAiSuccessMsg] = useState<string | null>(null);
 
   // Quiz state
   const [quizIndex, setQuizIndex] = useState(0);
@@ -41,10 +59,18 @@ export const FieldDictionaryZone: React.FC<FieldDictionaryZoneProps> = ({
   const [drillAnswered, setDrillAnswered] = useState(false);
   const [drillCorrect, setDrillCorrect] = useState(false);
 
+  // Combine static words + custom AI words
+  const allWords = useMemo(() => {
+    return [...customWords, ...DICTIONARY_WORDS];
+  }, [customWords]);
+
   // Filtered words based on category and search
   const filteredWords = useMemo(() => {
-    return DICTIONARY_WORDS.filter((w) => {
-      const matchesCat = selectedCategory === 'all' || w.category === selectedCategory;
+    return allWords.filter((w) => {
+      const matchesCat =
+        selectedCategory === 'all' ||
+        w.category === selectedCategory ||
+        (selectedCategory === 'custom_ai' && (w.category === 'custom_ai' || customWords.some((c) => c.id === w.id)));
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
@@ -53,13 +79,17 @@ export const FieldDictionaryZone: React.FC<FieldDictionaryZoneProps> = ({
         w.pron.toLowerCase().includes(q);
       return matchesCat && matchesSearch;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [allWords, selectedCategory, searchQuery, customWords]);
 
   // Active list of words for Quiz & Drill
   const practiceWords = useMemo(() => {
-    if (selectedCategory === 'all') return DICTIONARY_WORDS;
-    return DICTIONARY_WORDS.filter((w) => w.category === selectedCategory);
-  }, [selectedCategory]);
+    if (selectedCategory === 'all') return allWords;
+    return allWords.filter(
+      (w) =>
+        w.category === selectedCategory ||
+        (selectedCategory === 'custom_ai' && (w.category === 'custom_ai' || customWords.some((c) => c.id === w.id)))
+    );
+  }, [allWords, selectedCategory, customWords]);
 
   const currentQuizWord: DictionaryWord | undefined =
     practiceWords[quizIndex % (practiceWords.length || 1)];
@@ -128,6 +158,61 @@ export const FieldDictionaryZone: React.FC<FieldDictionaryZoneProps> = ({
     setDrillCorrect(false);
   };
 
+  // Handler for AI generation
+  const handleGenerateVocabulary = async () => {
+    if (!aiTopic.trim()) return;
+    setIsGeneratingAI(true);
+    setAiError(null);
+    setAiSuccessMsg(null);
+
+    try {
+      // Gather already existing words to ensure AI NEVER repeats them!
+      const existingEnglishWords = allWords.map((w) => w.en.toLowerCase().trim());
+      const generated = await generateCustomVocabularyWithAI(aiTopic, aiCount, existingEnglishWords);
+
+      if (!generated || generated.length === 0) {
+        throw new Error('La IA no devolvió palabras válidas. Prueba a concretar más el tema.');
+      }
+
+      const formattedWords: DictionaryWord[] = generated.map((item, idx) => ({
+        id: `ai-word-${Date.now()}-${idx}`,
+        es: item.es,
+        en: item.en,
+        acceptedAnswers: item.acceptedAnswers,
+        pron: item.pron,
+        category: aiTopic.toLowerCase().includes('pasado') ? 'past_verbs' : 'custom_ai',
+        partOfSpeech: item.partOfSpeech,
+        exampleEn: item.exampleEn,
+        exampleEs: item.exampleEs
+      }));
+
+      const updated = appendCustomDictionaryWords(formattedWords);
+      setCustomWords(updated);
+      setAiSuccessMsg(`¡Genial! Se han añadido ${formattedWords.length} palabras nuevas sobre "${aiTopic}" a tu diccionario.`);
+      onUpdateProgress({
+        ...progress,
+        xp: progress.xp + 30,
+        quids: progress.quids + 2
+      });
+
+      // Filter by the relevant category
+      if (aiTopic.toLowerCase().includes('pasado')) {
+        setSelectedCategory('past_verbs');
+      } else {
+        setSelectedCategory('custom_ai');
+      }
+
+      setTimeout(() => {
+        setShowAIModal(false);
+        setAiSuccessMsg(null);
+      }, 1500);
+    } catch (err: any) {
+      setAiError(err.message || 'Error al conectar con la IA. Asegúrate de tener tu API Key configurada en Ajustes.');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
   return (
     <div className="space-y-4 max-w-4xl mx-auto animate-in fade-in duration-200">
       {/* Header Banner */}
@@ -141,20 +226,30 @@ export const FieldDictionaryZone: React.FC<FieldDictionaryZoneProps> = ({
               Diccionario de Campo & Vocabulario
             </span>
             <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">
-              Top 50 Palabras, Verbos & Conceptos Clave
+              Top Palabras, Verbos en Pasado & Conceptos Clave
             </h2>
             <p className="text-xs text-slate-300">
-              Con pronunciación fonética en español, ejemplos reales y entrenamiento por escritura.
+              Pronunciación fonética en español, ejemplos de la calle y generador infinito por IA.
             </p>
           </div>
         </div>
 
-        {/* Global Mastered Stats Pill */}
-        <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-2xl p-2.5 shrink-0">
-          <Sparkles className="w-4 h-4 text-amber-400" />
-          <span className="text-xs font-bold text-slate-200">
-            Dominadas: <strong className="text-amber-300">{quizMasteredIds.length}</strong> / {DICTIONARY_WORDS.length}
-          </span>
+        {/* Action Buttons: AI Creator + Stats */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setShowAIModal(true)}
+            className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-300 hover:to-orange-300 active:scale-95 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md cursor-pointer transition-all shrink-0"
+          >
+            <Sparkles className="w-4 h-4 text-slate-950" />
+            <span>✨ Crear con IA (50 palabras)</span>
+          </button>
+
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-2xl p-2 shrink-0">
+            <span className="text-xs font-bold text-slate-200">
+              Total: <strong className="text-amber-300">{allWords.length}</strong> palabras
+            </span>
+          </div>
         </div>
       </div>
 
@@ -209,11 +304,11 @@ export const FieldDictionaryZone: React.FC<FieldDictionaryZoneProps> = ({
               : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
           }`}
         >
-          Todas ({DICTIONARY_WORDS.length})
+          Todas ({allWords.length})
         </button>
 
         {DICTIONARY_CATEGORIES.map((cat) => {
-          const count = DICTIONARY_WORDS.filter((w) => w.category === cat.id).length;
+          const count = allWords.filter((w) => w.category === cat.id).length;
           const isActive = selectedCategory === cat.id;
           return (
             <button
@@ -231,6 +326,21 @@ export const FieldDictionaryZone: React.FC<FieldDictionaryZoneProps> = ({
             </button>
           );
         })}
+
+        {customWords.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setSelectedCategory('custom_ai')}
+            className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap cursor-pointer transition-all flex items-center gap-1.5 ${
+              selectedCategory === 'custom_ai'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100'
+            }`}
+          >
+            <span>✨</span>
+            <span>Creadas con IA ({customWords.length})</span>
+          </button>
+        )}
       </div>
 
       {/* TAB 1: STUDY / DICTIONARY VIEW */}
@@ -243,7 +353,7 @@ export const FieldDictionaryZone: React.FC<FieldDictionaryZoneProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por español, inglés o pronunciación (ej: knowledge, saber, nóu)..."
+              placeholder="Buscar por español, inglés o pronunciación (ej: went, knowledge, uént, nó-ledzh)..."
               className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 outline-none focus:border-indigo-600 shadow-2xs"
             />
           </div>
@@ -259,7 +369,9 @@ export const FieldDictionaryZone: React.FC<FieldDictionaryZoneProps> = ({
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                        {item.partOfSpeech === 'verb'
+                        {item.category === 'past_verbs'
+                          ? '⏮️ Verbo en Pasado'
+                          : item.partOfSpeech === 'verb'
                           ? '⚡ Verbo'
                           : item.partOfSpeech === 'noun'
                           ? '📦 Sustantivo / Concepto'
@@ -273,7 +385,7 @@ export const FieldDictionaryZone: React.FC<FieldDictionaryZoneProps> = ({
                     </div>
 
                     <div className="text-right">
-                      <span className="text-sm sm:text-base font-black text-indigo-700 block">
+                      <span className="text-base sm:text-lg font-black text-indigo-700 block">
                         {item.en}
                       </span>
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200 inline-block mt-0.5 font-mono">
@@ -323,7 +435,9 @@ export const FieldDictionaryZone: React.FC<FieldDictionaryZoneProps> = ({
               {currentQuizWord.es}
             </h3>
             <span className="text-xs text-slate-500 block mt-1">
-              {currentQuizWord.partOfSpeech === 'verb'
+              {currentQuizWord.category === 'past_verbs'
+                ? '(Verbo en pasado)'
+                : currentQuizWord.partOfSpeech === 'verb'
                 ? '(Verbo)'
                 : currentQuizWord.partOfSpeech === 'noun'
                 ? '(Sustantivo / Concepto)'
@@ -534,6 +648,157 @@ export const FieldDictionaryZone: React.FC<FieldDictionaryZoneProps> = ({
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* AI VOCABULARY GENERATOR MODAL */}
+      {showAIModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border-2 border-indigo-200 p-5 sm:p-6 space-y-4 my-auto animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-500" />
+                <h3 className="font-extrabold text-base sm:text-lg text-slate-900">
+                  Generar 50 Palabras Nuevas con IA
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAIModal(false)}
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-xl"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Dile a la IA qué tema o grupo de palabras quieres aprender (ej: <em>verbos en pasado</em>, <em>comida</em>, <em>trabajo</em>). Si ya te sabes algunas, la IA creará <strong>palabras 100% nuevas sin repetir las que ya tienes</strong>.
+            </p>
+
+            {/* Quick Chips */}
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                Temas sugeridos en 1 clic:
+              </span>
+              <div className="flex flex-wrap gap-1.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setAiTopic('50 verbos en pasado irregulares y cotidianos')}
+                  className="px-2.5 py-1 rounded-xl bg-rose-50 text-rose-800 border border-rose-200 hover:bg-rose-100 font-bold cursor-pointer"
+                >
+                  ⏮️ 50 Verbos en Pasado
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAiTopic('50 palabras y jerga para ir al pub y salir en UK')}
+                  className="px-2.5 py-1 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 font-bold cursor-pointer"
+                >
+                  🍺 50 Palabras de Pub
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAiTopic('50 términos de trabajo, oficina y contratos en UK')}
+                  className="px-2.5 py-1 rounded-xl bg-indigo-50 text-indigo-800 border border-indigo-200 hover:bg-indigo-100 font-bold cursor-pointer"
+                >
+                  💼 50 Términos de Trabajo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAiTopic('50 palabras de cocina, comida y supermercado en UK')}
+                  className="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 font-bold cursor-pointer"
+                >
+                  🛒 50 Palabras de Súper
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAiTopic('50 términos de coches, taller mecánico y tráfico')}
+                  className="px-2.5 py-1 rounded-xl bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100 font-bold cursor-pointer"
+                >
+                  🚗 50 Términos de Coches
+                </button>
+              </div>
+            </div>
+
+            {/* Topic Input */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 block">
+                Tema personalizado:
+              </label>
+              <input
+                type="text"
+                value={aiTopic}
+                onChange={(e) => setAiTopic(e.target.value)}
+                placeholder="Escribe el tema que quieras..."
+                className="w-full p-3 rounded-2xl border-2 border-slate-300 focus:border-indigo-600 focus:bg-white text-xs sm:text-sm font-semibold text-slate-900 outline-none"
+              />
+            </div>
+
+            {/* Quantity Selector */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 block">
+                Cantidad de palabras nuevas:
+              </label>
+              <div className="flex gap-2">
+                {[20, 35, 50].map((cnt) => (
+                  <button
+                    key={cnt}
+                    type="button"
+                    onClick={() => setAiCount(cnt)}
+                    className={`flex-1 py-2 rounded-xl text-xs font-black border transition-all cursor-pointer ${
+                      aiCount === cnt
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    {cnt} palabras
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Error Message */}
+            {aiError && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800">
+                ⚠️ {aiError}
+              </div>
+            )}
+
+            {/* Success Message */}
+            {aiSuccessMsg && (
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-bold">
+                ✅ {aiSuccessMsg}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowAIModal(false)}
+                className="flex-1 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isGeneratingAI || !aiTopic.trim()}
+                onClick={handleGenerateVocabulary}
+                className="flex-1 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-black text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all"
+              >
+                {isGeneratingAI ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Generando 50 palabras...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>Generar y Añadir (+30 XP)</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
