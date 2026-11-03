@@ -873,3 +873,192 @@ Return ONLY valid JSON:
     exampleEs: parsed.exampleEs || ''
   };
 }
+
+// ==================== ANÁLISIS DE SERIES, PELÍCULAS Y LIBROS CON IA ====================
+export interface MediaWordItem {
+  id: string;
+  wordEn: string;
+  pron: string;
+  partOfSpeech: 'noun' | 'verb' | 'adjective' | 'expression' | 'slang';
+  acceptedMeaningsEs: string[];
+  primaryMeaningEs: string;
+  sceneContextEn: string;
+  sceneContextEs: string;
+  explanationWhyEs: string;
+}
+
+export interface MediaQuestionItem {
+  id: string;
+  questionEn: string;
+  questionEs: string;
+  sceneHintEs: string;
+  sampleIdealAnswerEn: string;
+  targetGrammarHint: string;
+}
+
+export interface MediaAnalysisSession {
+  id: string;
+  createdAt: number;
+  mediaTitle: string;
+  mediaType: 'series' | 'movie' | 'book';
+  episodeOrPart: string;
+  synopsisEs: string;
+  words: MediaWordItem[];
+  questions: MediaQuestionItem[];
+}
+
+export async function generateMediaAnalysisWithAI(
+  mediaTitle: string,
+  mediaType: 'series' | 'movie' | 'book',
+  episodeOrPart: string,
+  userNotes?: string
+): Promise<MediaAnalysisSession> {
+  const config = getAIConfig();
+  const sys = `You are a native British English linguist and pop culture tutor.
+The student is watching or reading:
+- Title: "${mediaTitle}"
+- Media Type: ${mediaType}
+- Episode / Season / Chapter: "${episodeOrPart}"
+${userNotes ? `- Additional user notes: "${userNotes}"` : ''}
+
+Generate a rich, authentic study session for this specific episode/work.
+You must provide:
+1. "synopsisEs": A concise 2-sentence summary in Spanish of what happens in this episode/chapter.
+2. "words": 6 to 8 UNCOMMON, colloquial, slang, idiomatic or distinctive British English words/phrases actually used or strongly associated with this episode. (Do NOT include basic A1/A2 words like "house", "car", "eat").
+   For each word:
+   - "id": "mw-1", "mw-2", etc.
+   - "wordEn": English word, phrasal verb or idiom (e.g. "collateral", "proper dodgy", "leverage", "extortion", "take the piss", "geezer")
+   - "pron": Phonetic guide in Spanish syllables with tildes (e.g. "kə-lét-ə-rəl", "gí-ser", "lé-və-ridzh")
+   - "partOfSpeech": "noun" | "verb" | "adjective" | "expression" | "slang"
+   - "acceptedMeaningsEs": array of accepted short Spanish meanings/translations the student might type (e.g. ["garantía", "aval", "fianza", "prenda"])
+   - "primaryMeaningEs": clear definition in Spanish
+   - "sceneContextEn": sample sentence showing how it is used in the episode
+   - "sceneContextEs": natural Spanish translation of that sentence
+   - "explanationWhyEs": why it is used here, nuance or British street usage
+3. "questions": 3 open comprehension questions in English about specific plot events, character motivations or decisions in this episode.
+   For each question:
+   - "id": "mq-1", "mq-2", "mq-3"
+   - "questionEn": Question in English
+   - "questionEs": Translation in Spanish
+   - "sceneHintEs": Scene context hint in Spanish
+   - "sampleIdealAnswerEn": Complete, natural model answer in English
+   - "targetGrammarHint": Grammar advice in Spanish (e.g. "Responde usando Past Simple o Past Continuous")
+
+Return ONLY valid JSON matching this structure.`;
+
+  const usr = `Generate episode analysis for "${mediaTitle}" - "${episodeOrPart}". Make sure vocabulary has words that are not common and require thinking to translate to Spanish.`;
+  const jsonStr = await callLLMJson(sys, usr, config);
+  const parsed = JSON.parse(jsonStr);
+
+  return {
+    id: `media-session-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    createdAt: Date.now(),
+    mediaTitle,
+    mediaType,
+    episodeOrPart,
+    synopsisEs: parsed.synopsisEs || `Análisis de ${mediaTitle} (${episodeOrPart}).`,
+    words: Array.isArray(parsed.words)
+      ? parsed.words.map((w: any, idx: number) => ({
+          id: w.id || `mw-${idx + 1}`,
+          wordEn: (w.wordEn || '').trim(),
+          pron: w.pron || '',
+          partOfSpeech: w.partOfSpeech || 'expression',
+          acceptedMeaningsEs:
+            Array.isArray(w.acceptedMeaningsEs) && w.acceptedMeaningsEs.length > 0
+              ? w.acceptedMeaningsEs
+              : [w.primaryMeaningEs || ''],
+          primaryMeaningEs: w.primaryMeaningEs || '',
+          sceneContextEn: w.sceneContextEn || '',
+          sceneContextEs: w.sceneContextEs || '',
+          explanationWhyEs: w.explanationWhyEs || ''
+        }))
+      : [],
+    questions: Array.isArray(parsed.questions)
+      ? parsed.questions.map((q: any, idx: number) => ({
+          id: q.id || `mq-${idx + 1}`,
+          questionEn: q.questionEn || '',
+          questionEs: q.questionEs || '',
+          sceneHintEs: q.sceneHintEs || '',
+          sampleIdealAnswerEn: q.sampleIdealAnswerEn || '',
+          targetGrammarHint: q.targetGrammarHint || 'Escribe tu respuesta en inglés en pasado.'
+        }))
+      : []
+  };
+}
+
+export async function evaluateMediaQuestionAnswerWithAI(
+  mediaTitle: string,
+  episodeOrPart: string,
+  questionEn: string,
+  userAnswerEn: string,
+  expectedContextEn: string
+): Promise<OpenAnswerFeedback> {
+  const config = getAIConfig();
+  const sys = `You are an expert British English teacher correcting a student's answer about a TV show / movie / book episode.
+Show/Movie: "${mediaTitle}" (${episodeOrPart})
+Question: "${questionEn}"
+Expected Plot Answer / Reference: "${expectedContextEn}"
+Student's Answer in English: "${userAnswerEn}"
+
+Evaluate the student's answer:
+1. Is the content accurate to what happened in this episode?
+2. Correct every grammar, spelling, tense, and vocabulary mistake.
+3. Provide a score from 1 to 10.
+4. Provide a corrected version of the user's sentence.
+5. Provide a natural native British English / B2 upgrade sentence.
+6. List all errors found: { wrong, right, whyEs }.
+7. Provide encouraging and clear feedback in Spanish.
+
+Return ONLY a valid JSON object:
+{
+  "isContentAccurate": true,
+  "scoreOutOf10": 8,
+  "correctedUserSentence": "Sentence without mistakes",
+  "b2UpgradeSentence": "Natural native British phrasing",
+  "feedbackEs": "Feedback en español claro",
+  "errorsFound": [
+    {
+      "wrong": "word or phrase with error",
+      "right": "correction",
+      "whyEs": "explicación en español"
+    }
+  ]
+}`;
+
+  const usr = `Evaluate: "${userAnswerEn}" for question: "${questionEn}" in "${mediaTitle}" (${episodeOrPart})`;
+  const jsonStr = await callLLMJson(sys, usr, config);
+  const parsed = JSON.parse(jsonStr);
+
+  return {
+    isContentAccurate: parsed.isContentAccurate ?? true,
+    scoreOutOf10: parsed.scoreOutOf10 ?? 7,
+    correctedUserSentence: parsed.correctedUserSentence || userAnswerEn,
+    b2UpgradeSentence: parsed.b2UpgradeSentence || expectedContextEn,
+    feedbackEs: parsed.feedbackEs || 'Respuesta revisada.',
+    errorsFound: Array.isArray(parsed.errorsFound) ? parsed.errorsFound : []
+  };
+}
+
+// Comparador semántico tolerante para traducciones al español
+export function checkSpanishMeaningMatch(userInput: string, accepted: string[]): boolean {
+  const norm = (s: string) =>
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[.,/#!$%^&*;:{}=\-_`~()?"'’]/g, '')
+      .trim();
+
+  const userNorm = norm(userInput);
+  if (!userNorm) return false;
+
+  return accepted.some((acc) => {
+    const accNorm = norm(acc);
+    if (!accNorm) return false;
+    if (userNorm === accNorm) return true;
+    if (userNorm.includes(accNorm) || accNorm.includes(userNorm)) return true;
+    const userWords = userNorm.split(/\s+/).filter((w) => w.length > 2);
+    const accWords = accNorm.split(/\s+/).filter((w) => w.length > 2);
+    return userWords.some((uw) => accWords.includes(uw));
+  });
+}

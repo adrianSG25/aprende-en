@@ -14,6 +14,7 @@ import { StreetWhatsAppSimulator } from './components/StreetWhatsAppSimulator';
 import { StreetProfile } from './components/StreetProfile';
 import { FieldDictionaryZone } from './components/FieldDictionaryZone';
 import { ReadingZone } from './components/ReadingZone';
+import { MediaLearningZone } from './components/MediaLearningZone';
 import { SettingsModal } from './components/SettingsModal';
 import {
   Gamepad2,
@@ -24,10 +25,11 @@ import {
   Settings,
   Sparkles,
   Coins,
-  BookOpen
+  BookOpen,
+  Tv
 } from 'lucide-react';
 
-type ActiveTab = 'levels' | 'vocab' | 'drills' | 'whatsapp' | 'reading' | 'profile';
+type ActiveTab = 'levels' | 'vocab' | 'media' | 'drills' | 'whatsapp' | 'reading' | 'profile';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('levels');
@@ -75,6 +77,11 @@ export function App() {
       id: 'vocab',
       label: 'Top 50 & Vocabulario',
       icon: <BookOpen className="w-4 h-4 text-indigo-500" />
+    },
+    {
+      id: 'media',
+      label: '🎬 Series & Pelis IA',
+      icon: <Tv className="w-4 h-4 text-rose-500" />
     },
     {
       id: 'whatsapp',
@@ -204,6 +211,14 @@ export function App() {
           />
         )}
 
+        {activeTab === 'media' && (
+          <MediaLearningZone
+            progress={gameProgress}
+            onUpdateProgress={handleUpdateGameProgress}
+            onOpenSettings={() => setShowSettings(true)}
+          />
+        )}
+
         {activeTab === 'drills' && (
           <StreetDrillArena
             progress={gameProgress}
@@ -236,87 +251,105 @@ export function App() {
         )}
       </main>
 
-      {/* Mobile Bottom Navigation Bar (6 dedicated large touch targets) */}
+      {/* Mobile Bottom Navigation Bar (7 dedicated large touch targets) */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-1 pt-1.5 pb-safe shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-        <div className="grid grid-cols-6 gap-0.5 max-w-lg mx-auto">
+        <div className="grid grid-cols-7 gap-0.5 max-w-lg mx-auto">
           {/* 1: Niveles (Juego) */}
           <button
             type="button"
             onClick={() => setActiveTab('levels')}
-            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[10px] font-black transition-all cursor-pointer ${
+            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[9px] font-black transition-all cursor-pointer ${
               activeTab === 'levels'
                 ? 'text-indigo-600 bg-indigo-50/90'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Gamepad2 className={`w-5 h-5 ${activeTab === 'levels' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            <span className="mt-0.5">Niveles</span>
+            <Gamepad2 className={`w-4 h-4 sm:w-5 sm:h-5 ${activeTab === 'levels' ? 'text-indigo-600' : 'text-slate-400'}`} />
+            <span className="mt-0.5 truncate">Niveles</span>
           </button>
 
           {/* 2: Vocabulario & Top 50 */}
           <button
             type="button"
             onClick={() => setActiveTab('vocab')}
-            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[10px] font-black transition-all cursor-pointer ${
+            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[9px] font-black transition-all cursor-pointer ${
               activeTab === 'vocab'
                 ? 'text-indigo-600 bg-indigo-50/90'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <BookOpen className={`w-5 h-5 ${activeTab === 'vocab' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            <span className="mt-0.5">Vocab</span>
+            <BookOpen className={`w-4 h-4 sm:w-5 sm:h-5 ${activeTab === 'vocab' ? 'text-indigo-600' : 'text-slate-400'}`} />
+            <span className="mt-0.5 truncate">Vocab</span>
           </button>
 
-          {/* 3: WhatsApp */}
+          {/* 3: Series & Cine con IA */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('media')}
+            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[9px] font-black transition-all cursor-pointer ${
+              activeTab === 'media'
+                ? 'text-indigo-600 bg-indigo-50/90'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Tv className={`w-4 h-4 sm:w-5 sm:h-5 ${activeTab === 'media' ? 'text-indigo-600' : 'text-slate-400'}`} />
+            <span className="mt-0.5 truncate">Series IA</span>
+          </button>
+
+          {/* 4: WhatsApp */}
           <button
             type="button"
             onClick={() => setActiveTab('whatsapp')}
-            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[10px] font-black transition-all cursor-pointer ${
+            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[9px] font-black transition-all cursor-pointer ${
               activeTab === 'whatsapp'
                 ? 'text-indigo-600 bg-indigo-50/90'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <MessageSquare className={`w-5 h-5 ${activeTab === 'whatsapp' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            <span className="mt-0.5">WhatsApp</span>
+            <MessageSquare className={`w-4 h-4 sm:w-5 sm:h-5 ${activeTab === 'whatsapp' ? 'text-indigo-600' : 'text-slate-400'}`} />
+            <span className="mt-0.5 truncate">WhatsApp</span>
           </button>
 
-          {/* 4: Machaque */}
+          {/* 5: Machaque */}
           <button
             type="button"
             onClick={() => setActiveTab('drills')}
-            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[10px] font-black transition-all cursor-pointer ${
+            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[9px] font-black transition-all cursor-pointer ${
               activeTab === 'drills'
                 ? 'text-indigo-600 bg-indigo-50/90'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Flame className={`w-5 h-5 ${activeTab === 'drills' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            <span className="mt-0.5">Machaque</span>
+            <Flame className={`w-4 h-4 sm:w-5 sm:h-5 ${activeTab === 'drills' ? 'text-indigo-600' : 'text-slate-400'}`} />
+            <span className="mt-0.5 truncate">Machaque</span>
           </button>
 
-          {/* 5: Textos */}
+          {/* 6: Textos */}
           <button
             type="button"
             onClick={() => setActiveTab('reading')}
-            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[10px] font-black transition-all cursor-pointer ${
+            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[9px] font-black transition-all cursor-pointer ${
               activeTab === 'reading'
                 ? 'text-indigo-600 bg-indigo-50/90'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <FileText className={`w-5 h-5 ${activeTab === 'reading' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            <span className="mt-0.5">Textos</span>
+            <FileText className={`w-4 h-4 sm:w-5 sm:h-5 ${activeTab === 'reading' ? 'text-indigo-600' : 'text-slate-400'}`} />
+            <span className="mt-0.5 truncate">Textos</span>
           </button>
 
-          {/* 6: Ajustes */}
+          {/* 7: Perfil */}
           <button
             type="button"
-            onClick={() => setShowSettings(true)}
-            className="flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[10px] font-black text-slate-500 hover:text-indigo-600 hover:bg-slate-50 transition-all cursor-pointer"
+            onClick={() => setActiveTab('profile')}
+            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[9px] font-black transition-all cursor-pointer ${
+              activeTab === 'profile'
+                ? 'text-indigo-600 bg-indigo-50/90'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
           >
-            <Settings className="w-5 h-5 text-slate-400" />
-            <span className="mt-0.5">Ajustes</span>
+            <Trophy className={`w-4 h-4 sm:w-5 sm:h-5 ${activeTab === 'profile' ? 'text-indigo-600' : 'text-slate-400'}`} />
+            <span className="mt-0.5 truncate">Perfil</span>
           </button>
         </div>
       </nav>

@@ -159,3 +159,31 @@ export function saveExamResultToHistory(result: ExamResult): UserStats {
   saveUserStats(stats);
   return stats;
 }
+
+// ==================== ALMACENAMIENTO DE SESIONES DE SERIES/CINE CON IA ====================
+const MEDIA_SESSIONS_KEY = 'uk_street_media_sessions_v1';
+
+export function loadMediaSessions(): any[] {
+  try {
+    const raw = localStorage.getItem(MEDIA_SESSIONS_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export function saveMediaSession(session: any): any[] {
+  const current = loadMediaSessions();
+  const filtered = current.filter((s: any) => s.id !== session.id);
+  const updated = [session, ...filtered].slice(0, 30);
+  localStorage.setItem(MEDIA_SESSIONS_KEY, JSON.stringify(updated));
+  return updated;
+}
+
+export function deleteMediaSession(sessionId: string): any[] {
+  const current = loadMediaSessions();
+  const updated = current.filter((s: any) => s.id !== sessionId);
+  localStorage.setItem(MEDIA_SESSIONS_KEY, JSON.stringify(updated));
+  return updated;
+}
