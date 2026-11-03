@@ -86,6 +86,20 @@ const PRESET_SUGGESTIONS = [
   {
     type: 'series' as const,
     title: 'The Gentlemen',
+    episode: 'Temporada 2, Episodio 2',
+    label: '🎩 The Gentlemen (T2 E2: Milán)',
+    notes: 'Eddie Horniman y Susie Glass viajan a Milán para cerrar el acuerdo con el capo de la mafia italiana Marco Moretti'
+  },
+  {
+    type: 'series' as const,
+    title: 'The Gentlemen',
+    episode: 'Temporada 2, Episodio 1',
+    label: '🎩 The Gentlemen (T2 E1: Cacería)',
+    notes: 'Eddie organiza una cacería de alto riesgo en la mansión Halstead con mafiosos italianos y un jeque para expandir el negocio'
+  },
+  {
+    type: 'series' as const,
+    title: 'The Gentlemen',
     episode: 'Temporada 1, Episodio 2',
     label: '🎩 The Gentlemen (T1 E2)',
     notes: 'Eddie negocia la deuda de Freddy con Tommy Dixon y descubre la granja oculta'
@@ -135,8 +149,8 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
   // Formulario
   const [mediaType, setMediaType] = useState<'series' | 'movie' | 'book'>('series');
   const [mediaTitle, setMediaTitle] = useState('The Gentlemen');
-  const [episodeOrPart, setEpisodeOrPart] = useState('Temporada 1, Episodio 2');
-  const [userNotes, setUserNotes] = useState('');
+  const [episodeOrPart, setEpisodeOrPart] = useState('Temporada 2, Episodio 2');
+  const [userNotes, setUserNotes] = useState('Eddie Horniman y Susie Glass viajan a Milán para cerrar el acuerdo con Marco Moretti');
 
   // Estados de generación
   const [isGenerating, setIsGenerating] = useState(false);
@@ -522,15 +536,18 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
         </div>
 
         {mediaTitle.toLowerCase().includes('gentlemen') && (
-          <div className="p-3 rounded-2xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-950 space-y-1">
-            <p className="font-bold">
-              💡 Aclaración sobre <em>The Gentlemen</em>:
+          <div className="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-950 space-y-1.5">
+            <p className="font-bold flex items-center gap-1.5">
+              <span>💡 Guía sobre The Gentlemen (Serie de Netflix):</span>
             </p>
             <p>
-              • <strong>Serie de Netflix (2024):</strong> Protagonizada por Eddie Horniman (Theo James) y Susie Glass (Kaya Scodelario). Tiene 8 episodios en la Temporada 1. (La Temporada 2 aún no se ha estrenado).
+              • <strong>Protagonistas reales:</strong> <strong>Eddie Horniman</strong> (Duque de Halstead / Theo James), <strong>Susie Glass</strong> (Kaya Scodelario), <strong>Bobby Glass</strong> (Ray Winstone) y <strong>Freddy Horniman</strong>.
             </p>
             <p>
-              • <strong>Película de 2019:</strong> Protagonizada por Mickey Pearson (Matthew McConaughey) y Ray (Charlie Hunnam).
+              • <strong>Temporada 2:</strong> Eddie y Susie viajan a Italia (Milán) y expanden el imperio con el capo Marco Moretti.
+            </p>
+            <p className="text-[11px] text-slate-500">
+              *(La película de 2019 fue la de Mickey Pearson y Ray; no confundir con la serie de Netflix).*
             </p>
           </div>
         )}
@@ -752,34 +769,34 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                       type="button"
                       onClick={() =>
                         setCorrectionNotes(
-                          'Es la serie de Netflix de 2024 (Guy Ritchie) con Eddie Horniman (Theo James), Susie Glass y Freddy Horniman. No es la película de 2019 de Mickey Pearson.'
+                          'The Gentlemen Temporada 2, Episodio 2 ("There\'s a Rat in the Kitchen"): Eddie Horniman viaja a Milán junto a Susie Glass para cerrar un acuerdo arriesgado con el capo de la mafia italiana Marco Moretti, mientras en Inglaterra Freddy lidia con problemas y tensiones.'
                         )
                       }
                       className="px-2.5 py-1 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-semibold cursor-pointer"
                     >
-                      🎩 Es la serie de Netflix (Eddie & Susie Glass)
+                      🇮🇹 The Gentlemen T2 E2: Eddie y Susie en Milán con Marco Moretti
                     </button>
                     <button
                       type="button"
                       onClick={() =>
                         setCorrectionNotes(
-                          'Es la película de 2019 con Mickey Pearson (Matthew McConaughey) y Ray (Charlie Hunnam).'
+                          'The Gentlemen Temporada 2, Episodio 1 ("The Road to Kingdom"): Eddie Horniman organiza una cacería de alto riesgo en la mansión Halstead con mafiosos italianos y un jeque para expandir el imperio a Europa.'
                         )
                       }
                       className="px-2.5 py-1 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-semibold cursor-pointer"
                     >
-                      🥊 Es la película de 2019 (Mickey & Ray)
+                      🎩 The Gentlemen T2 E1: Cacería y expansión con Eddie
                     </button>
                     <button
                       type="button"
                       onClick={() =>
                         setCorrectionNotes(
-                          'La Temporada 2 de Netflix aún no se ha estrenado. Céntrate en los personajes de la Temporada 1 (Eddie Horniman heredando el ducado y Susie Glass).'
+                          'Es la serie de Netflix (Guy Ritchie) protagonizada por Eddie Horniman (Theo James), Susie Glass (Kaya Scodelario) y Freddy Horniman. No es la película de 2019 de Mickey Pearson.'
                         )
                       }
                       className="px-2.5 py-1 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-semibold cursor-pointer"
                     >
-                      ⚠️ La Temporada 2 aún no existe en Netflix
+                      📺 Es la serie de Netflix (Eddie Horniman & Susie Glass)
                     </button>
                     <button
                       type="button"
@@ -790,7 +807,7 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                       }
                       className="px-2.5 py-1 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-semibold cursor-pointer"
                     >
-                      📺 T1 E2: Deuda de Freddy con Tommy Dixon
+                      🏰 T1 E2: Deuda de Freddy con Tommy Dixon
                     </button>
                   </div>
                 </div>

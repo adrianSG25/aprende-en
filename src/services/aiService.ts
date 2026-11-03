@@ -923,8 +923,12 @@ ${userNotes ? `- Additional user notes / real plot details: "${userNotes}"` : ''
 
 CRITICAL RULES AGAINST HALLUCINATIONS:
 1. DISTINGUISH ADAPTATIONS CAREFULLY:
-   - "The Gentlemen" Netflix TV series (2024, Guy Ritchie): Stars Eddie Horniman (Duke of Halstead / Theo James), Susie Glass (Kaya Scodelario), Freddy Horniman (Daniel Ings), Geoff Seacombe (Vinnie Jones). Season 1 has 8 episodes. Season 2 has not aired yet. If the user asks for Season 2 or an unaired episode, state clearly in synopsisEs that Season 2 has not aired yet and focus on Eddie Horniman, Susie Glass and the Halstead estate, OR follow the user's specific notes.
-   - "The Gentlemen" 2019 Movie: Stars Mickey Pearson (Matthew McConaughey), Ray (Charlie Hunnam), Fletcher (Hugh Grant), Dry Eye. DO NOT confuse the 2019 movie characters (Mickey, Ray) with the 2024 Netflix series!
+   - "The Gentlemen" Netflix TV series (Guy Ritchie): Stars Eddie Horniman (Duke of Halstead / Theo James), Susie Glass (Kaya Scodelario), Bobby Glass (Ray Winstone), Freddy Horniman (Daniel Ings), Geoff Seacombe (Vinnie Jones).
+     * Season 1: Eddie inherits the Halstead estate, uncovers the weed empire underneath, and pays off Freddy's debt.
+     * Season 2: Eddie and Susie expand their criminal empire into Europe and Italy:
+       - S2 Episode 1 ("The Road to Kingdom"): Eddie hosts a lavish, high-stakes shooting party at Halstead estate with Italian mafia figures and an Arab Sheikh to secure political peerage and international distribution.
+       - S2 Episode 2 ("There's a Rat in the Kitchen"): Eddie travels to Milan alongside Susie Glass to strike a dangerous pact with Mafia boss Marco Moretti, while back in England Freddy deals with recovery and sudden betrayals.
+     * CRITICAL: Do NOT confuse with the 2019 movie! Mickey Pearson (Matthew McConaughey) and Ray (Charlie Hunnam) are from the 2019 MOVIE, NOT the Netflix series! In the Netflix series the protagonists are always Eddie Horniman and Susie Glass.
 2. STRICTLY HONOR USER CORRECTIONS:
    - If the user provides notes or corrections about what actually happened, your synopsis, vocabulary and questions MUST be 100% faithful to the user's notes and the real characters. Never invent imaginary plots when the user gave real details.
 3. AUTHENTIC UK VOCABULARY:
