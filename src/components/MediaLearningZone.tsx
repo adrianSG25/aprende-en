@@ -30,7 +30,11 @@ import {
   Clock,
   Trash2,
   Languages,
-  AlertTriangle
+  AlertTriangle,
+  Wrench,
+  Edit3,
+  AlertCircle,
+  X
 } from 'lucide-react';
 
 interface MediaLearningZoneProps {
@@ -153,6 +157,13 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
   const [questionShowTrans, setQuestionShowTrans] = useState<Record<string, boolean>>({});
   const [repetitionMap, setRepetitionMap] = useState<Record<string, QuestionRepetitionState>>({});
 
+  // Estados para el apartado de corrección por si la IA se equivoca de trama o personajes
+  const [showCorrectionBox, setShowCorrectionBox] = useState(false);
+  const [correctionNotes, setCorrectionNotes] = useState('');
+  const [isRegeneratingCorrection, setIsRegeneratingCorrection] = useState(false);
+  const [isEditingSynopsis, setIsEditingSynopsis] = useState(false);
+  const [editedSynopsis, setEditedSynopsis] = useState('');
+
   // Cargar historial al iniciar
   useEffect(() => {
     const list = loadMediaSessions();
@@ -212,6 +223,54 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
     if (activeSession?.id === id) {
       setActiveSession(updated[0] || null);
     }
+  };
+
+  // Regenerar la sesión obligando a la IA a seguir la trama real del usuario
+  const handleRegenerateWithCorrection = async () => {
+    if (!activeSession) return;
+    setIsRegeneratingCorrection(true);
+    setGenerationError(null);
+
+    const fullCorrectionInstruction = `CORRECCIÓN URGENTE DEL USUARIO: La trama previa fue errónea o mezcló personajes de otra película o temporada no estrenada. Utiliza OBLIGATORIAMENTE esta información real del episodio: "${correctionNotes}". No inventes otros personajes ajenos a esto.`;
+
+    try {
+      const session = await generateMediaAnalysisWithAI(
+        activeSession.mediaTitle,
+        activeSession.mediaType,
+        activeSession.episodeOrPart,
+        fullCorrectionInstruction
+      );
+      // Mantener id de la sesión para sobrescribirla limpiamente
+      const correctedSession = { ...session, id: activeSession.id };
+      const updatedList = saveMediaSession(correctedSession);
+      setSavedSessions(updatedList);
+      setActiveSession(correctedSession);
+      setShowCorrectionBox(false);
+      setCorrectionNotes('');
+      setWordAttempts({});
+      setQuestionAnswers({});
+      setQuestionFeedbacks({});
+      setRepetitionMap({});
+    } catch (err: unknown) {
+      setGenerationError(
+        err instanceof Error ? err.message : 'Error al regenerar con la corrección.'
+      );
+    } finally {
+      setIsRegeneratingCorrection(false);
+    }
+  };
+
+  // Guardar edición manual de la sinopsis
+  const handleSaveEditedSynopsis = () => {
+    if (!activeSession || !editedSynopsis.trim()) return;
+    const updated: MediaAnalysisSession = {
+      ...activeSession,
+      synopsisEs: editedSynopsis.trim()
+    };
+    const list = saveMediaSession(updated);
+    setSavedSessions(list);
+    setActiveSession(updated);
+    setIsEditingSynopsis(false);
   };
 
   // PARTE 1: Comprobar traducción al español escrita por el alumno
@@ -462,16 +521,30 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
           </div>
         </div>
 
+        {mediaTitle.toLowerCase().includes('gentlemen') && (
+          <div className="p-3 rounded-2xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-950 space-y-1">
+            <p className="font-bold">
+              💡 Aclaración sobre <em>The Gentlemen</em>:
+            </p>
+            <p>
+              • <strong>Serie de Netflix (2024):</strong> Protagonizada por Eddie Horniman (Theo James) y Susie Glass (Kaya Scodelario). Tiene 8 episodios en la Temporada 1. (La Temporada 2 aún no se ha estrenado).
+            </p>
+            <p>
+              • <strong>Película de 2019:</strong> Protagonizada por Mickey Pearson (Matthew McConaughey) y Ray (Charlie Hunnam).
+            </p>
+          </div>
+        )}
+
         {/* Detalles opcionales que recuerde */}
         <div>
           <label className="text-xs font-bold text-slate-700 block mb-1">
-            Detalles o escenas que recuerdes (Opcional):
+            ¿Quiénes salen o qué pasó? (Pega la sinopsis de Netflix o tus notas para que la IA no invente nada):
           </label>
           <input
             type="text"
             value={userNotes}
             onChange={(e) => setUserNotes(e.target.value)}
-            placeholder="Ej: La parte en la que Tommy habla con la policía, la pelea en el ring..."
+            placeholder="Ej: Es la serie de Netflix con Eddie Horniman / Pega aquí la sinopsis de Netflix / Escena del pub..."
             className="w-full bg-white border-2 border-slate-300 focus:border-indigo-600 rounded-2xl p-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none"
           />
         </div>
@@ -571,9 +644,190 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
               {activeSession.mediaTitle} — {activeSession.episodeOrPart}
             </h3>
 
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-2xl border border-slate-200">
-              <strong>🎬 Resumen de la trama:</strong> {activeSession.synopsisEs}
-            </p>
+            {!isEditingSynopsis ? (
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs sm:text-sm text-slate-700 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-slate-900 flex items-center gap-1.5">
+                    🎬 Resumen de la trama:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditedSynopsis(activeSession.synopsisEs);
+                      setIsEditingSynopsis(true);
+                    }}
+                    className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                    <span>Editar texto</span>
+                  </button>
+                </div>
+                <p className="leading-relaxed">{activeSession.synopsisEs}</p>
+              </div>
+            ) : (
+              <div className="bg-indigo-50/50 p-3.5 rounded-2xl border border-indigo-200 space-y-2">
+                <span className="text-xs font-bold text-indigo-950 block">
+                  Editar resumen de la trama manualmente:
+                </span>
+                <textarea
+                  rows={3}
+                  value={editedSynopsis}
+                  onChange={(e) => setEditedSynopsis(e.target.value)}
+                  className="w-full bg-white border border-indigo-300 rounded-xl p-2.5 text-xs sm:text-sm text-slate-900 outline-none"
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingSynopsis(false)}
+                    className="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveEditedSynopsis}
+                    className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer"
+                  >
+                    Guardar resumen
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Botón y Panel de Corrección de Alucinación / Error de IA */}
+            <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => setShowCorrectionBox(!showCorrectionBox)}
+                className={`text-xs font-bold px-3 py-2 rounded-xl border flex items-center gap-1.5 cursor-pointer transition-all ${
+                  showCorrectionBox
+                    ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                    : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300'
+                }`}
+              >
+                <AlertCircle className="w-4 h-4 text-amber-600" />
+                <span>¿La IA se ha equivocado o inventado la trama? Corregir aquí</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => handleDeleteSession(activeSession.id, e)}
+                className="text-xs text-rose-600 hover:text-rose-800 font-bold px-2 py-1 flex items-center gap-1 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Borrar este episodio</span>
+              </button>
+            </div>
+
+            {/* Apartado Desplegable de Corrección */}
+            {showCorrectionBox && (
+              <div className="p-4 rounded-2xl bg-amber-50/90 border-2 border-amber-300 space-y-3 animate-in fade-in">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Wrench className="w-4 h-4 text-amber-800 shrink-0" />
+                    <h4 className="font-extrabold text-amber-950 text-xs sm:text-sm">
+                      Apartado de Corrección: Dile a la IA lo que pasó realmente
+                    </h4>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowCorrectionBox(false)}
+                    className="text-amber-800 hover:text-amber-950 p-1 cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <p className="text-xs text-amber-900 leading-relaxed">
+                  Las IAs a veces mezclan películas y series del mismo nombre (ej: <em>The Gentlemen</em> de Netflix de 2024 con Eddie Horniman vs la peli de 2019 con Mickey Pearson), o inventan historias si una temporada aún no se ha estrenado.
+                </p>
+
+                {/* Chips rápidos de corrección */}
+                <div className="space-y-1.5">
+                  <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider block">
+                    Aclaraciones rápidas sugeridas:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5 text-xs">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCorrectionNotes(
+                          'Es la serie de Netflix de 2024 (Guy Ritchie) con Eddie Horniman (Theo James), Susie Glass y Freddy Horniman. No es la película de 2019 de Mickey Pearson.'
+                        )
+                      }
+                      className="px-2.5 py-1 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-semibold cursor-pointer"
+                    >
+                      🎩 Es la serie de Netflix (Eddie & Susie Glass)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCorrectionNotes(
+                          'Es la película de 2019 con Mickey Pearson (Matthew McConaughey) y Ray (Charlie Hunnam).'
+                        )
+                      }
+                      className="px-2.5 py-1 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-semibold cursor-pointer"
+                    >
+                      🥊 Es la película de 2019 (Mickey & Ray)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCorrectionNotes(
+                          'La Temporada 2 de Netflix aún no se ha estrenado. Céntrate en los personajes de la Temporada 1 (Eddie Horniman heredando el ducado y Susie Glass).'
+                        )
+                      }
+                      className="px-2.5 py-1 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-semibold cursor-pointer"
+                    >
+                      ⚠️ La Temporada 2 aún no existe en Netflix
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCorrectionNotes(
+                          'Temporada 1 Episodio 2: Eddie intenta saldar la deuda de 8 millones de libras de su hermano Freddy con Tommy Dixon mientras Susie controla la granja de marihuana bajo la mansión.'
+                        )
+                      }
+                      className="px-2.5 py-1 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-semibold cursor-pointer"
+                    >
+                      📺 T1 E2: Deuda de Freddy con Tommy Dixon
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-amber-950 block">
+                    Escribe o pega aquí la trama real o lo que viste:
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={correctionNotes}
+                    onChange={(e) => setCorrectionNotes(e.target.value)}
+                    placeholder="Ej: Salen Eddie Horniman y Susie Glass. Eddie descubre que bajo su mansión hay una granja oculta de marihuana y Tommy Dixon exige 8 millones..."
+                    className="w-full bg-white border-2 border-amber-300 focus:border-amber-600 rounded-xl p-3 text-xs sm:text-sm text-slate-900 outline-none"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  disabled={isRegeneratingCorrection || !correctionNotes.trim()}
+                  onClick={handleRegenerateWithCorrection}
+                  className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-40 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs cursor-pointer flex items-center justify-center gap-2 min-h-[42px]"
+                >
+                  {isRegeneratingCorrection ? (
+                    <>
+                      <RotateCcw className="w-4 h-4 animate-spin" />
+                      <span>Regenerando sesión con la trama real...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="w-4 h-4" />
+                      <span>Regenerar sesión con esta trama real</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* ======================================================== */}
