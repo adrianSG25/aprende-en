@@ -361,14 +361,114 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
 @keyframes popIn{0%{opacity:0;transform:scale(.95)}100%{opacity:1;transform:scale(1)}}
 
 @media (max-width:900px){
-  .hero-text{left:6vw;right:6vw;top:15vh;transform:none;max-width:none}
-  .caps{left:6vw;right:6vw;width:auto;top:14vh;transform:none;height:220px}
-  .stats,.flipgrid{grid-template-columns:repeat(2,1fr)}
-  .flip{height:250px}
-  .split{grid-template-columns:1fr}
-  .split>div:first-child{margin-bottom:20px}
-  .sim-stage{grid-template-columns:1fr;gap:16px;margin-top:2vh}
+  /* Navigation */
+  #topnav{padding:0 14px}
+  #topnav span{display:none}
+  #topnav a.nav-link{padding:.26rem .65rem;font-size:.74rem}
   #dots{display:none}
+
+  /* Typography */
+  h1{font-size:clamp(1.9rem,7.4vw,3.8rem);line-height:1.06}
+  h2{font-size:clamp(1.45rem,5.6vw,2.5rem);line-height:1.1}
+  .lead{font-size:.92rem;line-height:1.45;max-width:92vw}
+  .kicker{font-size:.72rem;letter-spacing:.16em;margin-bottom:.5rem}
+  .head-top{top:54px;padding:0 4vw}
+
+  /* 1 · Hero */
+  .hero-text{left:4vw;right:4vw;top:10vh;transform:none;max-width:none;text-align:center}
+  .hero-text .tags{margin-top:1rem;display:flex;justify-content:center;flex-wrap:wrap}
+  .hero-text .tag{font-size:.68rem;padding:.24rem .55rem;margin:.15rem}
+  .hero-mid{padding:0 4vw}
+  .hero-mid h2{font-size:clamp(1.5rem,6vw,2.6rem);max-width:90vw}
+  .scroll-cue{bottom:18px;font-size:.65rem;gap:6px}
+  .mouse{width:20px;height:32px}
+
+  /* 2 · Carousel */
+  .ring-stage{padding-top:4vh}
+  .ring{width:min(250px,76vw);height:min(320px,44vh)}
+  .pcard{padding:18px 16px;border-radius:22px}
+  .pcard .big{font-size:3.2rem;top:14px;left:14px}
+  .pcard .num{font-size:.7rem;top:16px;right:16px}
+  .pcard b{font-size:1.25rem}
+  .pcard p{font-size:.82rem;line-height:1.35;margin-top:4px}
+  .ring-bottom{bottom:2.2vh;gap:8px;padding:0 4vw}
+  .ring-cap{font-size:.82rem;min-height:2.6em;line-height:1.35}
+
+  /* 3 · Exploded Tech Stack */
+  .caps{left:4vw;right:4vw;width:auto;top:9vh;transform:none;height:150px;text-align:center}
+  .cap h2{font-size:clamp(1.35rem,5.2vw,2rem)}
+  .cap .lead{font-size:.82rem;margin-top:.4rem;line-height:1.35}
+  .explode-stage{padding-top:70px}
+  .browser3d{width:min(320px,86vw);height:min(200px,54vw)}
+  .burst .chip{font-size:.65rem;padding:.2rem .45rem}
+  .lbl{display:none}
+
+  /* 4 · Build & Stats */
+  .bigtext{font-size:clamp(1.12rem,4vw,2rem);padding:0 4vw;line-height:1.35;text-align:center}
+  .stats{grid-template-columns:repeat(2,1fr);gap:10px;padding:0 4vw;margin-top:2.5vh}
+  .stat.card{padding:.75rem .6rem;border-radius:16px}
+  .stat .n{font-size:clamp(1.6rem,6vw,2.4rem)}
+  .stat p{font-size:.72rem}
+
+  /* 5 · Learning Cycle / Board */
+  .split{grid-template-columns:1fr;gap:8px;padding:0 4vw;text-align:center}
+  .split>div:first-child{margin-bottom:6px}
+  .feat{display:none}
+  .room{display:none}
+  .board-wrap{height:min(310px,44vh);margin-top:4px}
+  .board-cap{font-size:.84rem;padding:0 1rem;min-height:2.4em}
+
+  /* 6 · Architecture SVG */
+  .arch-stage{padding-top:4vh}
+  .arch{width:94vw}
+  .node{padding:.32rem .45rem;min-width:76px;border-radius:10px}
+  .node .e{font-size:1.05rem}
+  .node b{font-size:.68rem;line-height:1.1}
+  .node small{display:none}
+  .bottom-cap{bottom:2vh;font-size:.74rem;padding:0 4vw}
+
+  /* 7 & 8 · Simulators */
+  .sim-stage{grid-template-columns:1fr;gap:14px;padding:0 4vw;margin-top:1.5vh}
+  .phone-mockup{padding:14px 12px;border-radius:22px}
+  .chat-bubble{font-size:.82rem;padding:9px 12px}
+  .slang-btn{padding:9px 11px;font-size:.8rem}
+  .drill-input{font-size:16px;padding:11px 13px}
+  .check-btn{padding:10px 16px;font-size:.86rem}
+  .card{padding:1rem 1.1rem;border-radius:18px}
+
+  /* 9 · 4 Flip Cards */
+  .flipgrid{grid-template-columns:repeat(2,1fr);gap:10px;padding:0 4vw;margin-top:2vh}
+  .flip{height:195px}
+  .face{padding:12px 10px;border-radius:16px}
+  .face .icon{font-size:1.4rem;margin-bottom:.2rem}
+  .face h3{font-size:.86rem;margin-bottom:.2rem}
+  .face p{font-size:.7rem;line-height:1.3}
+  .face.back{font-size:3rem}
+  .shieldnote{flex-direction:column;text-align:center;font-size:.78rem;padding:10px 12px;margin-top:1.5vh;gap:6px}
+
+  /* 10 · 3D Fly-Through Bugs */
+  .bug-stage{padding-top:4vh}
+  .bug-world{width:min(660px,92vw);height:250px}
+  .bug{padding:18px 16px;border-radius:20px}
+  .bug .q{font-size:clamp(1.05rem,4vw,1.4rem);line-height:1.25}
+  .bug .why{font-size:.8rem;margin-top:.4rem;line-height:1.35}
+  .bug .fixl{font-size:.8rem;margin-top:.5rem;line-height:1.35}
+  .stamp{top:12px;right:12px;font-size:.68rem;padding:3px 8px}
+  .bug-count{bottom:2vh;font-size:.78rem;gap:6px}
+
+  /* 11 · Terminal */
+  .term-stage{display:block;width:100%}
+  .term{border-radius:14px}
+  .term .tbar{padding:.45rem .7rem;font-size:.68rem}
+  .term pre{min-height:160px;font-size:.72rem;padding:.75rem .85rem;line-height:1.4}
+  .side{display:none}
+
+  /* 12 · Final CTA */
+  .end-emoji{font-size:clamp(3.2rem,14vw,5.5rem)}
+  .end h1{font-size:clamp(1.7rem,6.8vw,3rem);margin-top:.6rem}
+  .end .lead{font-size:.88rem;line-height:1.45;padding:0 4vw;margin-top:.8rem}
+  .btn-row{margin-top:1.4rem;gap:10px}
+  .btn{padding:.75rem 1.4rem;font-size:.9rem}
 }
 </style>
 </head>
@@ -884,6 +984,12 @@ let W=innerWidth,H=innerHeight,mobile=W<900;
 const updaters={}, onResize=[];
 let mx=0,my=0,mxs=0,mys=0,sy=scrollY,now=0;
 addEventListener('mousemove',e=>{mx=e.clientX/W*2-1;my=e.clientY/H*2-1});
+addEventListener('touchmove',e=>{
+  if(e.touches && e.touches[0]){
+    mx=(e.touches[0].clientX/W)*2-1;
+    my=(e.touches[0].clientY/H)*2-1;
+  }
+},{passive:true});
 
 const sceneEls=$$('.scene');
 sceneEls.forEach(s=>s.style.height=(+s.dataset.len||100)+'vh');
@@ -1084,7 +1190,7 @@ const pcards=phases.map((ph,i)=>{
 const stepBars=$$('#steps b');
 let RR=380,lastAct=-1;
 onResize.push(()=>{
-  RR=Math.min(410,W*.4);
+  RR=mobile?Math.min(240,Math.max(150,W*0.42)):Math.min(410,W*.4);
   pcards.forEach((c,i)=>c.style.transform=`rotateY(${i*72}deg) translateZ(${RR}px)`);
 });
 
@@ -1121,11 +1227,11 @@ let chipT=[];
 onResize.push(()=>{
   chipT=chips.map((c,i)=>{
     const cols=mobile?2:3,col=i%cols,row=Math.floor(i/cols);
-    const baseX=mobile?0:W*.16,spanX=mobile?W*.42:W*.42;
+    const baseX=mobile?0:W*.16,spanX=mobile?W*.32:W*.42;
     return {
-      x:baseX+(col/(cols-1)-.5)*spanX+(hash(i)-.5)*40,
-      y:(row/(Math.ceil(chips.length/cols)-1)-.5)*H*(mobile?.5:.62)+(mobile?H*.12:0)+(hash(i+9)-.5)*24,
-      r:(hash(i+3)-.5)*24
+      x:baseX+(col/(cols-1)-.5)*spanX+(hash(i)-.5)*20,
+      y:(row/(Math.ceil(chips.length/cols)-1)-.5)*H*(mobile?.35:.62)+(mobile?H*.1:0)+(hash(i+9)-.5)*16,
+      r:(hash(i+3)-.5)*16
     };
   });
 });
@@ -1183,15 +1289,28 @@ updaters['s-build']=p=>{
    5 · MOTOR DE FIJACIÓN (3D Orbital Board)
    ============================================================ */
 const board=$('#board'),boardTilt=$('#boardTilt'),token=$('#token'),boardCap=$('#boardCap'),feats=$$('#feat li'),room=$('#room');
-const BR=160,BC=220,BOARD_RX=58;
+let BR=160,BC=220,BOARD_RX=58;
 const angOf=j=>(-90+j*72)*Math.PI/180;
 const snodes=phases.map((ph,j)=>{
   const n=document.createElement('div');n.className='snode';
-  n.style.left=(BC+Math.cos(angOf(j))*BR)+'px';
-  n.style.top=(BC+Math.sin(angOf(j))*BR)+'px';
+  board.appendChild(n);n._lift=0;
   n.innerHTML=`<div class="disc"></div><div class="up"><span class="e">${ph.e}</span><code>${ph.c}</code></div>`;
-  board.appendChild(n);n._lift=0;return n;
+  return n;
 });
+
+function updateBoardLayout(){
+  const bw = mobile ? Math.min(290, W * 0.76) : 440;
+  board.style.width = bw + 'px';
+  board.style.height = bw + 'px';
+  BC = bw / 2;
+  BR = bw * 0.36;
+  snodes.forEach((n,j)=>{
+    n.style.left=(BC+Math.cos(angOf(j))*BR)+'px';
+    n.style.top=(BC+Math.sin(angOf(j))*BR)+'px';
+  });
+}
+onResize.push(updateBoardLayout);
+
 let lastSrv=-1;
 updaters['s-server']=p=>{
   const k=clamp((p-.08)/.84)*4,i=Math.floor(Math.min(k,3.9999)),f=k-i,sn=i+eIO(clamp((f-.25)/.5));
@@ -1222,7 +1341,8 @@ archPaths.forEach(pa=>{
 });
 updaters['s-arch']=p=>{
   const a=eOut(seg(p,0,.3));
-  arch.style.transform=`rotateX(${lerp(55,8,a)-mys*5}deg) rotateY(${mxs*8}deg) scale(${lerp(.8,1,a)})`;
+  const archSc=mobile?Math.min(1,W/480):1;
+  arch.style.transform=`rotateX(${lerp(55,8,a)-mys*5}deg) rotateY(${mxs*8}deg) scale(${lerp(.8,1,a)*archSc})`;
   arch.style.opacity=seg(p,0,.08);
   archNodes.forEach((n,i)=>{
     const t=eOut(seg(p,.1+i*.055,.22+i*.055));
@@ -1463,8 +1583,13 @@ function frame(t){
   const target=scrollY;
   sy=reduce?target:sy+(target-sy)*.11;
   if(Math.abs(target-sy)<.05) sy=target;
-  mxs+=(mx-mxs)*.06;
-  mys+=(my-mys)*.06;
+  if(mobile && Math.abs(mx)<0.05 && Math.abs(my)<0.05){
+    mxs += (Math.sin(t*0.001)*0.2 - mxs)*0.03;
+    mys += (Math.cos(t*0.0014)*0.12 - mys)*0.03;
+  } else {
+    mxs+=(mx-mxs)*.06;
+    mys+=(my-mys)*.06;
+  }
 
   let active=0;
   layout.forEach((s,i)=>{
