@@ -3,1455 +3,1095 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>UK Street English — Cómo se hizo · Showcase Interactivo</title>
+<title>UK Street English — The Street Showcase · De la Academia al Pub</title>
 <link rel="icon" href="../public/icon.svg" type="image/svg+xml" />
 <style>
 :root{
-  --cyan:#38bdf8; --sky:#0284c7; --indigo:#6366f1; --violet:#8b5cf6; --amber:#fbbf24;
-  --gold:#f59e0b; --rose:#f43f5e; --green:#10b981; --text:#f8fafc; --muted:#94a3b8; --line:rgba(255,255,255,.12);
-  --bg:#030712; --card-bg:rgba(15,23,42,.88);
+  --neon-cyan:#00f5ff;
+  --neon-blue:#3b82f6;
+  --neon-purple:#a855f7;
+  --neon-pink:#ec4899;
+  --neon-amber:#fbbf24;
+  --neon-green:#10b981;
+  --tube-red:#e11d48;
+  --tube-blue:#2563eb;
+  --tube-yellow:#eab308;
+  --tube-green:#059669;
+  --tube-purple:#9333ea;
+  --bg-deep:#05070f;
+  --bg-card:rgba(12,18,34,0.85);
+  --border-neon:rgba(0,245,255,0.25);
+  --text-main:#f8fafc;
+  --text-sub:#94a3b8;
 }
+
 *{box-sizing:border-box;margin:0;padding:0}
-html{background:#000;scroll-behavior:auto}
+html{background:var(--bg-deep);scroll-behavior:auto;color:var(--text-main)}
 body{
-  background:#000;color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
-  overflow-x:hidden;-webkit-font-smoothing:antialiased;
+  background:var(--bg-deep);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
 }
+
+/* Scroll scene scaffolding */
 .scene{position:relative}
 .sticky{position:sticky;top:0;height:100vh;width:100%;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .col{flex-direction:column}
-.kicker{font-size:.82rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);margin-bottom:.9rem}
-h1{font-size:clamp(2.6rem,6.4vw,5.8rem);font-weight:800;letter-spacing:-.04em;line-height:1.02}
-h2{font-size:clamp(1.9rem,4.6vw,4rem);font-weight:800;letter-spacing:-.035em;line-height:1.06}
-.grad{background:linear-gradient(90deg,var(--cyan),var(--indigo) 50%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
-.grad-warm{background:linear-gradient(90deg,var(--amber),#f97316,var(--rose));-webkit-background-clip:text;background-clip:text;color:transparent}
-.grad-pub{background:linear-gradient(90deg,#38bdf8,#818cf8 50%,#ec4899);-webkit-background-clip:text;background-clip:text;color:transparent}
-.lead{font-size:clamp(1rem,1.4vw,1.28rem);color:var(--muted);line-height:1.55;max-width:56ch}
-.lead b{color:var(--text)}
-code,.mono{font-family:"SF Mono","Cascadia Code",Consolas,monospace}
-code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font-size:.88em;color:#7dd3fc}
-.center{text-align:center}
-.head-top{position:absolute;top:calc(48px + 5vh);left:0;right:0;text-align:center;z-index:5;padding:0 6vw}
-.card{
-  background:linear-gradient(180deg,rgba(30,41,59,.82),rgba(15,23,42,.94));
-  border:1px solid var(--line);border-radius:22px;padding:1.3rem 1.4rem;
-  box-shadow:0 30px 80px rgba(0,0,0,.65);backdrop-filter:blur(14px);
+
+/* Typography & Neons */
+.kicker{
+  font-size:.8rem;font-weight:800;letter-spacing:.25em;text-transform:uppercase;
+  display:inline-flex;align-items:center;gap:8px;margin-bottom:.8rem;
+  background:linear-gradient(90deg,var(--neon-cyan),var(--neon-pink));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
 }
-.card h3{font-size:1.05rem;font-weight:700;margin-bottom:.4rem}
-.card p{font-size:.92rem;color:var(--muted);line-height:1.5}
-.tag{
-  display:inline-block;font-size:.75rem;font-weight:700;padding:.32rem .75rem;
-  border-radius:99px;margin:.22rem;border:1px solid rgba(255,255,255,.18);
-  color:#e2e8f0;background:rgba(255,255,255,.06);letter-spacing:.02em;
+.kicker::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--neon-cyan);box-shadow:0 0 10px var(--neon-cyan)}
+
+h1{font-size:clamp(2.5rem,6.2vw,5.6rem);font-weight:900;letter-spacing:-.04em;line-height:1.02}
+h2{font-size:clamp(1.9rem,4.5vw,3.8rem);font-weight:800;letter-spacing:-.03em;line-height:1.08}
+.grad-street{
+  background:linear-gradient(135deg,#00f5ff 0%,#a855f7 50%,#ec4899 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.grad-amber{
+  background:linear-gradient(135deg,#fbbf24 0%,#f97316 60%,#ef4444 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.lead{font-size:clamp(1rem,1.35vw,1.25rem);color:var(--text-sub);line-height:1.6;max-width:58ch}
+.lead b{color:#fff}
+
+/* Chrome Header */
+#streetNav{
+  position:fixed;top:0;left:0;right:0;height:52px;
+  background:rgba(5,7,15,0.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,0.08);z-index:90;
+  display:flex;align-items:center;justify-content:space-between;padding:0 28px;
+}
+.brand-roundel{
+  display:flex;align-items:center;gap:10px;font-weight:800;font-size:.9rem;letter-spacing:.02em;text-decoration:none;color:#fff;
+}
+.roundel-icon{
+  width:26px;height:26px;border-radius:50%;border:4px solid #e11d48;position:relative;display:flex;align-items:center;justify-content:center;
+}
+.roundel-icon::after{
+  content:"";position:absolute;width:34px;height:8px;background:#2563eb;border-radius:2px;
+}
+.live-pill{
+  background:linear-gradient(135deg,var(--neon-cyan),var(--neon-purple));
+  color:#000;font-weight:800;font-size:.78rem;padding:.35rem .9rem;border-radius:99px;
+  text-decoration:none;transition:transform .2s,box-shadow .2s;
+}
+.live-pill:hover{transform:scale(1.05);box-shadow:0 0 20px rgba(0,245,255,0.5)}
+
+/* Track Progress Tube Bar */
+#tubeProgressBar{
+  position:fixed;top:52px;left:0;height:3px;width:0;
+  background:linear-gradient(90deg,#e11d48,#2563eb,#eab308,#059669,#9333ea,#00f5ff);
+  z-index:91;box-shadow:0 0 12px var(--neon-cyan);
 }
 
-/* ---------- chrome nav ---------- */
-#topnav{
-  position:fixed;top:0;left:0;right:0;height:48px;display:flex;align-items:center;
-  justify-content:space-between;padding:0 26px;z-index:60;
-  background:rgba(3,7,18,.75);backdrop-filter:saturate(180%) blur(20px);
-  -webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--line);
-  font-size:.82rem;color:#cbd5e1;
+/* Sidebar Station Dots */
+#stationNav{
+  position:fixed;right:24px;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:14px;z-index:80;
 }
-#topnav b{color:#fff;letter-spacing:.03em;display:flex;align-items:center;gap:8px}
-#topnav span{color:var(--muted)}
-#topnav a.nav-link{
-  color:var(--cyan);text-decoration:none;font-weight:600;padding:.3rem .8rem;
-  border-radius:99px;border:1px solid rgba(56,189,248,.3);transition:.2s;
+.station-dot{
+  width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2);
+  border:2px solid transparent;cursor:pointer;position:relative;transition:all .25s;
 }
-#topnav a.nav-link:hover{background:rgba(56,189,248,.15);border-color:var(--cyan)}
-#bar{
-  position:fixed;top:48px;left:0;height:2.5px;width:0;
-  background:linear-gradient(90deg,var(--cyan),var(--indigo),var(--rose));
-  z-index:61;box-shadow:0 0 14px var(--cyan);
+.station-dot.active{
+  background:#00f5ff;border-color:#fff;transform:scale(1.6);box-shadow:0 0 14px #00f5ff;
 }
-#dots{position:fixed;right:22px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:12px;z-index:60}
-#dots a{
-  display:block;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.22);
-  position:relative;transition:transform .3s,background .3s,box-shadow .3s;cursor:pointer;
+.station-dot span{
+  position:absolute;right:22px;top:50%;transform:translateY(-50%);
+  background:rgba(12,18,34,0.95);border:1px solid rgba(255,255,255,0.15);
+  padding:.3rem .65rem;border-radius:6px;font-size:.7rem;font-weight:700;
+  white-space:nowrap;color:#fff;opacity:0;pointer-events:none;transition:opacity .2s;
 }
-#dots a.on{background:var(--cyan);transform:scale(1.6);box-shadow:0 0 14px var(--cyan)}
-#dots a span{
-  position:absolute;right:18px;top:50%;transform:translateY(-50%);white-space:nowrap;
-  font-size:.7rem;color:#e2e8f0;opacity:0;transition:.22s;pointer-events:none;
-  background:rgba(15,23,42,.92);padding:.25rem .55rem;border-radius:6px;border:1px solid var(--line);
-}
-#dots a:hover span{opacity:1}
+.station-dot:hover span{opacity:1}
 
-/* ---------- 1 · HERO ---------- */
-#ukCanvas{position:absolute;inset:0;width:100%;height:100%}
-.hero-text{position:absolute;left:7vw;top:50%;transform:translateY(-50%);max-width:min(620px,48vw);z-index:3;will-change:transform,opacity}
-.hero-text .lead{margin-top:1.3rem}
-.hero-text .tags{margin-top:1.4rem;margin-left:-.2rem}
-.hero-mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;opacity:0;z-index:3;pointer-events:none;padding:0 6vw}
-.hero-mid h2{font-size:clamp(2.2rem,5.4vw,4.8rem);max-width:17ch;text-shadow:0 10px 50px #000,0 0 30px #000}
-.scroll-cue{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;font-size:.72rem;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;z-index:3}
-.mouse{width:24px;height:38px;border:2px solid rgba(255,255,255,.45);border-radius:14px;position:relative}
-.mouse::after{content:"";position:absolute;left:50%;top:7px;width:4px;height:8px;margin-left:-2px;border-radius:2px;background:#fff;animation:wheel 1.6s infinite}
-@keyframes wheel{0%{opacity:0;transform:translateY(0)}30%{opacity:1}100%{opacity:0;transform:translateY(13px)}}
-
-/* ---------- 2 · CAROUSEL 3D ---------- */
-.ring-stage{position:absolute;inset:0;perspective:1500px;display:flex;align-items:center;justify-content:center;padding-top:10vh}
-.ring{position:relative;width:290px;height:370px;transform-style:preserve-3d;will-change:transform}
-.pcard{
-  position:absolute;inset:0;border-radius:28px;padding:28px 24px;
-  background:linear-gradient(160deg,rgba(30,41,59,.96),rgba(15,23,42,.98));
-  border:1px solid rgba(255,255,255,.14);display:flex;flex-direction:column;justify-content:flex-end;
-  backface-visibility:hidden;-webkit-backface-visibility:hidden;
-  box-shadow:0 40px 90px rgba(0,0,0,.7);overflow:hidden;
+/* ============================================================
+   1 · HERO: THE DUAL REALITY (Oxford vs. Street Rain)
+   ============================================================ */
+#rainCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+.hero-content{
+  position:relative;z-index:10;text-align:center;max-width:900px;padding:0 24px;
 }
-.pcard::before{content:"";position:absolute;inset:-40%;background:radial-gradient(circle at 30% 22%,var(--c),transparent 42%);opacity:.45}
-.pcard>*{position:relative}
-.pcard .big{font-size:4.6rem;position:absolute;top:22px;left:20px;filter:drop-shadow(0 12px 22px rgba(0,0,0,.6))}
-.pcard .num{position:absolute;top:24px;right:22px;font-size:.78rem;color:var(--muted);font-weight:700;letter-spacing:.12em}
-.pcard b{font-size:1.7rem;letter-spacing:-.025em;line-height:1.15}
-.pcard p{color:#cbd5e1;font-size:.9rem;margin-top:8px;line-height:1.45}
-.pcard code{margin-top:12px;align-self:flex-start}
-.ring-bottom{position:absolute;bottom:6vh;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:14px;z-index:4;padding:0 8vw}
-.ring-cap{font-size:clamp(.95rem,1.3vw,1.15rem);color:#e2e8f0;text-align:center;max-width:62ch;min-height:3em;transition:opacity .3s}
-.steps{display:flex;gap:8px}
-.steps i{width:38px;height:4px;border-radius:2px;background:rgba(255,255,255,.16);overflow:hidden;position:relative}
-.steps i b{position:absolute;inset:0;background:var(--cyan);transform-origin:left;transform:scaleX(0)}
-
-/* ---------- 3 · EXPLODED TECH STACK ---------- */
-.caps{position:absolute;left:7vw;top:50%;transform:translateY(-50%);width:min(440px,35vw);height:360px;z-index:5}
-.cap{position:absolute;inset:0;opacity:0;display:flex;flex-direction:column;justify-content:center}
-.cap h2{font-size:clamp(1.8rem,3.2vw,3rem)}
-.cap .lead{margin-top:1rem;font-size:clamp(.95rem,1.2vw,1.1rem)}
-.explode-stage{position:absolute;inset:0;perspective:1800px;display:flex;align-items:center;justify-content:center}
-.browser3d{position:relative;width:min(660px,62vw);height:min(410px,39vw);transform-style:preserve-3d;will-change:transform}
-.layer{position:absolute;inset:0;border-radius:18px;transform-style:preserve-3d;border:1px solid rgba(255,255,255,.18);overflow:visible}
-.layer .inner{position:absolute;inset:0;border-radius:18px;overflow:hidden}
-.lbl{
-  position:absolute;left:100%;top:50%;transform-origin:0 50%;white-space:nowrap;
-  font-size:.82rem;font-weight:700;padding:.45rem .85rem;border-radius:99px;
-  background:rgba(15,23,42,.88);border:1px solid;opacity:0;margin-left:18px;backdrop-filter:blur(8px);
+.split-headline{
+  margin:1.4rem 0;position:relative;display:inline-block;
 }
-.lbl::before{content:"";position:absolute;right:100%;top:50%;width:18px;height:1px;background:currentColor;opacity:.6}
+.academic-cross{
+  font-size:clamp(1.2rem,2.2vw,1.9rem);color:#64748b;text-decoration:line-through;
+  text-decoration-color:#ef4444;text-decoration-thickness:3px;display:block;margin-bottom:6px;
+  font-style:italic;font-family:Georgia,serif;
+}
+.hero-tags{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:1.5rem}
+.htag{
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);
+  padding:.35rem .8rem;border-radius:99px;font-size:.76rem;font-weight:700;
+  color:#cbd5e1;letter-spacing:.02em;backdrop-filter:blur(10px);
+}
+.htag.accent{border-color:rgba(0,245,255,0.4);color:var(--neon-cyan)}
 
-/* Layers inside 3D exploded */
-.l-pwa .inner{background:radial-gradient(circle at 50% 50%,rgba(16,185,129,.2),rgba(2,6,23,.98) 75%);padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;align-content:center;font-family:Consolas,monospace;font-size:.78rem;color:#6ee7b7}
-.l-pwa .inner div::before{content:"⚙️ ";color:var(--green)}
-.l-ai .inner{background:rgba(23,15,38,.96);padding:20px;font-family:Consolas,monospace;font-size:.72rem;line-height:1.6;color:#c084fc;word-break:break-all}
-.l-ai .inner b{color:#38bdf8}
-.l-react .inner{background:rgba(15,23,42,.95);display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:22px;align-content:center}
-.l-react .sw{aspect-ratio:1;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;border:1px solid rgba(255,255,255,.1)}
-.l-react .rc-title{grid-column:span 5;font-size:.9rem;font-weight:800;color:#93c5fd;display:flex;align-items:center;gap:8px;margin-bottom:4px}
-.l-page .inner{background:#090d16}
-.l-page .bar{height:28px;background:#1e293b;display:flex;align-items:center;gap:6px;padding:0 10px;font-size:.68rem;color:var(--muted)}
-.l-page .bar i{width:9px;height:9px;border-radius:50%;background:#ff5f57;display:inline-block}
-.l-page .bar i:nth-child(2){background:#febc2e}.l-page .bar i:nth-child(3){background:#28c840}
-.l-page .ui{position:absolute;top:28px;left:0;right:0;bottom:0;display:flex;flex-direction:column;padding:12px;gap:8px;background:#090d16}
-.l-page .ui-header{display:flex;justify-content:space-between;align-items:center;padding:4px 8px;border-bottom:1px solid rgba(255,255,255,.08)}
-.l-page .ui-badge{font-size:.7rem;padding:.2rem .6rem;border-radius:99px;background:rgba(251,191,36,.2);color:#fbbf24;font-weight:700}
-.l-page .ui-card{flex:1;background:#1e293b;border-radius:12px;padding:12px;display:flex;flex-direction:column;justify-content:center;gap:8px;border:1px solid rgba(255,255,255,.08)}
-.l-page .ui-bar-nav{height:32px;background:#0f172a;border-radius:8px;display:flex;align-items:center;justify-content:space-around;font-size:1rem}
-
-.burst{position:absolute;inset:0;perspective:1000px;pointer-events:none;z-index:6}
-.chip{
-  position:absolute;left:50%;top:50%;padding:.45rem .85rem;border-radius:99px;
-  background:rgba(56,189,248,.14);border:1px solid rgba(56,189,248,.5);
-  font-family:Consolas,monospace;font-size:.8rem;color:#7dd3fc;white-space:nowrap;
-  opacity:0;box-shadow:0 0 24px rgba(56,189,248,.2);backdrop-filter:blur(6px);
+/* ============================================================
+   2 · THE ISOMETRIC LONDON UNDERGROUND MAP
+   ============================================================ */
+.tube-scene-stage{
+  position:relative;width:100%;max-width:1250px;height:82vh;
+  display:grid;grid-template-columns:1.2fr 1fr;gap:40px;align-items:center;padding:0 4vw;
+}
+.tube-map-wrap{
+  position:relative;height:520px;perspective:1000px;display:flex;align-items:center;justify-content:center;
+}
+.tube-map-svg{
+  width:100%;height:100%;transform-style:preserve-3d;
+  filter:drop-shadow(0 20px 40px rgba(0,0,0,0.8));
+}
+.tube-train{
+  transition:transform 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+.station-card-box{
+  background:var(--bg-card);border:1px solid var(--border-neon);border-radius:24px;
+  padding:28px;box-shadow:0 30px 80px rgba(0,0,0,0.7);backdrop-filter:blur(16px);
+  position:relative;overflow:hidden;
+}
+.station-card-box::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,var(--neon-cyan),var(--neon-pink));
+}
+.station-badge{
+  display:inline-flex;align-items:center;gap:6px;padding:.3rem .75rem;
+  border-radius:99px;font-size:.72rem;font-weight:800;text-transform:uppercase;margin-bottom:12px;
+}
+.station-title{font-size:1.6rem;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+.station-desc{font-size:.95rem;color:var(--text-sub);line-height:1.55}
+.slang-capsule{
+  display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;
+}
+.slang-capsule span{
+  background:rgba(0,245,255,0.1);border:1px solid rgba(0,245,255,0.3);
+  padding:.3rem .7rem;border-radius:8px;font-size:.8rem;font-weight:700;color:#7dd3fc;
 }
 
-/* ---------- 4 · BUILD & STATS ---------- */
-.bigtext{font-size:clamp(1.5rem,3.2vw,2.9rem);font-weight:700;letter-spacing:-.025em;line-height:1.24;max-width:26em;padding:0 7vw;will-change:transform}
-.bigtext .w{opacity:.15}
-.bigtext .kw{background:linear-gradient(90deg,var(--cyan),var(--indigo) 50%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;padding:0 7vw;margin-top:6vh;width:100%;max-width:1250px;perspective:1100px}
-.stat{transform-origin:50% 100%;opacity:0;text-align:center}
-.stat .n{
-  font-size:clamp(2.2rem,4.2vw,3.8rem);font-weight:800;letter-spacing:-.03em;
-  background:linear-gradient(180deg,#fff,#94a3b8);-webkit-background-clip:text;background-clip:text;
-  color:transparent;line-height:1.05;
+/* ============================================================
+   3 · SOUND LAB & PHONETIC EQUALIZER
+   ============================================================ */
+.soundlab-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:36px;width:100%;max-width:1200px;
+  padding:0 5vw;align-items:center;
 }
-.stat p{margin-top:.35rem;font-size:.88rem;color:var(--muted)}
-
-/* ---------- 5 · LEARNING ENGINE (3D Cycle Board) ---------- */
-.split{display:grid;grid-template-columns:1fr 1.05fr;gap:3vw;align-items:center;width:100%;max-width:1280px;padding:0 6vw}
-.feat{list-style:none;margin-top:1.6rem}
-.feat li{
-  padding:.75rem 0;border-bottom:1px solid var(--line);color:#475569;
-  font-weight:600;transition:color .5s;display:flex;gap:.8rem;align-items:center;
-  font-size:clamp(.9rem,1.1vw,1.02rem);
+.waveform-box{
+  background:var(--bg-card);border:1px solid rgba(255,255,255,0.12);
+  border-radius:26px;padding:26px;box-shadow:0 30px 80px rgba(0,0,0,0.6);
+  display:flex;flex-direction:column;gap:18px;
 }
-.feat li.on{color:var(--text)}
-.feat li i{width:9px;height:9px;border-radius:50%;background:#334155;transition:.5s;flex:none}
-.feat li.on i{background:var(--cyan);box-shadow:0 0 14px var(--cyan)}
-.board-wrap{position:relative;height:min(560px,70vh);perspective:1100px;display:flex;align-items:center;justify-content:center}
-.board-tilt{transform-style:preserve-3d}
-.board{
-  position:relative;width:440px;height:440px;transform-style:preserve-3d;border-radius:50%;
-  background:radial-gradient(circle,rgba(99,102,241,.24),rgba(99,102,241,.04) 55%,transparent 70%);will-change:transform;
+#eqCanvas{width:100%;height:130px;border-radius:12px;background:rgba(3,7,18,0.7)}
+.phonetic-compare{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;
 }
-.board .orb{position:absolute;inset:60px;border-radius:50%;border:2px dashed rgba(255,255,255,.18)}
-.board .orb2{position:absolute;inset:20px;border-radius:50%;border:1px solid rgba(56,189,248,.15)}
-.snode{position:absolute;width:0;height:0;transform-style:preserve-3d}
-.snode .disc{
-  position:absolute;width:58px;height:58px;left:-29px;top:-29px;border-radius:50%;
-  background:#0f172a;border:2px solid #334155;transition:background .4s,border-color .4s,box-shadow .4s;
+.ph-card{
+  background:rgba(15,23,42,0.7);border:1px solid rgba(255,255,255,0.08);
+  border-radius:16px;padding:14px;cursor:pointer;transition:all .2s;
 }
-.snode.on .disc{background:rgba(56,189,248,.25);border-color:var(--cyan);box-shadow:0 0 40px rgba(56,189,248,.7)}
-.snode .up{position:absolute;left:0;top:0;transform-origin:0 0;display:flex;flex-direction:column;align-items:center;gap:2px;white-space:nowrap}
-.snode .up .e{font-size:2rem;filter:drop-shadow(0 8px 10px rgba(0,0,0,.6))}
-.snode .up code{font-size:.72rem;color:#cbd5e1}
-.snode.on .up code{color:#7dd3fc;background:rgba(56,189,248,.18)}
-.token{
-  position:absolute;left:0;top:0;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;
-  background:radial-gradient(circle at 35% 35%,#fff,var(--amber) 45%,#b45309);box-shadow:0 0 30px var(--amber);
-}
-.board-cap{position:absolute;bottom:0;left:0;right:0;text-align:center;color:#e2e8f0;font-size:.98rem;min-height:3em;padding:0 2rem}
-.room{
-  margin-top:1.4rem;font-size:.78rem;line-height:1.6;color:#94a3b8;background:rgba(15,23,42,.7);
-  border:1px solid var(--line);border-radius:14px;padding:.9rem 1rem;opacity:0;
-}
-.room .y{color:#fcd34d}.room .c{color:#64748b}
-
-/* ---------- 6 · ARCHITECTURE (SVG Flow) ---------- */
-.arch-stage{position:absolute;inset:0;perspective:1500px;display:flex;align-items:center;justify-content:center;padding-top:8vh}
-.arch{position:relative;width:min(1150px,88vw);aspect-ratio:1150/470;transform-style:preserve-3d;will-change:transform}
-.arch .plane{
-  position:absolute;inset:-4%;border-radius:30px;
-  background:radial-gradient(ellipse at 50% 50%,rgba(99,102,241,.12),transparent 70%);
-  border:1px solid rgba(255,255,255,.06);
-  background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
-  background-size:40px 40px;
-}
-.arch svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.wire{fill:none;stroke:url(#gw);stroke-width:2.5}
-.wire.dash{stroke:rgba(255,255,255,.18);stroke-dasharray:6 6;stroke-width:1.5}
-.node{
-  position:absolute;text-align:center;padding:.8rem 1rem;border-radius:18px;
-  background:rgba(15,23,42,.96);border:1px solid rgba(255,255,255,.16);
-  min-width:150px;box-shadow:0 24px 50px rgba(0,0,0,.65);opacity:0;backdrop-filter:blur(8px);
-}
-.node .e{font-size:1.7rem;display:block}
-.node b{font-size:.9rem;display:block}
-.node small{font-size:.7rem;color:var(--muted);display:block;margin-top:.15rem}
-.node.hl{border-color:rgba(56,189,248,.7);box-shadow:0 0 34px rgba(56,189,248,.24),0 24px 50px rgba(0,0,0,.6)}
-.node.hv{border-color:rgba(139,92,246,.7);box-shadow:0 0 34px rgba(139,92,246,.24),0 24px 50px rgba(0,0,0,.6)}
-.node.ho{border-color:rgba(251,191,36,.7);box-shadow:0 0 34px rgba(251,191,36,.24),0 24px 50px rgba(0,0,0,.6)}
-.node.hg{border-color:rgba(16,185,129,.7);box-shadow:0 0 34px rgba(16,185,129,.24),0 24px 50px rgba(0,0,0,.6)}
-.bottom-cap{position:absolute;bottom:5vh;left:0;right:0;text-align:center;color:#cbd5e1;padding:0 8vw;opacity:0}
-
-/* ---------- 7 & 8 · INTERACTIVE SIMULATORS ---------- */
-.sim-stage{width:100%;max-width:1150px;padding:0 5vw;margin-top:6vh;display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
-.phone-mockup{
-  background:#0b1329;border:3px solid #1e293b;border-radius:36px;padding:20px;
-  box-shadow:0 35px 80px rgba(0,0,0,.8),0 0 30px rgba(56,189,248,.15);
-  display:flex;flex-direction:column;gap:14px;
-}
-.phone-header{
-  display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.08);
-  padding-bottom:12px;
-}
-.phone-contact{display:flex;align-items:center;gap:10px}
-.avatar-circle{
-  width:42px;height:42px;border-radius:50%;display:flex;align-items:center;
-  justify-content:center;font-size:1.4rem;background:#1e293b;border:2px solid var(--cyan);
-}
-.chat-bubble{
-  padding:12px 16px;border-radius:18px;max-width:85%;font-size:.9rem;line-height:1.45;
-  box-shadow:0 8px 20px rgba(0,0,0,.3);animation:popIn .3s ease-out;
-}
-.chat-incoming{background:#1e293b;color:#f1f5f9;align-self:flex-start;border-bottom-left-radius:4px}
-.chat-outgoing{background:linear-gradient(135deg,var(--indigo),var(--cyan));color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
-.slang-btn{
-  background:rgba(30,41,59,.9);border:1px solid rgba(255,255,255,.14);
-  color:#f8fafc;padding:12px 14px;border-radius:14px;text-align:left;
-  font-size:.88rem;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;gap:4px;
-}
-.slang-btn:hover{background:#334155;border-color:var(--cyan);transform:translateY(-2px)}
-.slang-btn.correct{border-color:var(--green);background:rgba(16,185,129,.2)}
-.slang-btn.wrong{border-color:var(--rose);background:rgba(244,63,94,.2)}
-.expl-box{
-  background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.4);
-  border-radius:14px;padding:12px 14px;font-size:.84rem;color:#a7f3d0;display:none;
+.ph-card:hover{border-color:var(--neon-cyan);transform:translateY(-2px)}
+.ph-label{font-size:.7rem;font-weight:800;color:var(--text-sub);text-transform:uppercase}
+.ph-word{font-size:1.3rem;font-weight:800;margin:4px 0}
+.ph-trans{font-size:.85rem;color:var(--neon-cyan);font-family:Consolas,monospace;font-weight:700}
+.ph-btn{
+  margin-top:8px;background:rgba(0,245,255,0.15);border:1px solid var(--neon-cyan);
+  color:#fff;padding:6px 12px;border-radius:99px;font-size:.75rem;font-weight:700;
+  display:inline-flex;align-items:center;gap:6px;cursor:pointer;
 }
 
-/* Audio drill widget */
-.audio-btn{
-  background:rgba(56,189,248,.18);border:1px solid var(--cyan);color:#38bdf8;
-  padding:6px 14px;border-radius:99px;font-size:.82rem;font-weight:700;cursor:pointer;
-  display:inline-flex;align-items:center;gap:6px;transition:.2s;
+/* ============================================================
+   4 · NEURAL MUSCLE RECALL 0/2 ENGINE
+   ============================================================ */
+.synapse-wrap{
+  display:grid;grid-template-columns:1.1fr 1fr;gap:40px;width:100%;max-width:1220px;
+  padding:0 5vw;align-items:center;
 }
-.audio-btn:hover{background:rgba(56,189,248,.35);transform:scale(1.04)}
-.drill-input{
-  width:100%;padding:14px 16px;background:rgba(15,23,42,.8);border:2px solid rgba(255,255,255,.16);
-  border-radius:14px;color:#fff;font-size:.95rem;font-family:inherit;outline:none;transition:border-color .2s;
+#synapseCanvas{width:100%;height:380px;border-radius:24px}
+.drill-box{
+  background:var(--bg-card);border:2px solid rgba(0,245,255,0.3);border-radius:24px;
+  padding:26px;box-shadow:0 30px 80px rgba(0,245,255,0.15);
 }
-.drill-input:focus{border-color:var(--cyan);box-shadow:0 0 16px rgba(56,189,248,.25)}
-.check-btn{
-  padding:12px 20px;border-radius:14px;background:linear-gradient(135deg,var(--indigo),var(--cyan));
-  color:#fff;font-weight:700;font-size:.92rem;border:none;cursor:pointer;transition:.2s;
+.step-counter{
+  display:flex;gap:8px;margin-bottom:14px;
 }
-.check-btn:hover{transform:scale(1.03);box-shadow:0 8px 24px rgba(99,102,241,.4)}
+.step-pill{
+  flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,0.15);overflow:hidden;
+}
+.step-pill.fill{background:linear-gradient(90deg,var(--neon-cyan),var(--neon-green))}
+.interactive-input{
+  width:100%;padding:14px 18px;background:rgba(3,7,18,0.9);
+  border:2px solid rgba(255,255,255,0.15);border-radius:14px;
+  color:#fff;font-size:1rem;font-family:inherit;outline:none;margin-top:12px;
+  transition:border-color .2s,box-shadow .2s;
+}
+.interactive-input:focus{
+  border-color:var(--neon-cyan);box-shadow:0 0 20px rgba(0,245,255,0.3);
+}
+.btn-check-drill{
+  margin-top:12px;width:100%;padding:13px;border-radius:14px;
+  background:linear-gradient(135deg,#00f5ff,#3b82f6);color:#000;
+  font-weight:800;font-size:.95rem;border:none;cursor:pointer;transition:transform .2s;
+}
+.btn-check-drill:hover{transform:scale(1.02)}
 
-/* ---------- 9 · 4 FLIP CARDS (Resilience) ---------- */
-.flipgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;width:100%;max-width:1250px;padding:0 6vw;perspective:1300px;margin-top:6vh}
-.flip{height:310px;position:relative;transform-style:preserve-3d;will-change:transform}
-.face{
-  position:absolute;inset:0;border-radius:26px;backface-visibility:hidden;-webkit-backface-visibility:hidden;
-  padding:24px;border:1px solid var(--line);
-  background:linear-gradient(180deg,rgba(30,41,59,.96),rgba(15,23,42,.98));
-  display:flex;flex-direction:column;
+/* ============================================================
+   5 · 3D GLASS SMARTPHONE WHATSAPP SIMULATOR
+   ============================================================ */
+.phone-3d-stage{
+  perspective:1400px;display:flex;align-items:center;justify-content:center;
+  width:100%;max-width:1200px;padding:0 5vw;gap:50px;
 }
-.face .icon{font-size:2.2rem;margin-bottom:.6rem}
-.face h3{font-size:1.15rem;margin-bottom:.45rem}
-.face p{font-size:.88rem;color:var(--muted);line-height:1.5;flex:1}
-.face.back{transform:rotateY(180deg);align-items:center;justify-content:center;font-size:4.5rem;background:linear-gradient(135deg,#1e1b4b,#0c4a6e)}
-.meter{height:5px;border-radius:3px;background:#334155;overflow:hidden;margin-top:10px}
-.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--green));transform-origin:left;transform:scaleX(0)}
-.shieldnote{margin-top:4vh;max-width:900px;display:flex;gap:1.2rem;align-items:center;opacity:0}
+.phone-device{
+  width:360px;height:580px;background:#030712;border:4px solid #1e293b;
+  border-radius:44px;padding:16px;box-shadow:0 40px 100px rgba(0,0,0,0.9),0 0 40px rgba(0,245,255,0.2);
+  transform:rotateY(-12deg) rotateX(6deg);transition:transform .4s;display:flex;flex-direction:column;
+}
+.phone-device:hover{transform:rotateY(0deg) rotateX(0deg)}
+.phone-screen{
+  flex:1;background:#090d16;border-radius:32px;display:flex;flex-direction:column;
+  overflow:hidden;border:1px solid rgba(255,255,255,0.06);
+}
+.phone-top-bar{
+  background:#0f172a;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.phone-chat-body{
+  flex:1;padding:14px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;
+}
+.bubble-in{
+  background:#1e293b;color:#f1f5f9;padding:10px 14px;border-radius:16px;
+  border-bottom-left-radius:3px;font-size:.85rem;line-height:1.4;max-width:85%;
+}
+.bubble-out{
+  background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;padding:10px 14px;
+  border-radius:16px;border-bottom-right-radius:3px;font-size:.85rem;line-height:1.4;
+  align-self:flex-end;max-width:85%;
+}
+.slang-xray-tag{
+  background:rgba(251,191,36,0.18);color:#fbbf24;padding:.1em .4em;border-radius:4px;
+  font-weight:700;border:1px dashed rgba(251,191,36,0.4);
+}
+.phone-replies{
+  padding:10px;background:#0f172a;display:flex;flex-direction:column;gap:6px;
+}
+.reply-option{
+  padding:9px 12px;border-radius:10px;background:rgba(255,255,255,0.05);
+  font-size:.78rem;cursor:pointer;transition:all .2s;color:#e2e8f0;border:1px solid transparent;
+}
+.reply-option:hover{background:rgba(0,245,255,0.15);border-color:var(--neon-cyan)}
 
-/* ---------- 10 · BUGS & RESOLUTIONS FLY-THROUGH ---------- */
-.bug-stage{position:absolute;inset:0;perspective:1000px;display:flex;align-items:center;justify-content:center;padding-top:8vh}
-.bug-world{position:relative;width:min(660px,88vw);height:290px;transform-style:preserve-3d}
-.bug{
-  position:absolute;left:0;top:0;width:100%;padding:32px 34px;border-radius:28px;
-  background:linear-gradient(160deg,rgba(30,41,59,.98),rgba(15,23,42,.98));
-  border:1px solid rgba(255,255,255,.14);box-shadow:0 40px 100px rgba(0,0,0,.75);
-  opacity:0;will-change:transform,opacity;
+/* ============================================================
+   6 · THE CINE & SERIES IA X-RAY SCANNER
+   ============================================================ */
+.scanner-stage{
+  width:100%;max-width:1200px;padding:0 5vw;display:grid;
+  grid-template-columns:1.2fr 1fr;gap:40px;align-items:center;
 }
-.bug .sev{font-size:.72rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase}
-.bug .q{font-size:clamp(1.3rem,2.5vw,1.95rem);font-weight:800;letter-spacing:-.02em;margin-top:.5rem;line-height:1.2}
-.bug .why{color:var(--muted);margin-top:.8rem;line-height:1.5;font-size:.92rem}
-.bug .fixl{margin-top:1.1rem;color:#6ee7b7;font-weight:600;line-height:1.5;opacity:0;font-size:.92rem}
-.stamp{
-  position:absolute;top:24px;right:26px;border:3px solid var(--green);color:var(--green);
-  font-weight:900;padding:5px 12px;border-radius:10px;letter-spacing:.12em;font-size:.8rem;opacity:0;
+.cinema-film-box{
+  background:#000;border:2px solid #334155;border-radius:24px;overflow:hidden;
+  box-shadow:0 30px 80px rgba(0,0,0,0.8);position:relative;
 }
-.bug-count{position:absolute;bottom:6vh;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--muted);font-size:.85rem;font-weight:600}
+.film-perforations{
+  height:24px;background:#0f172a;display:flex;align-items:center;justify-content:space-between;
+  padding:0 12px;border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.film-hole{width:12px;height:12px;background:#000;border-radius:3px}
+.film-screen{
+  padding:24px;position:relative;min-height:300px;
+}
+.laser-scanner-line{
+  position:absolute;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,#00f5ff 50%,transparent);
+  box-shadow:0 0 16px #00f5ff;pointer-events:none;
+  animation:scanSweep 3s ease-in-out infinite alternate;
+}
+@keyframes scanSweep{0%{top:10%}100%{top:90%}}
+.script-line{
+  font-family:Consolas,monospace;font-size:.9rem;line-height:1.7;margin-bottom:12px;
+}
+.hl-slang{
+  background:rgba(236,72,153,0.25);color:#f472b6;padding:2px 6px;border-radius:4px;
+  font-weight:700;border:1px solid rgba(236,72,153,0.5);
+}
 
-/* ---------- 11 · TERMINAL ---------- */
-.term-stage{perspective:1400px}
-.term{
-  background:#090d16;border:1px solid #1e293b;border-radius:18px;overflow:hidden;
-  font-family:Consolas,"SF Mono",monospace;font-size:.9rem;box-shadow:0 50px 120px rgba(0,0,0,.75);will-change:transform;
+/* ============================================================
+   7 · SPEEDOMETER & ZERO-SERVER PIPELINE
+   ============================================================ */
+.speed-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:24px;width:100%;max-width:1150px;
+  padding:0 5vw;margin-top:6vh;
 }
-.term .tbar{background:#111827;padding:.65rem .95rem;color:#94a3b8;font-size:.75rem;display:flex;gap:6px;align-items:center}
-.term .tbar i{width:11px;height:11px;border-radius:50%;background:#ff5f57;display:inline-block}
-.term .tbar i:nth-child(2){background:#febc2e}.term .tbar i:nth-child(3){background:#28c840}
-.term pre{padding:1.1rem 1.25rem;line-height:1.75;min-height:310px;white-space:pre-wrap}
-.term .c{color:#64748b}.term .g{color:#4ade80}.term .y{color:#facc15}.term .b{color:#38bdf8}
-.caret{display:inline-block;width:8px;height:1em;background:#4ade80;vertical-align:-2px;animation:blink 1s step-end infinite}
-@keyframes blink{50%{opacity:0}}
-.side .card{margin-bottom:14px;opacity:0}
+.speed-card{
+  background:var(--bg-card);border:1px solid rgba(255,255,255,0.1);border-radius:24px;
+  padding:28px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.6);
+  position:relative;overflow:hidden;
+}
+.speed-val{
+  font-size:clamp(2.5rem,4.5vw,4rem);font-weight:900;letter-spacing:-.03em;
+  background:linear-gradient(180deg,#fff,#94a3b8);-webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.speed-unit{font-size:.9rem;color:var(--neon-cyan);font-weight:700;margin-top:4px}
 
-/* ---------- 12 · END & CTA ---------- */
-.end-emoji{font-size:clamp(4.5rem,11vw,8rem);display:inline-block;will-change:transform;filter:drop-shadow(0 15px 30px rgba(56,189,248,.3))}
-.end h1{margin-top:1rem}
-.end .lead{margin:1.2rem auto 0}
-.btn-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:2.2rem}
-.btn{
-  display:inline-flex;align-items:center;gap:8px;padding:.9rem 1.8rem;border-radius:99px;
-  background:#fff;color:#000;font-weight:700;border:none;cursor:pointer;font-size:.98rem;
-  transition:all .2s;text-decoration:none;
+/* ============================================================
+   8 · CAMDEN BRICK WALL: STREET GRAFFITI OF RESOLVED CHALLENGES
+   ============================================================ */
+.wall-scene-stage{
+  width:100%;max-width:1250px;padding:0 5vw;display:flex;flex-direction:column;align-items:center;
 }
-.btn:hover{transform:scale(1.05);box-shadow:0 12px 30px rgba(255,255,255,.25)}
-.btn-ghost{
-  background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.2);
+.brick-wall{
+  width:100%;border-radius:28px;padding:34px;background:#0a0e1a;
+  border:2px solid rgba(255,255,255,0.1);box-shadow:0 40px 100px rgba(0,0,0,0.8);
+  display:grid;grid-template-columns:repeat(3,1fr);gap:18px;
 }
-.btn-ghost:hover{background:rgba(255,255,255,.15);border-color:#fff}
+.graffiti-tag{
+  background:rgba(15,23,42,0.9);border:1px solid rgba(255,255,255,0.08);border-radius:18px;
+  padding:20px;position:relative;transition:all .3s;cursor:default;
+}
+.graffiti-tag:hover{
+  border-color:var(--neon-cyan);transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,245,255,0.15);
+}
+.tag-num{
+  font-size:.72rem;font-weight:900;letter-spacing:.12em;color:var(--neon-pink);margin-bottom:6px;
+}
+.tag-title{font-size:1.05rem;font-weight:800;color:#fff;margin-bottom:8px}
+.tag-solution{font-size:.85rem;color:#6ee7b7;font-weight:600;line-height:1.45}
 
-@keyframes popIn{0%{opacity:0;transform:scale(.95)}100%{opacity:1;transform:scale(1)}}
+/* ============================================================
+   9 · CYBERPUNK TERMINAL
+   ============================================================ */
+.cyber-term{
+  width:100%;max-width:960px;background:#050711;border:1px solid rgba(0,245,255,0.3);
+  border-radius:20px;overflow:hidden;box-shadow:0 30px 90px rgba(0,245,255,0.12);
+  font-family:Consolas,"SF Mono",monospace;
+}
+.term-bar{
+  background:#0f172a;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.term-content{
+  padding:24px;font-size:.88rem;line-height:1.75;min-height:260px;white-space:pre-wrap;
+}
+
+/* ============================================================
+   10 · PASSPORT & FINAL LAUNCH
+   ============================================================ */
+.passport-box{
+  background:linear-gradient(135deg,#0a1128,#1e1b4b);border:2px solid #38bdf8;
+  border-radius:32px;padding:48px 36px;max-width:720px;width:90%;text-align:center;
+  box-shadow:0 40px 120px rgba(56,189,248,0.25);position:relative;
+}
+.passport-crest{font-size:5rem;margin-bottom:12px;filter:drop-shadow(0 10px 20px rgba(0,0,0,0.5))}
+.btn-launch-big{
+  display:inline-flex;align-items:center;gap:12px;padding:16px 36px;border-radius:99px;
+  background:linear-gradient(90deg,#00f5ff,#3b82f6,#ec4899);color:#000;
+  font-weight:900;font-size:1.1rem;text-decoration:none;transition:transform .2s,box-shadow .2s;
+  margin-top:28px;
+}
+.btn-launch-big:hover{
+  transform:scale(1.06);box-shadow:0 0 40px rgba(0,245,255,0.7);
+}
 
 @media (max-width:900px){
-  .hero-text{left:6vw;right:6vw;top:15vh;transform:none;max-width:none}
-  .caps{left:6vw;right:6vw;width:auto;top:14vh;transform:none;height:220px}
-  .stats,.flipgrid{grid-template-columns:repeat(2,1fr)}
-  .flip{height:250px}
-  .split{grid-template-columns:1fr}
-  .split>div:first-child{margin-bottom:20px}
-  .sim-stage{grid-template-columns:1fr;gap:16px;margin-top:2vh}
-  #dots{display:none}
+  .tube-scene-stage{grid-template-columns:1fr;height:auto;padding-top:10vh}
+  .soundlab-grid{grid-template-columns:1fr}
+  .synapse-wrap{grid-template-columns:1fr}
+  .phone-3d-stage{flex-direction:column}
+  .scanner-stage{grid-template-columns:1fr}
+  .speed-grid{grid-template-columns:1fr}
+  .brick-wall{grid-template-columns:1fr}
+  #stationNav{display:none}
 }
 </style>
 </head>
 <body>
 
-<header id="topnav">
-  <b>🇬🇧 UK STREET ENGLISH <span>· De cero a hablar como un local</span></b>
-  <div style="display:flex;align-items:center;gap:12px">
-    <a href="https://adriansg25.github.io/aprende-en/" target="_blank" class="nav-link">🚀 Abrir App</a>
+<!-- NAVIGATION BAR -->
+<header id="streetNav">
+  <a href="#" class="brand-roundel">
+    <div class="roundel-icon"></div>
+    <span>UK STREET ENGLISH <span style="color:var(--neon-cyan)">· SHOWCASE</span></span>
+  </a>
+  <div style="display:flex;align-items:center;gap:16px">
+    <a href="https://adriansg25.github.io/aprende-en/" target="_blank" class="live-pill">🚀 Abrir App</a>
   </div>
 </header>
-<div id="bar"></div>
-<nav id="dots"></nav>
+<div id="tubeProgressBar"></div>
+<nav id="stationNav"></nav>
 
-<!-- ================= 1 · HERO ================= -->
-<section class="scene" id="s-hero" data-len="280" data-title="Inicio">
+<!-- ================= SCENE 1 · HERO: THE DUAL REALITY ================= -->
+<section class="scene" id="s-hero" data-len="260" data-title="La Realidad">
   <div class="sticky">
-    <canvas id="ukCanvas"></canvas>
-    <div class="hero-text" id="heroText">
-      <div class="kicker">Proyecto · Noviembre 2026 · PWA & AI</div>
-      <h1>Cómo creamos<br><span class="grad">UK Street English</span>.</h1>
-      <p class="lead">De la frustración del inglés académico de libro que nadie habla en la vida real, a una app progresiva, gamificada e impulsada por IA para dominar el inglés auténtico de la calle, pubs, WhatsApp y series en Reino Unido.</p>
-      <div class="tags">
-        <span class="tag">React 19</span>
-        <span class="tag">TypeScript</span>
-        <span class="tag">Tailwind 4</span>
-        <span class="tag">Multi-LLM (Groq & Gemini)</span>
-        <span class="tag">PWA 100% Offline</span>
-        <span class="tag">Web Speech Audio</span>
-        <span class="tag">0€ Servidor</span>
+    <canvas id="rainCanvas"></canvas>
+    <div class="hero-content">
+      <div class="kicker">Experiencia Inmersiva · Noviembre 2026</div>
+      <div class="split-headline">
+        <span class="academic-cross">"Good afternoon, how do you find the weather today?"</span>
+        <h1>Habla como un local.<br><span class="grad-street">No como un robot de academia.</span></h1>
       </div>
-    </div>
-    <div class="hero-mid" id="heroMid">
-      <h2>El inglés de libro te aprueba un examen.<br><span class="grad-warm">El inglés de la calle te hace amigos.</span></h2>
-    </div>
-    <div class="scroll-cue" id="cue"><div class="mouse"></div>Desliza para explorar</div>
-  </div>
-</section>
-
-<!-- ================= 2 · THE 5 PILLARS CAROUSEL ================= -->
-<section class="scene" id="s-game" data-len="440" data-title="Pilares">
-  <div class="sticky">
-    <div class="head-top">
-      <div class="kicker">01 · El Aprendizaje Real</div>
-      <h2>Cinco módulos. <span class="grad">Cero teoría aburrida.</span></h2>
-    </div>
-    <div class="ring-stage"><div class="ring" id="ring"></div></div>
-    <div class="ring-bottom"><div class="ring-cap" id="ringCap"></div><div class="steps" id="steps"></div></div>
-  </div>
-</section>
-
-<!-- ================= 3 · EXPLODED TECH STACK ================= -->
-<section class="scene" id="s-inspect" data-len="500" data-title="Arquitectura">
-  <div class="sticky">
-    <div class="caps">
-      <div class="cap">
-        <div class="kicker">02 · Por dentro</div>
-        <h2>La experiencia <span class="grad">PWA Móvil</span>.</h2>
-        <p class="lead">Diseñada con ergonomía táctil idéntica a una app nativa de iOS y Android. Navegación fluida por pestañas, feedback háptico y sonido en directo.</p>
-      </div>
-      <div class="cap">
-        <div class="kicker">Vista desmontada</div>
-        <h2>Una app son <span class="grad">cuatro capas</span>.</h2>
-        <p class="lead">Lo que tocas es React 19 con Tailwind 4. Debajo operan el enrutador de modelos de IA, la síntesis de voz nativa y el Service Worker offline con cache-busting.</p>
-      </div>
-      <div class="cap">
-        <div class="kicker">Resiliencia absoluta</div>
-        <h2>Cero caída, <span class="grad">cero servidor</span>.</h2>
-        <p class="lead">Toda la lógica corre en el dispositivo del alumno. Si se agota una clave de IA o se cae un proveedor, conmuta al siguiente en milisegundos sin interrumpir la sesión.</p>
-      </div>
-    </div>
-    <div class="explode-stage">
-      <div class="browser3d" id="b3d">
-        <!-- Layer 1: PWA Core -->
-        <div class="layer l-pwa">
-          <div class="inner">
-            <div>sw.js (cache v19)</div><div>manifest.json</div><div>SpeechSynthesis (en-GB)</div>
-            <div>localStorage Engine</div><div>ActiveRecallStore.ts</div><div>AudioPlayer.ts</div>
-            <div>offlineSync.ts</div><div>levelState.ts</div>
-          </div>
-          <div class="lbl" style="color:#6ee7b7;border-color:rgba(16,185,129,.6)">Capa 1: PWA & Offline Engine</div>
-        </div>
-        <!-- Layer 2: Multi-LLM AI Router -->
-        <div class="layer l-ai">
-          <div class="inner">
-            <div><b>const</b> AI_ROUTER = [</div>
-            <div>  { provider: 'groq', model: 'llama-3.3-70b-versatile', speed: '300 t/s' },</div>
-            <div>  { provider: 'gemini', model: 'gemini-2.5-flash', speed: 'fallback' },</div>
-            <div>  { provider: 'openai', model: 'gpt-4o-mini', speed: 'resilience' },</div>
-            <div>  { provider: 'local', fallback: 'curated-uk-database.json' }</div>
-            <div>]; // Conmutación transparente en cliente</div>
-          </div>
-          <div class="lbl" style="color:#c084fc;border-color:rgba(168,85,247,.6)">Capa 2: Motor Multi-LLM</div>
-        </div>
-        <!-- Layer 3: React 19 Components -->
-        <div class="layer l-react">
-          <div class="inner">
-            <div class="rc-title">⚛️ Componentes React 19 + TypeScript</div>
-            <div class="sw" title="StreetLevelMap">🗺️</div>
-            <div class="sw" title="WhatsAppSimulator">💬</div>
-            <div class="sw" title="MediaLearningZone">🎬</div>
-            <div class="sw" title="FieldDictionary">📖</div>
-            <div class="sw" title="ReadingZone">📑</div>
-            <div class="sw" title="StreetBossFight">👑</div>
-            <div class="sw" title="ActiveRecall2x">🔁</div>
-            <div class="sw" title="SpeechDrill">🗣️</div>
-            <div class="sw" title="LevelBadge">💷</div>
-            <div class="sw" title="Settings">⚙️</div>
-          </div>
-          <div class="lbl" style="color:#93c5fd;border-color:rgba(59,130,246,.6)">Capa 3: React 19 + Tailwind 4</div>
-        </div>
-        <!-- Layer 4: UI Screen -->
-        <div class="layer l-page">
-          <div class="inner">
-            <div class="bar"><i></i><i></i><i></i>&nbsp; uk-street-english.pwa — Camden Level 3</div>
-            <div class="ui">
-              <div class="ui-header">
-                <span style="font-weight:700;font-size:.78rem">🇬🇧 UK Street English</span>
-                <span class="ui-badge">⚡ 300 XP · 45 Quids 💷</span>
-              </div>
-              <div class="ui-card">
-                <span style="font-size:.7rem;color:#38bdf8;font-weight:700">DESAFÍO CALLEJERO #12</span>
-                <p style="font-size:.82rem;font-weight:600">"El camarero en el pub te dice: 'Alright mate, pint of bitter?' ¿Cómo respondes?"</p>
-                <div style="background:#0f172a;padding:6px 10px;border-radius:8px;font-size:.72rem;color:#4ade80">✓ "Yeah, lovely mate, cheers!"</div>
-              </div>
-              <div class="ui-bar-nav">
-                <span>🗺️</span><span>⚡</span><span>💬</span><span>🎬</span><span>👤</span>
-              </div>
-            </div>
-          </div>
-          <div class="lbl" style="color:#fff;border-color:rgba(255,255,255,.5)">Capa 4: Interfaz Móvil PWA</div>
-        </div>
-      </div>
-    </div>
-    <div class="burst" id="burst"></div>
-  </div>
-</section>
-
-<!-- ================= 4 · BUILD & STATS ================= -->
-<section class="scene" id="s-build" data-len="380" data-title="Métricas">
-  <div class="sticky col">
-    <div class="kicker">03 · Métricas del Proyecto</div>
-    <p class="bigtext" id="bigtext">Desarrollamos una arquitectura 100% *Client-Side* en *React* *19*, *TypeScript* y *Tailwind* *4*. Más de *1.850* modismos y palabras callejeras curadas, motor de fonética española amigable y *cero* *euros* mensuales en servidores o bases de datos externas.</p>
-    <div class="stats">
-      <div class="stat card"><div class="n" data-count="1850" data-suf="+">0</div><p>expresiones y slang UK</p></div>
-      <div class="stat card"><div class="n" data-count="17">0</div><p>componentes modulares</p></div>
-      <div class="stat card"><div class="n" data-count="300" data-suf=" t/s">0</div><p>velocidad inferencia con Groq</p></div>
-      <div class="stat card"><div class="n" data-count="0" data-suf=" €">0</div><p>coste mensual de hosting</p></div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= 5 · MOTOR DE APRENDIZAJE ACTIVO ================= -->
-<section class="scene" id="s-server" data-len="420" data-title="Ciclo de Fijación">
-  <div class="sticky">
-    <div class="split">
-      <div>
-        <div class="kicker">04 · Ciencia del Aprendizaje</div>
-        <h2>El ciclo de fijación<br><span class="grad">en memoria muscular</span>.</h2>
-        <p class="lead" style="margin-top:1rem">Elegir en un test de cuatro opciones es pasivo y engañoso. Para hablar de verdad, obligamos al cerebro a producir la frase y a reescribirla si comete un error.</p>
-        <ul class="feat" id="feat">
-          <li><i></i>Contexto real en calle, pub o serie de TV</li>
-          <li><i></i>Pronunciación británica nativa + fonética española</li>
-          <li><i></i>Producción activa: escribir con teclado real</li>
-          <li><i></i>Detección inteligente de erratas leves vs fallos gramaticales</li>
-          <li><i></i>Regla de oro: repetición 2 veces de la frase corregida (0/2)</li>
-        </ul>
-        <pre class="room mono" id="room">recallState = {
-  attempt: <span class="y">'He were go to pub'</span>,
-  corrected: <span class="y">'He went down the pub'</span>,
-  phonetic: <span class="y">'[hi uént daun de pab]'</span>,
-  drillsRemaining: <span class="y">2</span> <span class="c">// → fijación muscular</span>
-}</pre>
-      </div>
-      <div class="board-wrap">
-        <div class="board-tilt" id="boardTilt">
-          <div class="board" id="board">
-            <div class="orb2"></div><div class="orb"></div><div class="token" id="token"></div>
-          </div>
-        </div>
-        <div class="board-cap" id="boardCap"></div>
+      <p class="lead" style="margin:0 auto">
+        Diseñamos una plataforma completamente personalizada para aprender el <b>inglés real de UK</b>: desde el saludo reflejo en el pub hasta el slang auténtico de WhatsApp, el desglose de series como <i>The Gentlemen</i> y un motor de fijación en memoria muscular.
+      </p>
+      <div class="hero-tags">
+        <span class="htag accent">⚡ React 19</span>
+        <span class="htag">TypeScript</span>
+        <span class="htag">Tailwind 4</span>
+        <span class="htag accent">🧠 Groq Llama 3.3 (300 t/s)</span>
+        <span class="htag">PWA Offline v19</span>
+        <span class="htag accent">🗣️ Fonética Española</span>
+        <span class="htag">0€ Servidor</span>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ================= 6 · ARQUITECTURA SVG ================= -->
-<section class="scene" id="s-arch" data-len="380" data-title="Flujo de Datos">
+<!-- ================= SCENE 2 · ISOMETRIC LONDON UNDERGROUND MAP ================= -->
+<section class="scene" id="s-tube" data-len="420" data-title="Líneas de Metro">
   <div class="sticky">
-    <div class="head-top">
-      <div class="kicker">05 · Flujo de Datos & Resiliencia</div>
-      <h2>Cómo viaja la información <span class="grad">sin fricción</span>.</h2>
-    </div>
-    <div class="arch-stage">
-      <div class="arch" id="arch">
-        <div class="plane"></div>
-        <svg viewBox="0 0 1150 470" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="gw" x1="0" x2="1">
-              <stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#8b5cf6"/>
-            </linearGradient>
-          </defs>
-          <path id="w1" class="wire" d="M150 110 C 300 110, 330 235, 450 235"/>
-          <path id="w2" class="wire" d="M150 360 C 300 360, 330 235, 450 235"/>
-          <path id="w3" class="wire" d="M560 235 L 700 235"/>
-          <path id="w4" class="wire" d="M820 235 C 900 235, 900 110, 1000 110"/>
-          <path id="w5" class="wire" d="M820 235 C 900 235, 900 360, 1000 360"/>
-          <path class="wire dash" id="w6" d="M150 110 C 250 20, 900 20, 1000 20"/>
-          <g id="packets" opacity="0">
-            <circle r="6" fill="#38bdf8"><animateMotion dur="2s" repeatCount="indefinite"><mpath href="#w1"/></animateMotion></circle>
-            <circle r="6" fill="#8b5cf6"><animateMotion dur="2.4s" repeatCount="indefinite" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#w2"/></animateMotion></circle>
-            <circle r="6" fill="#fbbf24"><animateMotion dur="1.2s" repeatCount="indefinite"><mpath href="#w3"/></animateMotion></circle>
-            <circle r="5" fill="#10b981"><animateMotion dur="1.8s" repeatCount="indefinite"><mpath href="#w4"/></animateMotion></circle>
-            <circle r="5" fill="#f43f5e"><animateMotion dur="1.8s" repeatCount="indefinite" begin=".9s"><mpath href="#w5"/></animateMotion></circle>
+    <div class="tube-scene-stage">
+      <div class="tube-map-wrap">
+        <svg class="tube-map-svg" viewBox="0 0 600 500" fill="none">
+          <!-- Background Grid -->
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          </pattern>
+          <rect width="600" height="500" fill="url(#grid)"/>
+
+          <!-- Tube Line Tracks -->
+          <path id="trackCentral" d="M 60 420 C 180 380, 220 250, 320 220 C 420 190, 480 120, 540 80" stroke="#e11d48" stroke-width="7" stroke-linecap="round"/>
+          <path id="trackPiccadilly" d="M 70 90 C 150 140, 260 200, 320 220 C 390 250, 480 340, 530 430" stroke="#2563eb" stroke-width="6" stroke-linecap="round"/>
+          <path id="trackElizabeth" d="M 50 250 L 550 250" stroke="#9333ea" stroke-width="5" stroke-dasharray="8 6"/>
+
+          <!-- Tube Stations (Circles) -->
+          <g id="stationsGroup">
+            <!-- Station 1 -->
+            <circle class="st-node" cx="130" cy="400" r="10" fill="#fff" stroke="#e11d48" stroke-width="5" data-idx="0"/>
+            <!-- Station 2 -->
+            <circle class="st-node" cx="240" cy="280" r="10" fill="#fff" stroke="#e11d48" stroke-width="5" data-idx="1"/>
+            <!-- Station 3 (Transfer Hub) -->
+            <circle class="st-node" cx="320" cy="220" r="14" fill="#00f5ff" stroke="#fff" stroke-width="5" data-idx="2"/>
+            <!-- Station 4 -->
+            <circle class="st-node" cx="420" cy="160" r="10" fill="#fff" stroke="#e11d48" stroke-width="5" data-idx="3"/>
+            <!-- Station 5 -->
+            <circle class="st-node" cx="500" cy="100" r="10" fill="#fff" stroke="#e11d48" stroke-width="5" data-idx="4"/>
+          </g>
+
+          <!-- Animated Subway Train Capsule -->
+          <g id="tubeTrain" class="tube-train">
+            <rect x="-18" y="-10" width="36" height="20" rx="8" fill="#fff" stroke="#00f5ff" stroke-width="3"/>
+            <circle cx="-8" cy="0" r="3" fill="#00f5ff"/>
+            <circle cx="8" cy="0" r="3" fill="#00f5ff"/>
           </g>
         </svg>
-        <div class="node hl" style="left:13%;top:23%"><span class="e">📱</span><b>Tu Teléfono (PWA)</b><small>Service Worker v19</small></div>
-        <div class="node hl" style="left:13%;top:77%"><span class="e">🗣️</span><b>Web Speech API</b><small>Acento nativo en-GB</small></div>
-        <div class="node ho" style="left:44%;top:50%"><span class="e">⚡</span><b>Router Inteligente IA</b><small>Fallback automático</small></div>
-        <div class="node hv" style="left:66%;top:50%"><span class="e">🧠</span><b>Groq Llama 3.3 70B</b><small>300 tokens/segundo</small></div>
-        <div class="node hg" style="left:88%;top:23%"><span class="e">✨</span><b>Google Gemini Flash</b><small>Respaldo de alta cuota</small></div>
-        <div class="node" style="left:88%;top:77%"><span class="e">📦</span><b>Base de Datos Local</b><small>1.850+ modismos offline</small></div>
-        <div class="node" style="left:88%;top:2%;min-width:120px;padding:.45rem .8rem"><b style="font-size:.78rem">🛡️ Anti-Alucinación</b></div>
       </div>
-    </div>
-    <div class="bottom-cap" id="archCap">
-      PWA sirve todo al instante desde caché local · <b>Groq / Gemini</b> generan ejercicios y analizan series · <b>Web Speech</b> da vida al acento británico sin coste alguno.
+
+      <div class="station-card-box" id="stationInfoBox">
+        <div class="station-badge" id="stBadge" style="background:rgba(225,29,72,0.2);color:#fb7185">
+          🚇 ESTACIÓN 1 · COVENT GARDEN
+        </div>
+        <h3 class="station-title" id="stTitle">Top 50 Palabras & Fonética</h3>
+        <p class="station-desc" id="stDesc">
+          Los cimientos del inglés cotidiano. Nada de listas de vocabulario académico que no usarás: aquí dominas las 50 palabras más repetidas en UK con fonética pronunciable en español.
+        </p>
+        <div class="slang-capsule" id="stCapsule">
+          <span>Went [uént]</span>
+          <span>Thought [sót]</span>
+          <span>Knowledge [nó-lech]</span>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ================= 7 · INTERACTIVE SIMULATOR 1: WHATSAPP UK ================= -->
-<section class="scene" id="s-sim-wa" data-len="460" data-title="Simulador WhatsApp">
-  <div class="sticky col">
-    <div class="head-top">
-      <div class="kicker">06 · Demostración Interactiva</div>
-      <h2>Chatea como un local en <span class="grad">WhatsApp UK</span>.</h2>
+<!-- ================= SCENE 3 · PHONETIC LAB & EQUALIZER ================= -->
+<section class="scene" id="s-sound" data-len="380" data-title="Laboratorio Fonético">
+  <div class="sticky">
+    <div class="soundlab-grid">
+      <div>
+        <div class="kicker">Pronunciación Sin Miedo</div>
+        <h2>El puente entre tu oído y la <span class="grad-street">fonética española</span>.</h2>
+        <p class="lead" style="margin-top:1rem">
+          El alfabeto fonético tradicional (IPA) como <code>/θɔːt/</code> es incomprensible para el 95% de las personas. En UK Street English transcribimos el sonido a fonética amigable en español para que tu boca lo reproduzca al instante.
+        </p>
+        <p class="lead" style="margin-top:.8rem">
+          Haz clic en cualquier palabra para escuchar la voz británica nativa generada en directo mediante la <b>Web Speech API</b>:
+        </p>
+      </div>
+
+      <div class="waveform-box">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:.76rem;font-weight:800;color:var(--neon-cyan)">ESPECTRO DE AUDIO EN-GB (60 FPS)</span>
+          <span style="font-size:.74rem;color:var(--text-sub)">SINTETIZADOR NATIVO</span>
+        </div>
+        <canvas id="eqCanvas"></canvas>
+        <div class="phonetic-compare">
+          <div class="ph-card" onclick="playPhonetic('Thought', '[sót]')">
+            <span class="ph-label">Inglés vs Fonética</span>
+            <div class="ph-word">Thought</div>
+            <div class="ph-trans">[sót] · pensar (pasado)</div>
+            <button class="ph-btn">🔊 Escuchar acento</button>
+          </div>
+          <div class="ph-card" onclick="playPhonetic('Went down the pub', '[uént daun de pab]')">
+            <span class="ph-label">Frase de Pub</span>
+            <div class="ph-word">Went down</div>
+            <div class="ph-trans">[uént daun] · bajó al pub</div>
+            <button class="ph-btn">🔊 Escuchar acento</button>
+          </div>
+          <div class="ph-card" onclick="playPhonetic('Knowledge', '[nó-lech]')">
+            <span class="ph-label">Sustantivo Clave</span>
+            <div class="ph-word">Knowledge</div>
+            <div class="ph-trans">[nó-lech] · conocimiento</div>
+            <button class="ph-btn">🔊 Escuchar acento</button>
+          </div>
+          <div class="ph-card" onclick="playPhonetic('Taking the piss', '[téiking de pis]')">
+            <span class="ph-label">Modismo Callejero</span>
+            <div class="ph-word">Taking the piss</div>
+            <div class="ph-trans">[téiking de pis] · vacilar</div>
+            <button class="ph-btn">🔊 Escuchar acento</button>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="sim-stage">
-      <div class="phone-mockup">
-        <div class="phone-header">
-          <div class="phone-contact">
-            <div class="avatar-circle">🎸</div>
-            <div>
-              <b style="font-size:.95rem" id="waName">Dave (Londres)</b>
-              <small style="color:#4ade80;display:block;font-size:.72rem">● en línea</small>
+  </div>
+</section>
+
+<!-- ================= SCENE 4 · NEURAL MUSCLE RECALL 0/2 ================= -->
+<section class="scene" id="s-neural" data-len="420" data-title="Memoria Muscular">
+  <div class="sticky">
+    <div class="synapse-wrap">
+      <div>
+        <div class="kicker">Neurociencia Aplicada</div>
+        <h2>La regla de oro: <span class="grad-street">2 repeticiones sin pistas</span>.</h2>
+        <p class="lead" style="margin-top:1rem">
+          Los tests tipo test te engañan: tu ojo reconoce la respuesta correcta, pero tu boca sigue sin saber producirla cuando estás en Londres.
+        </p>
+        <p class="lead" style="margin-top:.8rem">
+          Cuando cometes un fallo en nuestra app, no te dejamos escapar: debes reescribir la frase corregida <b>2 veces seguidas</b> con el teclado de tu móvil. Esto activa la memoria muscular de tus dedos y corteza motora.
+        </p>
+      </div>
+
+      <div class="drill-box">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:.74rem;font-weight:800;color:var(--neon-amber)">MODO FIJACIÓN NEURONAL</span>
+          <span id="synapseBadge" style="font-size:.78rem;font-weight:800;color:var(--neon-cyan)">REPETICIÓN 0 / 2</span>
+        </div>
+        <div class="step-counter" style="margin-top:8px">
+          <div class="step-pill" id="pill1"></div>
+          <div class="step-pill" id="pill2"></div>
+        </div>
+        <div style="background:rgba(3,7,18,0.7);padding:14px;border-radius:14px;margin-top:14px;border:1px solid rgba(255,255,255,0.08)">
+          <div style="font-size:.8rem;color:var(--text-sub)">Escribe la frase completa corregida:</div>
+          <b id="targetDrillSentence" style="font-size:1.05rem;color:#fff;display:block;margin-top:4px">
+            "Because he was focused on looking for his charger"
+          </b>
+        </div>
+        <form onsubmit="testSynapseDrill(event)">
+          <input type="text" id="synapseInput" class="interactive-input" placeholder="Escribe la frase aquí para fijarla..." autocomplete="off"/>
+          <button type="submit" class="btn-check-drill">Comprobar y Fijar Neurona ✓</button>
+        </form>
+        <div id="synapseFeedback" style="font-size:.82rem;color:var(--text-sub);margin-top:10px;min-height:1.4em">
+          Prueba a escribir la frase en el recuadro para ver cómo reacciona la sinapsis.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SCENE 5 · 3D GLASS SMARTPHONE WHATSAPP ================= -->
+<section class="scene" id="s-phone" data-len="440" data-title="Simulador WhatsApp">
+  <div class="sticky">
+    <div class="phone-3d-stage">
+      <div>
+        <div class="kicker">Inmersión Conversacional</div>
+        <h2>Chatea con nativos <span class="grad-street">en WhatsApp UK</span>.</h2>
+        <p class="lead" style="margin-top:1rem">
+          Eliminamos las preguntas obvias y el vocabulario acrónimo raro. Aquí practicas conversaciones dinámicas con amigos británicos (Dave, Liam, Chloe) para reaccionar ante situaciones reales.
+        </p>
+        <p class="lead" style="margin-top:.8rem">
+          Pasa el cursor por las etiquetas <span class="slang-xray-tag">slang</span> en el chat para ver la radiografía cultural de cada término.
+        </p>
+      </div>
+
+      <div class="phone-device">
+        <div class="phone-screen">
+          <div class="phone-top-bar">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:34px;height:34px;border-radius:50%;background:#e11d48;display:flex;align-items:center;justify-content:center;font-size:1.1rem">
+                🎸
+              </div>
+              <div>
+                <b style="font-size:.85rem;display:block">Dave (Londres)</b>
+                <small style="color:#10b981;font-size:.7rem">● en línea</small>
+              </div>
+            </div>
+            <button class="ph-btn" onclick="playPhonetic('mate, that gig ticket was forty quid, are they proper taking the piss?', '')" style="margin:0">🔊 Oír</button>
+          </div>
+          <div class="phone-chat-body" id="phoneChatBody">
+            <div class="bubble-in">
+              mate, that gig ticket was <span class="slang-xray-tag" title="40 Libras esterlinas">forty quid</span>!! are they <span class="slang-xray-tag" title="¿Se están pasando de la raya?">proper taking the piss</span>?!
             </div>
           </div>
-          <button class="audio-btn" id="waSpeakerBtn" onclick="speakCurrentWa()">🔊 Escuchar</button>
-        </div>
-        <div id="waChatLog" style="display:flex;flex-direction:column;gap:10px;min-height:160px">
-          <div class="chat-bubble chat-incoming" id="waIncomingMsg">
-            mate, that gig ticket was forty quid!! are they proper taking the piss?!
+          <div class="phone-replies" id="phoneRepliesBox">
+            <div class="reply-option" onclick="sendPhoneReply(true)">
+              <b>🇬🇧 Respuesta Local:</b> "madness innit! forty quid is daylight robbery tbh"
+            </div>
+            <div class="reply-option" onclick="sendPhoneReply(false)">
+              <b>🤖 Academia Formal:</b> "I calculate 40 pounds to be an adequate expenditure for musical events."
+            </div>
           </div>
-        </div>
-        <div id="waChoices" style="display:flex;flex-direction:column;gap:8px">
-          <div class="slang-btn" onclick="handleWaChoice(true)">
-            <b>🇬🇧 Respuesta Callejera Auténtica:</b>
-            <span>"madness innit! forty quid is daylight robbery tbh, proper taking the piss"</span>
-          </div>
-          <div class="slang-btn" onclick="handleWaChoice(false)">
-            <b>🤖 Respuesta Robótica de Academia:</b>
-            <span>"I consider 40 pounds to be a reasonable investment in musical culture."</span>
-          </div>
-        </div>
-        <div class="expl-box" id="waExpl">
-          🎉 <b>¡Exacto! Hablas como un local.</b><br>
-          • <b>Quid</b> = Libra (£).<br>
-          • <b>Taking the piss</b> = Tomar el pelo o pasarse de la raya.<br>
-          • <b>Innit</b> = ¿Verdad? / ¿A que sí?<br>
-          • <b>Daylight robbery</b> = Un robo a mano armada.
-        </div>
-      </div>
-      <div class="card" style="align-self:center">
-        <h3>¿Por qué este enfoque?</h3>
-        <p style="margin-top:.6rem">En los libros de texto te enseñan a decir <i>"Good afternoon sir, how do you do?"</i>. Si le dices eso a un amigo en un pub de Camden o por WhatsApp, se pensará que eres un robot victoriano.</p>
-        <p style="margin-top:.8rem">En nuestra app entrenas con <b>mensajes reales</b> de británicos cotidianos (Dave, Liam, Chloe, Maya), aprendiendo cuándo usar <i>innit</i>, <i>dodgy</i>, <i>chuffed</i>, <i>bloke</i> o <i>knackered</i> de manera natural.</p>
-        <div style="margin-top:1.2rem;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="tag" style="cursor:pointer" onclick="setWaScenario('dave')">🎸 Dave · Concierto</button>
-          <button class="tag" style="cursor:pointer" onclick="setWaScenario('chloe')">☕ Chloe · Plan finde</button>
-          <button class="tag" style="cursor:pointer" onclick="setWaScenario('liam')">🍻 Liam · El pub</button>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ================= 8 · INTERACTIVE SIMULATOR 2: REPETICIÓN ACTIVA ================= -->
-<section class="scene" id="s-sim-rep" data-len="460" data-title="Memoria Muscular">
-  <div class="sticky col">
-    <div class="head-top">
-      <div class="kicker">07 · Memoria Activa 0/2</div>
-      <h2>Fija estructuras con <span class="grad">repetición muscular</span>.</h2>
-    </div>
-    <div class="sim-stage" style="align-items:center">
-      <div class="card" style="border-color:rgba(56,189,248,.3)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <span style="font-size:.76rem;font-weight:700;color:#fbbf24;letter-spacing:.1em">ENTRENAMIENTO #44</span>
-          <span id="drillCounterBadge" style="background:#1e293b;padding:.3rem .8rem;border-radius:99px;font-size:.8rem;font-weight:800;color:#38bdf8">
-            REPETICIÓN 0 / 2
-          </span>
-        </div>
-        <p style="font-size:.86rem;color:var(--muted)">Has tenido un fallo en la estructura. Escribe la frase corregida 2 veces para fijarla en tu memoria motora:</p>
-        
-        <div style="margin:16px 0;padding:14px;background:#0f172a;border-radius:14px;border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <b id="drillTargetText" style="color:#f8fafc;font-size:1.05rem">"He was focused on looking for his charger"</b>
-            <small style="display:block;color:#7dd3fc;margin-top:4px">[ji uós fócast on lúking for jis cháryer]</small>
-          </div>
-          <button class="audio-btn" onclick="speakText(document.getElementById('drillTargetText').innerText)">🔊 Oír</button>
-        </div>
-
-        <form onsubmit="handleDrillSubmit(event)" style="display:flex;flex-direction:column;gap:12px">
-          <input type="text" id="drillInput" class="drill-input" placeholder="Escribe la frase exacta aquí..." autocomplete="off" />
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span id="drillFeedback" style="font-size:.82rem;color:var(--muted)">Escribe exactamente la frase y pulsa Comprobar</span>
-            <button type="submit" class="check-btn">Comprobar ✓</button>
-          </div>
-        </form>
-      </div>
-
+<!-- ================= SCENE 6 · THE CINE & SERIES IA SCANNER ================= -->
+<section class="scene" id="s-cine" data-len="420" data-title="Series & Cine IA">
+  <div class="sticky">
+    <div class="scanner-stage">
       <div>
-        <div class="kicker">Ciencia Cognitiva</div>
-        <h2>Escribir a mano activa <span class="grad">circuitos neuronales</span>.</h2>
-        <p class="lead" style="margin-top:1rem">Los estudios demuestran que seleccionar una respuesta entre cuatro (el clásico botón verde) produce la ilusión de saber. Al cabo de 2 horas se ha olvidado el 80%.</p>
-        <p class="lead" style="margin-top:.8rem">En <b>UK Street English</b>, cuando tienes un fallo o errata, el sistema activa la <b>repetición guiada (0/2)</b>. Hasta que no reproduces tú mismo la frase completa dos veces seguidas sin pistas, no avanzas de nivel.</p>
+        <div class="kicker">Aprende con lo que ves</div>
+        <h2>El escáner de <span class="grad-street">series y películas</span>.</h2>
+        <p class="lead" style="margin-top:1rem">
+          ¿Acabas de ver el episodio 2 de la temporada 2 de <i>The Gentlemen</i> o <i>Peaky Blinders</i>? La IA de la app escanea el capítulo, detecta la jerga que no viene en los diccionarios y te prepara preguntas de trama.
+        </p>
+        <p class="lead" style="margin-top:.8rem">
+          <b>🛡️ Escudo Anti-Alucinaciones:</b> Si la IA comete un desliz sobre un episodio recién estrenado, cuentas con un botón de corrección comunitaria para sincronizar la trama exacta.
+        </p>
+      </div>
+
+      <div class="cinema-film-box">
+        <div class="film-perforations">
+          <div class="film-hole"></div><div class="film-hole"></div><div class="film-hole"></div>
+          <span style="font-size:.7rem;font-weight:800;color:var(--neon-pink)">THE GENTLEMEN · S2 E02 SCAN</span>
+          <div class="film-hole"></div><div class="film-hole"></div><div class="film-hole"></div>
+        </div>
+        <div class="film-screen">
+          <div class="laser-scanner-line"></div>
+          <div class="script-line" style="color:var(--text-sub)">
+            [MICKEY whisper to RAY at the pub counter]:
+          </div>
+          <div class="script-line" style="color:#fff">
+            "Listen mate, we need a bit of <span class="hl-slang">graft</span> to keep the Russian syndicate off our backs, otherwise it's a proper <span class="hl-slang">stitch up</span>."
+          </div>
+          <div style="margin-top:20px;padding:12px;background:rgba(236,72,153,0.12);border:1px solid rgba(236,72,153,0.3);border-radius:12px">
+            <span style="font-size:.74rem;font-weight:800;color:#f472b6">EXPRESIÓN DETECTADA POR IA:</span>
+            <div style="font-size:.9rem;font-weight:800;color:#fff;margin-top:2px">Graft [gréft] — Trabajo duro / esfuerzo físico clandestino</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ================= 9 · 4 PILARES DE RESILIENCIA ================= -->
-<section class="scene" id="s-robust" data-len="360" data-title="Robustez">
+<!-- ================= SCENE 7 · ZERO-SERVER SPEEDOMETER ================= -->
+<section class="scene" id="s-speed" data-len="360" data-title="Rendimiento">
   <div class="sticky col">
-    <div class="kicker">08 · A Prueba de Fallos</div>
-    <h2 class="center">Cuatro capas de <span class="grad">máxima fiabilidad</span>.</h2>
-    <div class="flipgrid" id="flipgrid">
-      <div class="flip">
-        <div class="face back">⚡</div>
-        <div class="face">
-          <div class="icon">⚡</div>
-          <h3>Multi-LLM Fallback</h3>
-          <p>Groq Llama 3.3 @ 300 t/s como motor primario; si se satura, conmuta a Gemini Flash o GPT-4o mini sin corte.</p>
-          <div class="meter"><i></i></div>
-        </div>
+    <div class="kicker">Ingeniería Extrema</div>
+    <h2 class="center">Velocidad instantánea. <span class="grad-street">Cero coste de servidor.</span></h2>
+    <div class="speed-grid">
+      <div class="speed-card">
+        <div class="speed-val" data-val="300">0</div>
+        <div class="speed-unit">TOKENS / SEGUNDO</div>
+        <p style="font-size:.85rem;color:var(--text-sub);margin-top:8px">Motor Groq Llama 3.3 70B: generación de ejercicios en tiempo real.</p>
       </div>
-      <div class="flip">
-        <div class="face back">📵</div>
-        <div class="face">
-          <div class="icon">📵</div>
-          <h3>PWA 100% Offline</h3>
-          <p>Service Worker v19 precachea toda la aplicación. Puedes practicar en el metro de Londres o en pleno vuelo.</p>
-          <div class="meter"><i></i></div>
-        </div>
+      <div class="speed-card">
+        <div class="speed-val" data-val="0" data-suf=" ms">0</div>
+        <div class="speed-unit">LATENCIA OFFLINE</div>
+        <p style="font-size:.85rem;color:var(--text-sub);margin-top:8px">Service Worker v19: toda la app precacheada para viajar en el metro de Londres.</p>
       </div>
-      <div class="flip">
-        <div class="face back">🗣️</div>
-        <div class="face">
-          <div class="icon">🗣️</div>
-          <h3>Audio Nativo en-GB</h3>
-          <p>Web Speech API sintetiza con acento británico local directamente en el dispositivo: 0 coste y 0 latencia.</p>
-          <div class="meter"><i></i></div>
-        </div>
+      <div class="speed-card">
+        <div class="speed-val" data-val="0" data-suf=" €">0</div>
+        <div class="speed-unit">COSTE MENSUAL DE HOSTING</div>
+        <p style="font-size:.85rem;color:var(--text-sub);margin-top:8px">100% Client-Side SPA servida en el CDN global gratuito de GitHub Pages.</p>
       </div>
-      <div class="flip">
-        <div class="face back">🛡️</div>
-        <div class="face">
-          <div class="icon">🛡️</div>
-          <h3>Anti-Alucinación</h3>
-          <p>Módulo Series IA con botón de reporte y corrección comunitaria si la IA se inventa episodios de series recientes.</p>
-          <div class="meter"><i></i></div>
-        </div>
-      </div>
-    </div>
-    <div class="card shieldnote" id="shield">
-      <span style="font-size:2rem">🛡️</span>
-      <p>Diseñado con tolerancia total: el usuario jamás ve una pantalla en blanco. Los fallos de red degradan suavemente a ejercicios precompilados de la base de datos local.</p>
     </div>
   </div>
 </section>
 
-<!-- ================= 10 · DIARIO DE DEPURACIÓN ================= -->
-<section class="scene" id="s-bugs" data-len="560" data-title="Depuración">
-  <div class="sticky">
-    <div class="head-top">
-      <div class="kicker">09 · Diario de Desarrollo</div>
-      <h2>Retos y mejoras del usuario, <span class="grad">resueltos</span>.</h2>
-    </div>
-    <div class="bug-stage">
-      <div class="bug-world" id="bugWorld">
-        <!-- Bug 1 -->
-        <div class="bug">
-          <div class="stamp">RESUELTO</div>
-          <div class="sev" style="color:#f43f5e">● Crítico · Metodología</div>
-          <div class="q">"Las opciones eran muy obvias y el slang era de acrónimos raros."</div>
-          <div class="why">Elegir entre 2 opciones evidentes no requiere pensar, y los acrónimos no reflejan cómo habla la gente real.</div>
-          <div class="fixl">✓ Slang cotidiano natural (quid, innit, mate) y modo escritura manual obligatoria.</div>
+<!-- ================= SCENE 8 · CAMDEN BRICK WALL: SOLUCIONES REALES ================= -->
+<section class="scene" id="s-wall" data-len="520" data-title="Mural de Retos">
+  <div class="sticky col">
+    <div class="kicker">Diario de Desarrollo</div>
+    <h2 class="center" style="margin-bottom:24px">El mural de los <span class="grad-street">6 retos resueltos</span>.</h2>
+    <div class="wall-scene-stage">
+      <div class="brick-wall">
+        <div class="graffiti-tag">
+          <div class="tag-num">01 · METODOLOGÍA</div>
+          <div class="tag-title">"Opciones muy obvias"</div>
+          <div class="tag-solution">✓ Eliminamos respuestas de juguete. Ahora escribes las frases con teclado real sin pistas trampa.</div>
         </div>
-        <!-- Bug 2 -->
-        <div class="bug">
-          <div class="stamp">RESUELTO</div>
-          <div class="sev" style="color:#f43f5e">● Crítico · Despliegue PWA</div>
-          <div class="q">"No se me actualiza en el móvil, actualízala bien."</div>
-          <div class="why">Los navegadores móviles cacheaban agresivamente el bundle antiguo de Vite sin refrescar el Service Worker.</div>
-          <div class="fixl">✓ Service Worker con cache-busting 'uk-street-v19', skipWaiting() y recarga forzada.</div>
+        <div class="graffiti-tag">
+          <div class="tag-num">02 · PWA MÓVIL</div>
+          <div class="tag-title">"No se actualiza en el móvil"</div>
+          <div class="tag-solution">✓ Implementamos cache-busting automático 'uk-street-v19' y recarga forzada de Service Worker.</div>
         </div>
-        <!-- Bug 3 -->
-        <div class="bug">
-          <div class="stamp">RESUELTO</div>
-          <div class="sev" style="color:#fbbf24">● Usabilidad · UX Móvil</div>
-          <div class="q">"El botón de comprobar queda fuera de su sitio con el teclado."</div>
-          <div class="why">El teclado virtual de iOS y Android descolocaba el layout flotante y tapaba el campo de entrada.</div>
-          <div class="fixl">✓ Rediseño con flexbox responsive, scroll automático y botón anclado al teclado.</div>
+        <div class="graffiti-tag">
+          <div class="tag-num">03 · EXPERIENCIA UX</div>
+          <div class="tag-title">"Botón Comprobar fuera de sitio"</div>
+          <div class="tag-solution">✓ Rediseño adaptativo completo que ancla los controles sobre el teclado de iOS y Android.</div>
         </div>
-        <!-- Bug 4 -->
-        <div class="bug">
-          <div class="stamp">RESUELTO</div>
-          <div class="sev" style="color:#fbbf24">● Precisión de IA</div>
-          <div class="q">"La IA se ha inventado la temporada 2 de The Gentlemen."</div>
-          <div class="why">Los modelos de lenguaje alucinaban información sobre temporadas recientemente emitidas.</div>
-          <div class="fixl">✓ Búsqueda de sinopsis actualizada y panel de corrección en vivo para el usuario.</div>
+        <div class="graffiti-tag">
+          <div class="tag-num">04 · MODELOS DE IA</div>
+          <div class="tag-title">"La IA se inventa The Gentlemen"</div>
+          <div class="tag-solution">✓ Búsqueda de sinopsis reales y panel de reporte comunitario para corregir tramas en vivo.</div>
         </div>
-        <!-- Bug 5 -->
-        <div class="bug">
-          <div class="stamp">RESUELTO</div>
-          <div class="sev" style="color:#38bdf8">● Vocabulario Esencial</div>
-          <div class="q">"Quiero aprender las 50 palabras más usadas y verbos en pasado."</div>
-          <div class="why">Hacía falta un módulo específico de cimientos con transcripción fonética entendible en español.</div>
-          <div class="fixl">✓ Zona de Machaque con Top 50 palabras, fonética tipo [uént] y generador de lotes con IA.</div>
+        <div class="graffiti-tag">
+          <div class="tag-num">05 · APRENDIZAJE BASE</div>
+          <div class="tag-title">"Top 50 palabras y verbos pasado"</div>
+          <div class="tag-solution">✓ Módulo de cimientos con fonética en español tipo [uént] y generador de lotes por IA.</div>
         </div>
-        <!-- Bug 6 -->
-        <div class="bug">
-          <div class="stamp">RESUELTO</div>
-          <div class="sev" style="color:#38bdf8">● Gamificación</div>
-          <div class="q">"Quiero que sea progresivo rollo videojuego, no poder avanzar sin pasar requisitos."</div>
-          <div class="why">Sin objetivos claros y bloqueos de nivel, el usuario pierde la motivación de completar cada lección.</div>
-          <div class="fixl">✓ Mapa callejero de Londres con distritos bloqueados, Quids 💷, XP y combate de Jefes.</div>
+        <div class="graffiti-tag">
+          <div class="tag-num">06 · MOTIVACIÓN</div>
+          <div class="tag-title">"Rollo videojuego progresivo"</div>
+          <div class="tag-solution">✓ Mapa callejero con distritos bloqueados (Camden, Soho, Mayfair), Quids 💷 y jefes de nivel.</div>
         </div>
       </div>
-    </div>
-    <div class="bug-count">
-      <span id="bugN">Desafío 1 / 6</span>
-      <div class="steps" id="bugSteps"></div>
     </div>
   </div>
 </section>
 
-<!-- ================= 11 · TERMINAL ================= -->
+<!-- ================= SCENE 9 · CYBERPUNK TERMINAL ================= -->
 <section class="scene" id="s-term" data-len="360" data-title="Despliegue">
-  <div class="sticky">
-    <div class="split" style="grid-template-columns:1.25fr 1fr">
-      <div class="term-stage" style="display:block">
-        <div class="kicker">10 · Puesta en Producción</div>
-        <h2 style="margin-bottom:3vh">Compilación instantánea.<br><span class="grad">GitHub Pages & PWA.</span></h2>
-        <div class="term" id="term">
-          <div class="tbar"><i></i><i></i><i></i>&nbsp; PowerShell — Aprende_EN</div>
-          <pre id="typed"></pre>
+  <div class="sticky col">
+    <div class="kicker">Pipeline de Construcción</div>
+    <h2 class="center" style="margin-bottom:20px">Tres pasos hacia <span class="grad-street">producción global</span>.</h2>
+    <div class="cyber-term">
+      <div class="term-bar">
+        <div style="display:flex;gap:6px">
+          <span style="width:11px;height:11px;border-radius:50%;background:#ef4444;display:inline-block"></span>
+          <span style="width:11px;height:11px;border-radius:50%;background:#eab308;display:inline-block"></span>
+          <span style="width:11px;height:11px;border-radius:50%;background:#22c55e;display:inline-block"></span>
         </div>
+        <span style="font-size:.74rem;color:var(--text-sub)">bash — london-cloud-deploy</span>
       </div>
-      <div class="side" id="side" style="display:block">
-        <div class="card">
-          <h3>⚡ Build ultrarrápido</h3>
-          <p>Vite compila y minifica todo el proyecto en menos de <b>600 milisegundos</b> con cero warnings de TypeScript.</p>
-        </div>
-        <div class="card">
-          <h3>🌐 Despliegue en 1 clic</h3>
-          <p>Conectado a GitHub Pages (<code>adriansg25.github.io/aprende-en/</code>) con certificado SSL y CDN global gratuito.</p>
-        </div>
-        <div class="card">
-          <h3>📲 Instálalo en tu móvil</h3>
-          <p>Abre el enlace en Safari o Chrome, pulsa <b>"Añadir a pantalla de inicio"</b> y disfruta de una app nativa sin tiendas.</p>
-        </div>
-      </div>
+      <div class="term-content" id="cyberTermText"></div>
     </div>
   </div>
 </section>
 
-<!-- ================= 12 · FINAL & LAUNCH ================= -->
-<section class="scene" id="s-end" data-len="100" data-title="Fin">
-  <div class="sticky col end center" id="end">
-    <span class="end-emoji" id="endEmoji">🇬🇧</span>
-    <h1>¡Aprende el inglés de verdad!</h1>
-    <p class="lead">UK Street English está listo para llevarte desde tus primeras palabras hasta sentirte como en casa en cualquier pub de Londres o Manchester.</p>
-    <div class="btn-row">
-      <a href="https://adriansg25.github.io/aprende-en/" target="_blank" class="btn">🚀 Abrir App en Vivo</a>
-      <button class="btn btn-ghost" onclick="scrollTo({top:0,behavior:'smooth'})">↑ Volver al inicio</button>
-    </div>
-    <div style="margin-top:2rem">
-      <span class="tag">React 19</span>
-      <span class="tag">TypeScript</span>
-      <span class="tag">Tailwind 4</span>
-      <span class="tag">Groq Llama 3.3</span>
-      <span class="tag">PWA v19</span>
+<!-- ================= SCENE 10 · THE PASSPORT & LAUNCH ================= -->
+<section class="scene" id="s-end" data-len="100" data-title="Lanzamiento">
+  <div class="sticky col">
+    <div class="passport-box">
+      <div class="passport-crest">🇬🇧</div>
+      <h2>Tu Pasaporte Callejero está listo.</h2>
+      <p class="lead" style="margin:12px auto 0">
+        Deja de estudiar inglés para rellenar huecos en un papel. Empieza a entender lo que de verdad dicen tus amigos británicos en los pubs, en las series y en la calle.
+      </p>
+      <a href="https://adriansg25.github.io/aprende-en/" target="_blank" class="btn-launch-big">
+        🚀 Entrar a UK Street English
+      </a>
+      <div style="margin-top:20px">
+        <button class="ph-btn" onclick="scrollTo({top:0,behavior:'smooth'})">↑ Volver al principio</button>
+      </div>
     </div>
   </div>
 </section>
 
 <script>
 /* ============================================================
-   HELPERS & MATH
+   FRAMEWORK & SCROLL ENGINE
    ============================================================ */
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const clamp=(v,a=0,b=1)=>v<a?a:v>b?b:v;
 const seg=(p,a,b)=>clamp((p-a)/(b-a));
 const lerp=(a,b,t)=>a+(b-a)*t;
 const eOut=t=>1-Math.pow(1-t,3);
-const eIn=t=>t*t*t;
 const eIO=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
-const hash=n=>{const x=Math.sin(n*127.1)*43758.5453;return x-Math.floor(x)};
-const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-let W=innerWidth,H=innerHeight,mobile=W<900;
-const updaters={}, onResize=[];
-let mx=0,my=0,mxs=0,mys=0,sy=scrollY,now=0;
-addEventListener('mousemove',e=>{mx=e.clientX/W*2-1;my=e.clientY/H*2-1});
 
+let W=innerWidth, H=innerHeight;
 const sceneEls=$$('.scene');
 sceneEls.forEach(s=>s.style.height=(+s.dataset.len||100)+'vh');
 
-/* dots nav */
-const dotsNav=$('#dots');
+// Build navigation dots
+const stationNav=$('#stationNav');
 sceneEls.forEach(s=>{
-  const a=document.createElement('a');
-  a.innerHTML=`<span>${s.dataset.title}</span>`;
-  a.onclick=()=>scrollTo({top:s.offsetTop+(s.id==='s-hero'?0:2),behavior:'smooth'});
-  dotsNav.appendChild(a);
-});
-const dots=$$('#dots a');
-
-/* ============================================================
-   1 · HERO — UK Particle Map Canvas
-   ============================================================ */
-const cv=$('#ukCanvas'),ctx=cv.getContext('2d');
-let dpr=1,gScale=1,gCx=.68,gCy=.5,gAlpha=1;
-
-const ukCities=[
-  {name:'London', x:0.15, y:0.25, hub:true},
-  {name:'Camden', x:0.12, y:0.22, hub:false},
-  {name:'Soho', x:0.14, y:0.26, hub:false},
-  {name:'Brixton', x:0.16, y:0.29, hub:false},
-  {name:'Manchester', x:-0.05, y:-0.18, hub:true},
-  {name:'Bristol', x:-0.12, y:0.18, hub:true},
-  {name:'Birmingham', x:-0.02, y:0.02, hub:true},
-  {name:'Edinburgh', x:-0.1, y:-0.65, hub:true},
-  {name:'Liverpool', x:-0.12, y:-0.16, hub:false},
-  {name:'Oxford', x:0.02, y:0.15, hub:false}
-];
-
-// Generate 450 ambient particles forming the British Isles silhouette
-const ukParticles=[];
-for(let i=0;i<480;i++){
-  const t=i/480;
-  const lat=lerp(-0.75, 0.45, Math.sin(t*Math.PI*2)*0.5+0.5);
-  const lon=(hash(i)-0.5)*(0.55-Math.abs(lat)*0.35);
-  ukParticles.push({x:lon, y:lat, z:(hash(i*2)-0.5)*0.3, sz:hash(i*3)*2+1, color:hash(i*4)>.7?'#38bdf8':'#818cf8'});
-}
-
-onResize.push(()=>{
-  dpr=Math.min(1.5,devicePixelRatio||1);
-  cv.width=W*dpr;
-  cv.height=H*dpr;
-});
-
-function drawUKCanvas(t){
-  const w=cv.width,h=cv.height;
-  ctx.clearRect(0,0,w,h);
-  if(gAlpha<=.001)return;
-  ctx.globalAlpha=gAlpha;
-  
-  const cx=w*gCx, cy=h*gCy;
-  const R=Math.min(w,h)*0.45*gScale;
-  const rot=t*0.0002 + mxs*0.1;
-  const s=dpr;
-
-  // Background glow
-  let bg=ctx.createRadialGradient(cx,cy,R*0.2,cx,cy,R*1.3);
-  bg.addColorStop(0,'rgba(56,189,248,0.18)');
-  bg.addColorStop(0.5,'rgba(99,102,241,0.08)');
-  bg.addColorStop(1,'rgba(2,6,23,0)');
-  ctx.fillStyle=bg;
-  ctx.beginPath();ctx.arc(cx,cy,R*1.3,0,Math.PI*2);ctx.fill();
-
-  // Draw ambient particles
-  for(const p of ukParticles){
-    const cosR=Math.cos(rot), sinR=Math.sin(rot);
-    const px=cx + (p.x*cosR - p.z*sinR)*R;
-    const py=cy + p.y*R;
-    const pz=p.x*sinR + p.z*cosR;
-    const alpha=clamp(0.2 + (pz+0.5)*0.6);
-    ctx.fillStyle=p.color;
-    ctx.globalAlpha=alpha*gAlpha;
-    ctx.fillRect(px,py,p.sz*s,p.sz*s);
-  }
-
-  // Draw connecting laser arcs from London to other hubs
-  const london=ukCities[0];
-  const lX=cx + london.x*R, lY=cy + london.y*R;
-
-  for(let i=1;i<ukCities.length;i++){
-    const dest=ukCities[i];
-    const dX=cx + dest.x*R, dY=cy + dest.y*R;
-    const pulse=(t*0.0015 + i*0.25)%1;
-
-    // Arc path
-    ctx.beginPath();
-    ctx.moveTo(lX,lY);
-    const midX=(lX+dX)/2 + (hash(i)-0.5)*30*s;
-    const midY=(lY+dY)/2 - 25*s;
-    ctx.quadraticCurveTo(midX, midY, dX, dY);
-    ctx.strokeStyle='rgba(99,102,241,0.22)';
-    ctx.lineWidth=1.2*s;
-    ctx.stroke();
-
-    // Pulse dot traveling on the curve
-    const u=pulse;
-    const curX=(1-u)*(1-u)*lX + 2*(1-u)*u*midX + u*u*dX;
-    const curY=(1-u)*(1-u)*lY + 2*(1-u)*u*midY + u*u*dY;
-    ctx.beginPath();
-    ctx.arc(curX,curY,3.5*s,0,Math.PI*2);
-    ctx.fillStyle='#38bdf8';
-    ctx.shadowColor='#38bdf8';
-    ctx.shadowBlur=10*s;
-    ctx.fill();
-    ctx.shadowBlur=0;
-  }
-
-  // Draw UK Cities nodes
-  for(const c of ukCities){
-    const cX=cx + c.x*R, cY=cy + c.y*R;
-    ctx.beginPath();
-    ctx.arc(cX,cY,c.hub?5*s:3*s,0,Math.PI*2);
-    ctx.fillStyle=c.hub?'#fbbf24':'#38bdf8';
-    ctx.shadowColor=c.hub?'#fbbf24':'#38bdf8';
-    ctx.shadowBlur=12*s;
-    ctx.fill();
-    ctx.shadowBlur=0;
-
-    if(c.hub && gScale<1.6){
-      ctx.fillStyle='#f8fafc';
-      ctx.font=`700 ${11*s}px system-ui`;
-      ctx.fillText(c.name, cX+8*s, cY-6*s);
-    }
-  }
-
-  ctx.globalAlpha=1;
-}
-
-const heroText=$('#heroText'),heroMid=$('#heroMid'),cue=$('#cue');
-updaters['s-hero']=(p,t)=>{
-  const e=eIO(seg(p,.12,1));
-  gScale=lerp(1,2.8,e);
-  gCx=mobile?.5:lerp(.7,.5,eOut(seg(p,0,.45)));
-  gCy=lerp(mobile?.62:.5,1.25,e);
-  gAlpha=1-seg(p,.88,1);
-  const o=1-seg(p,.04,.3),dy=p*180,sc=1-seg(p,0,.35)*.1;
-  heroText.style.opacity=o;
-  heroText.style.transform=mobile?`translateY(${-dy}px) scale(${sc})`:`translateY(calc(-50% - ${dy}px)) scale(${sc})`;
-  heroMid.style.opacity=seg(p,.36,.5)*(1-seg(p,.78,.92));
-  heroMid.style.transform=`scale(${lerp(.9,1.05,seg(p,.36,.92))})`;
-  cue.style.opacity=1-seg(p,0,.06);
-  drawUKCanvas(t);
-};
-
-/* ============================================================
-   2 · CAROUSEL 3D
-   ============================================================ */
-const phases=[
-  {e:'🍻',n:'Pub & Saludos',c:'alright-mate',d:'Responde como un nativo sin pensar.',l:'De "How do you do?" a "Alright mate? You good?". En UK nadie se para a contar sus problemas ante un saludo reflejo.',col:'#38bdf8'},
-  {e:'📱',n:'WhatsApp UK',c:'chat-simulator',d:'Conversaciones con jerga cotidiana.',l:'Chatea con Dave, Liam o Chloe usando modismos reales: "forty quid", "taking the piss", "proper dodgy" e "innit".',col:'#6366f1'},
-  {e:'🗺️',n:'Mapa Callejero',c:'street-levels',d:'Progresión con distritos y jefes.',l:'Avanza por Camden, Soho, Brixton y Mayfair ganando Quids 💷 y XP. No puedes pasar de nivel sin dominar los desafíos.',col:'#fbbf24'},
-  {e:'🧠',n:'Fijación Muscular',c:'muscle-memory-2x',d:'Repetición activa 0/2.',l:'Si cometes un fallo escribiendo, nada de pistas automáticas: debes escribir la frase corregida 2 veces seguidas hasta grabarla.',col:'#10b981'},
-  {e:'🎬',n:'Series & Pelis IA',c:'media-analysis',d:'Aprende con series reales.',l:'Analiza episodios de The Gentlemen, Peaky Blinders o Top Boy. Extrae vocabulario raro, preguntas de trama y corrección comunitaria.',col:'#f43f5e'}
-];
-
-const ring=$('#ring'),ringCap=$('#ringCap'),stepsEl=$('#steps');
-const pcards=phases.map((ph,i)=>{
   const d=document.createElement('div');
-  d.className='pcard';d.style.setProperty('--c',ph.col);
-  d.innerHTML=`<span class="big">${ph.e}</span><span class="num">0${i+1}</span><b>${ph.n}</b><p>${ph.d}</p><code>${ph.c}</code>`;
-  ring.appendChild(d);
-  stepsEl.insertAdjacentHTML('beforeend','<i><b></b></i>');
-  return d;
+  d.className='station-dot';
+  d.innerHTML=`<span>${s.dataset.title}</span>`;
+  d.onclick=()=>scrollTo({top:s.offsetTop+(s.id==='s-hero'?0:2),behavior:'smooth'});
+  stationNav.appendChild(d);
 });
-const stepBars=$$('#steps b');
-let RR=380,lastAct=-1;
-onResize.push(()=>{
-  RR=Math.min(410,W*.4);
-  pcards.forEach((c,i)=>c.style.transform=`rotateY(${i*72}deg) translateZ(${RR}px)`);
-});
+const navDots=$$('.station-dot');
 
-updaters['s-game']=p=>{
-  const k=clamp((p-.04)/.9)*4,i=Math.floor(Math.min(k,3.9999)),f=k-i,sn=i+eIO(clamp((f-.2)/.6));
-  const rot=-sn*72;
-  ring.style.transform=`translateZ(${-RR}px) rotateX(${-6-mys*6}deg) rotateY(${rot+mxs*10}deg)`;
-  pcards.forEach((c,j)=>{
-    const a=((j*72+rot)%360+540)%360-180,cs=Math.cos(a*Math.PI/180);
-    c.style.opacity=clamp(.1+cs*.9);c.style.filter=`brightness(${.45+.55*clamp(cs)})`;
-  });
-  const act=Math.round(sn);
-  if(act!==lastAct){
-    lastAct=act;ringCap.style.opacity=0;
-    setTimeout(()=>{ringCap.textContent=phases[act].l;ringCap.style.opacity=1},150);
+const updaters={};
+
+/* ============================================================
+   1 · RAIN CANVAS (Hero)
+   ============================================================ */
+const rCv=$('#rainCanvas'), rCtx=rCv.getContext('2d');
+let drops=[];
+function initRain(){
+  rCv.width=W; rCv.height=H;
+  drops=[];
+  for(let i=0;i<140;i++){
+    drops.push({
+      x:Math.random()*W,
+      y:Math.random()*H,
+      len:Math.random()*20+10,
+      speed:Math.random()*8+12,
+      opacity:Math.random()*0.4+0.1
+    });
   }
-  stepBars.forEach((b,j)=>b.style.transform=`scaleX(${clamp(sn+1-j)})`);
-};
+}
+initRain();
+addEventListener('resize',()=>{W=innerWidth;H=innerHeight;initRain()});
+
+function drawRain(){
+  rCtx.clearRect(0,0,W,H);
+  rCtx.lineWidth=1.2;
+  for(const d of drops){
+    rCtx.strokeStyle=`rgba(0,245,255,${d.opacity})`;
+    rCtx.beginPath();
+    rCtx.moveTo(d.x,d.y);
+    rCtx.lineTo(d.x-2,d.y+d.len);
+    rCtx.stroke();
+    d.y+=d.speed;
+    d.x-=1;
+    if(d.y>H){d.y=-d.len;d.x=Math.random()*W}
+  }
+}
 
 /* ============================================================
-   3 · EXPLODED TECH STACK
+   2 · TUBE UNDERGROUND INTERACTIVE MAP
    ============================================================ */
-const b3d=$('#b3d'),layers=$$('#b3d .layer'),lbls=$$('#b3d .lbl'),caps=$$('#s-inspect .cap'),burst=$('#burst');
-const chipNames=[
-  'StreetLevelMap.tsx','StreetWhatsAppSimulator.tsx','MediaLearningZone.tsx',
-  'FieldDictionaryZone.tsx','ReadingZone.tsx','StreetBossFight.tsx',
-  'sw.js','aiService.ts','speechAudio.ts','muscleMemory.ts','uk-street-v19.cache'
+const stations=[
+  {
+    name:"COVENT GARDEN",
+    title:"Top 50 Palabras & Fonética",
+    desc:"Los cimientos del inglés cotidiano. Nada de listas de vocabulario académico que no usarás: aquí dominas las 50 palabras más repetidas en UK con fonética pronunciable en español.",
+    capsule:["Went [uént]","Thought [sót]","Knowledge [nó-lech]"],
+    color:"#e11d48",
+    cx:130, cy:400
+  },
+  {
+    name:"CAMDEN TOWN",
+    title:"Street Slang & Pub Life",
+    desc:"Aprende a pedir una pinta, responder a un 'Alright mate?' sin quedarte en blanco y entender modismos como 'proper dodgy', 'chuffed' y 'parched'.",
+    capsule:["Alright mate?","Proper dodgy","A pint of bitter"],
+    color:"#2563eb",
+    cx:240, cy:280
+  },
+  {
+    name:"PICCADILLY CIRCUS",
+    title:"WhatsApp Simulator UK",
+    desc:"Chatea con Dave, Liam y Chloe. Aprende cómo escriben los británicos de verdad: 'quid', 'innit', 'taking the piss' y 'daylight robbery' en contextos naturales.",
+    capsule:["40 Quid","Taking the piss","Innit!"],
+    color:"#00f5ff",
+    cx:320, cy:220
+  },
+  {
+    name:"BAKER STREET",
+    title:"Series & Cine con IA",
+    desc:"Analiza episodios reales de The Gentlemen o Peaky Blinders. La IA extrae expresiones raras con ejemplos de diálogo y comprobación de trama sin spoilers.",
+    capsule:["The Gentlemen T2","Graft","Stitch up"],
+    color:"#eab308",
+    cx:420, cy:160
+  },
+  {
+    name:"KING'S CROSS",
+    title:"Fijación Muscular 0/2",
+    desc:"El final del trayecto: fijar las estructuras en memoria a largo plazo. Si tienes un fallo, reproduces la frase 2 veces seguidas hasta dominarla.",
+    capsule:["Memoria Muscular","Repetición 2x","0 Pistas trampa"],
+    color:"#9333ea",
+    cx:500, cy:100
+  }
 ];
-const chips=chipNames.map(n=>{
-  const c=document.createElement('div');c.className='chip';c.textContent=n;
-  burst.appendChild(c);return c;
-});
-let chipT=[];
-onResize.push(()=>{
-  chipT=chips.map((c,i)=>{
-    const cols=mobile?2:3,col=i%cols,row=Math.floor(i/cols);
-    const baseX=mobile?0:W*.16,spanX=mobile?W*.42:W*.42;
-    return {
-      x:baseX+(col/(cols-1)-.5)*spanX+(hash(i)-.5)*40,
-      y:(row/(Math.ceil(chips.length/cols)-1)-.5)*H*(mobile?.5:.62)+(mobile?H*.12:0)+(hash(i+9)-.5)*24,
-      r:(hash(i+3)-.5)*24
-    };
-  });
-});
 
-updaters['s-inspect']=p=>{
-  const a=eOut(seg(p,0,.22)),b=eIO(seg(p,.28,.6)),c=seg(p,.66,.97);
-  const shift=mobile?0:W*.14,shiftY=mobile?H*.12:0;
-  const rx=lerp(lerp(64,0,a),56,b),rz=lerp(0,-36,b),sc=lerp(lerp(.7,1,a),.8,b),ty=lerp(H*.4,0,a)+shiftY;
-  b3d.style.transform=`translate3d(${shift}px,${ty}px,0) rotateX(${rx}deg) rotateZ(${rz}deg) scale(${sc})`;
-  b3d.style.opacity=a*(1-c*.65);
-  const gap=b*(mobile?55:95);
-  layers.forEach((l,i)=>l.style.transform=`translateZ(${i*gap}px)`);
-  lbls.forEach((l,i)=>{
-    const k=3-i;
-    l.style.opacity=mobile?0:seg(p,.46+k*.035,.56+k*.035);
-    l.style.transform=`rotateZ(${-rz}deg) rotateX(${-rx}deg)`;
-  });
-  caps[0].style.opacity=seg(p,.03,.12)*(1-seg(p,.22,.29));
-  caps[1].style.opacity=seg(p,.31,.38)*(1-seg(p,.62,.69));
-  caps[2].style.opacity=seg(p,.7,.78);
-  caps.forEach(cp=>cp.style.transform=`translateY(${(1-+cp.style.opacity)*20}px)`);
-  chips.forEach((ch,i)=>{
-    const t=eOut(seg(c,i*.045,i*.045+.4)),T=chipT[i]||{x:0,y:0,r:0};
-    ch.style.opacity=t;
-    ch.style.transform=`translate(-50%,-50%) translate3d(${lerp(shift,T.x,t)}px,${lerp(shiftY+H*.05,T.y,t)}px,${lerp(-500,0,t)}px) rotate(${lerp(0,T.r,t)*.3}deg) scale(${lerp(.3,1,t)})`;
-  });
+const tubeTrain=$('#tubeTrain'), stBadge=$('#stBadge'), stTitle=$('#stTitle'), stDesc=$('#stDesc'), stCapsule=$('#stCapsule');
+let lastStationIdx=-1;
+
+function updateTubeStation(idx){
+  if(idx===lastStationIdx) return;
+  lastStationIdx=idx;
+  const s=stations[idx];
+  stBadge.textContent=`🚇 ESTACIÓN ${idx+1} · ${s.name}`;
+  stBadge.style.background=`${s.color}33`;
+  stBadge.style.color=s.color;
+  stTitle.textContent=s.title;
+  stDesc.textContent=s.desc;
+  stCapsule.innerHTML=s.capsule.map(c=>`<span>${c}</span>`).join('');
+  tubeTrain.setAttribute('transform',`translate(${s.cx},${s.cy})`);
+}
+
+updaters['s-tube']=p=>{
+  const k=clamp((p-0.05)/0.9)*4;
+  const idx=Math.min(4,Math.floor(k));
+  updateTubeStation(idx);
 };
 
 /* ============================================================
-   4 · BUILD & STATS
+   3 · SOUND LAB & EQUALIZER CANVAS
    ============================================================ */
-const bigtext=$('#bigtext');
-bigtext.innerHTML=bigtext.textContent.split(/\s+/).map(w=>{
-  const kw=/^\*.*\*[.,]?$/.test(w);
-  const clean=w.replace(/\*/g,'');
-  return `<span class="w${kw?' kw':''}">${clean}</span>`;
-}).join(' ');
-const words=$$('#bigtext .w'),stats=$$('#s-build .stat');
+const eqCv=$('#eqCanvas'), eqCtx=eqCv.getContext('2d');
+let isSpeaking=false;
+let eqBars=Array.from({length:36},()=>Math.random()*15+5);
 
-updaters['s-build']=p=>{
-  const lit=seg(p,.03,.5)*words.length;
-  words.forEach((w,i)=>w.style.opacity=.14+.86*clamp(lit-i));
-  const m=eIO(seg(p,.5,.64));
-  bigtext.style.transform=`translateY(${lerp(9,0,m)}vh) scale(${lerp(1,.9,m)})`;
-  stats.forEach((s,i)=>{
-    const t=eOut(seg(p,.55+i*.05,.72+i*.05));
-    s.style.opacity=t;
-    s.style.transform=`rotateX(${lerp(-90,0,t)+mys*-4}deg) rotateY(${mxs*5}deg) translateY(${lerp(50,0,t)}px)`;
-    const n=s.querySelector('.n');
-    n.textContent=Math.round(+n.dataset.count*eOut(seg(p,.6+i*.05,.88+i*.05))).toLocaleString('es')+(n.dataset.suf||'');
-  });
-};
+function drawEqualizer(){
+  eqCv.width=eqCv.clientWidth; eqCv.height=eqCv.clientHeight;
+  const w=eqCv.width, h=eqCv.height;
+  eqCtx.clearRect(0,0,w,h);
+  const barW=w/eqBars.length - 3;
 
-/* ============================================================
-   5 · MOTOR DE APRENDIZAJE (3D Cycle Board)
-   ============================================================ */
-const board=$('#board'),boardTilt=$('#boardTilt'),token=$('#token'),boardCap=$('#boardCap'),feats=$$('#feat li'),room=$('#room');
-const BR=160,BC=220,BOARD_RX=58;
-const angOf=j=>(-90+j*72)*Math.PI/180;
-const snodes=phases.map((ph,j)=>{
-  const n=document.createElement('div');n.className='snode';
-  n.style.left=(BC+Math.cos(angOf(j))*BR)+'px';
-  n.style.top=(BC+Math.sin(angOf(j))*BR)+'px';
-  n.innerHTML=`<div class="disc"></div><div class="up"><span class="e">${ph.e}</span><code>${ph.c}</code></div>`;
-  board.appendChild(n);n._lift=0;return n;
-});
-let lastSrv=-1;
-updaters['s-server']=p=>{
-  const k=clamp((p-.08)/.84)*4,i=Math.floor(Math.min(k,3.9999)),f=k-i,sn=i+eIO(clamp((f-.25)/.5));
-  const intro=eOut(seg(p,0,.16));
-  boardTilt.style.transform=`rotateY(${mxs*14}deg) rotateX(${-mys*5}deg) translateY(${lerp(80,0,intro)}px)`;
-  board.style.transform=`rotateX(${BOARD_RX}deg) scale(${lerp(.7,1,intro)})`;
-  board.style.opacity=intro;
-  const a=(-90+sn*72)*Math.PI/180;
-  token.style.transform=`translate(${BC+Math.cos(a)*BR}px,${BC+Math.sin(a)*BR}px) translateZ(14px)`;
-  const act=Math.round(sn);
-  snodes.forEach((n,j)=>{
-    const on=j===act;n.classList.toggle('on',on);n._lift+=((on?34:0)-n._lift)*.15;
-    n.querySelector('.up').style.transform=`rotateX(${-BOARD_RX}deg) translate(-50%,-100%) translateY(${-20-n._lift}px)`;
-  });
-  if(act!==lastSrv){lastSrv=act;boardCap.textContent=phases[act].l}
-  feats.forEach((li,j)=>li.classList.toggle('on',p>.06+j*.15));
-  room.style.opacity=seg(p,.8,.9);
-};
+  for(let i=0;i<eqBars.length;i++){
+    const target=isSpeaking?(Math.sin(Date.now()*0.015+i*0.4)*0.5+0.5)*(h*0.8)+10 : 8;
+    eqBars[i]+=(target-eqBars[i])*0.2;
+    const x=i*(barW+3);
+    const y=h-eqBars[i];
 
-/* ============================================================
-   6 · ARCHITECTURE (SVG Flow)
-   ============================================================ */
-const arch=$('#arch'),archNodes=$$('#arch .node'),archPaths=$$('#arch .wire'),packets=$('#packets'),archCap=$('#archCap');
-archPaths.forEach(pa=>{
-  pa._len=pa.getTotalLength();
-  pa.style.strokeDasharray=pa.classList.contains('dash')?'6 6':pa._len;
-  pa.style.strokeDashoffset=pa._len;
-});
-updaters['s-arch']=p=>{
-  const a=eOut(seg(p,0,.3));
-  arch.style.transform=`rotateX(${lerp(55,8,a)-mys*5}deg) rotateY(${mxs*8}deg) scale(${lerp(.8,1,a)})`;
-  arch.style.opacity=seg(p,0,.08);
-  archNodes.forEach((n,i)=>{
-    const t=eOut(seg(p,.1+i*.055,.22+i*.055));
-    n.style.opacity=t;
-    n.style.transform=`translate(-50%,-50%) translateZ(${lerp(-600,40,t)}px) scale(${lerp(.5,1,t)})`;
-  });
-  archPaths.forEach((pa,j)=>{
-    const t=eIO(seg(p,.45+j*.045,.58+j*.045));
-    if(pa.classList.contains('dash')) pa.style.opacity=t;
-    else pa.style.strokeDashoffset=pa._len*(1-t);
-  });
-  packets.setAttribute('opacity',seg(p,.72,.8));
-  archCap.style.opacity=seg(p,.78,.86);
-};
+    const grad=eqCtx.createLinearGradient(0,y,0,h);
+    grad.addColorStop(0,'#00f5ff');
+    grad.addColorStop(1,'#a855f7');
+    eqCtx.fillStyle=grad;
+    eqCtx.fillRect(x,y,barW,eqBars[i]);
+  }
+}
 
-/* ============================================================
-   7 & 8 · SIMULATORS UP-DATE & LOGIC
-   ============================================================ */
-updaters['s-sim-wa']=p=>{};
-updaters['s-sim-rep']=p=>{};
-
-function speakText(txt){
-  if(!window.speechSynthesis)return;
+function playPhonetic(word, trans){
+  if(!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  const clean=txt.replace(/["']/g,'');
-  const u=new SpeechSynthesisUtterance(clean);
+  const u=new SpeechSynthesisUtterance(word);
   u.lang='en-GB';
-  u.rate=0.92;
+  u.rate=0.9;
+  isSpeaking=true;
+  u.onend=()=>isSpeaking=false;
+  u.onerror=()=>isSpeaking=false;
   window.speechSynthesis.speak(u);
 }
 
-function speakCurrentWa(){
-  const msg=$('#waIncomingMsg').innerText;
-  speakText(msg);
-}
-
-const waScenarios={
-  dave:{
-    name:'Dave (Londres)',
-    incoming:'mate, that gig ticket was forty quid!! are they proper taking the piss?!',
-    correct:'madness innit! forty quid is daylight robbery tbh, proper taking the piss',
-    robot:'I consider 40 pounds to be a reasonable investment in musical culture.',
-    expl:'🎉 <b>¡Exacto! Hablas como un local.</b><br>• <b>Quid</b> = Libra (£).<br>• <b>Taking the piss</b> = Tomar el pelo o pasarse de la raya.<br>• <b>Innit</b> = ¿Verdad? / ¿A que sí?<br>• <b>Daylight robbery</b> = Un robo descarado.'
-  },
-  chloe:{
-    name:'Chloe (Camden)',
-    incoming:'reckon we should grab a quick pint before the queue at Camden gets mental?',
-    correct:'proper sound plan! I\'m parched anyway, meet you outside in ten?',
-    robot:'I believe purchasing an alcoholic beverage prior to queuing is logically optimal.',
-    expl:'🎉 <b>¡Clavado!</b><br>• <b>Reckon</b> = Creo / Pienso.<br>• <b>Sound</b> = Perfecto / Buena idea.<br>• <b>Parched</b> = Seco de sed.<br>• <b>Mental</b> = Una locura.'
-  },
-  liam:{
-    name:'Liam (Soho)',
-    incoming:'blimey mate, that bloke was proper dodgy, thought he was gonna nick my coat!',
-    correct:'swear down! looked dodgy as hell, glad we bounced out of there.',
-    robot:'Indeed, that male exhibited suspicious behaviors according to local jurisdiction.',
-    expl:'🎉 <b>¡Genial!</b><br>• <b>Blimey</b> = ¡Ostras! / ¡Madre mía!<br>• <b>Dodgy</b> = Sospechoso / Peligroso.<br>• <b>Nick</b> = Robar.<br>• <b>Bounced</b> = Nos piramos.'
-  }
-};
-
-let currentWaKey='dave';
-function setWaScenario(key){
-  currentWaKey=key;
-  const s=waScenarios[key];
-  $('#waName').innerText=s.name;
-  $('#waIncomingMsg').innerText=s.incoming;
-  const btns=$$('#waChoices .slang-btn');
-  btns[0].querySelector('span').innerText=`"${s.correct}"`;
-  btns[1].querySelector('span').innerText=`"${s.robot}"`;
-  $('#waExpl').style.display='none';
-  $('#waExpl').innerHTML=s.expl;
-  speakText(s.incoming);
-}
-
-function handleWaChoice(isCorrect){
-  const expl=$('#waExpl');
-  const chatLog=$('#waChatLog');
-  const s=waScenarios[currentWaKey];
-
-  if(isCorrect){
-    expl.style.display='block';
-    const bubble=document.createElement('div');
-    bubble.className='chat-bubble chat-outgoing';
-    bubble.innerText=s.correct;
-    chatLog.appendChild(bubble);
-    speakText(s.correct);
-  } else {
-    alert("🤖 ¡Demasiado formal! Un británico te miraría raro si le contestas como una enciclopedia.");
-  }
-}
-
-// Active recall repetition simulation
-let drillCount=0;
-const targetSentence="He was focused on looking for his charger";
-function handleDrillSubmit(e){
+/* ============================================================
+   4 · NEURAL MUSCLE RECALL INTERACTIVE
+   ============================================================ */
+let synapseProgress=0;
+const targetSynapsePhrase="Because he was focused on looking for his charger";
+function testSynapseDrill(e){
   e.preventDefault();
-  const inp=$('#drillInput');
+  const inp=$('#synapseInput');
   const val=inp.value.trim();
-  const feedback=$('#drillFeedback');
-  const badge=$('#drillCounterBadge');
+  const feedback=$('#synapseFeedback');
+  const badge=$('#synapseBadge');
+  const pill1=$('#pill1'), pill2=$('#pill2');
 
-  if(val.toLowerCase() === targetSentence.toLowerCase()){
-    drillCount++;
-    if(drillCount >= 2){
-      badge.innerText="COMPLETADO (2 / 2) ✓";
-      badge.style.color="#4ade80";
-      feedback.innerHTML="🎉 <b>¡Fijado en tu memoria!</b> Has reproducido la estructura dos veces seguidas sin fallos.";
-      feedback.style.color="#4ade80";
-      inp.value="";
-      inp.disabled=true;
-    } else {
-      badge.innerText="REPETICIÓN 1 / 2";
+  if(val.toLowerCase()===targetSynapsePhrase.toLowerCase()){
+    synapseProgress++;
+    if(synapseProgress===1){
+      pill1.classList.add('fill');
+      badge.textContent="REPETICIÓN 1 / 2";
       badge.style.color="#fbbf24";
-      feedback.innerHTML="✓ ¡Bien! Ahora escríbela <b>una vez más</b> para completar la segunda repetición:";
+      feedback.innerHTML="✓ <b>¡Primera repetición correcta!</b> Ahora escríbela una vez más para consolidar la sinapsis:";
       feedback.style.color="#fbbf24";
       inp.value="";
       inp.focus();
+    } else if(synapseProgress>=2){
+      pill2.classList.add('fill');
+      badge.textContent="¡SINAPSIS FIJADA (2/2) ✓!";
+      badge.style.color="#10b981";
+      feedback.innerHTML="🎉 <b>¡Enhorabuena!</b> Has grabado la estructura en memoria muscular sin depender de pistas pasivas.";
+      feedback.style.color="#10b981";
+      inp.value="";
+      inp.disabled=true;
     }
   } else {
-    feedback.innerHTML="❌ Errata detectada. Fíjate bien y escribe exactamente: <i>"+targetSentence+"</i>";
+    feedback.innerHTML="❌ Revisa la frase e inténtalo de nuevo: <i>\""+targetSynapsePhrase+"\"</i>";
     feedback.style.color="#f43f5e";
   }
 }
 
 /* ============================================================
-   9 · FLIP CARDS (Robustez)
+   5 · PHONE WHATSAPP DEMO
    ============================================================ */
-const flips=$$('#flipgrid .flip'),meters=$$('#flipgrid .meter i'),shield=$('#shield');
-updaters['s-robust']=p=>{
-  flips.forEach((f,i)=>{
-    const t=eIO(seg(p,.06+i*.11,.3+i*.11));
-    f.style.transform=`translateY(${lerp(60,0,eOut(seg(p,0,.1)))}px) rotateX(${-mys*6}deg) rotateY(${lerp(180,0,t)+mxs*8}deg)`;
-    meters[i].style.transform=`scaleX(${seg(p,.3+i*.11,.45+i*.11)})`;
-  });
-  const s=eOut(seg(p,.78,.9));
-  shield.style.opacity=s;
-  shield.style.transform=`translateY(${lerp(30,0,s)}px)`;
-};
+function sendPhoneReply(isStreet){
+  const chat=$('#phoneChatBody');
+  const replies=$('#phoneRepliesBox');
+  if(isStreet){
+    const b=document.createElement('div');
+    b.className='bubble-out';
+    b.textContent="madness innit! forty quid is daylight robbery tbh";
+    chat.appendChild(b);
+    playPhonetic("madness innit! forty quid is daylight robbery tbh", "");
+    replies.innerHTML=`<div style="font-size:.76rem;color:#10b981;font-weight:700;padding:6px">✓ Dave responde: "proper right mate, pints on me later!"</div>`;
+  } else {
+    alert("🤖 ¡Demasiado formal! Tu amigo británico pensaría que le está respondiendo un asistente virtual.");
+  }
+}
 
 /* ============================================================
-   10 · BUGS & RESOLUTIONS FLY-THROUGH
+   6 · CYBER TERMINAL SCROLL TYPING
    ============================================================ */
-const bugs=$$('#bugWorld .bug'),NB=bugs.length,bugN=$('#bugN'),bugSteps=$('#bugSteps');
-bugs.forEach(()=>bugSteps.insertAdjacentHTML('beforeend','<i><b></b></i>'));
-const bugBars=$$('#bugSteps b');
-
-updaters['s-bugs']=p=>{
-  const L=p*(NB-.3);
-  bugs.forEach((b,i)=>{
-    const t=L-i;
-    if(t<-.5||t>1.25){b.style.opacity=0;b.style.visibility='hidden';return}
-    b.style.visibility='visible';
-    let z,op,rx;
-    if(t<0){const a=eOut(clamp((t+.5)/.5));z=lerp(-1800,0,a);op=a;rx=lerp(25,0,a)}
-    else if(t<.7){z=0;op=1;rx=0}
-    else{const l=eIn(seg(t,.7,1.2));z=lerp(0,650,l);op=1-l;rx=lerp(0,-12,l)}
-    b.style.opacity=op;
-    b.style.transform=`translate3d(0,0,${z}px) rotateX(${rx-mys*5}deg) rotateY(${mxs*7}deg)`;
-    const s=seg(t,.08,.28),st=b.querySelector('.stamp'),fx=b.querySelector('.fixl');
-    st.style.opacity=s;
-    st.style.transform=`rotate(-8deg) scale(${lerp(2.6,1,eOut(s))})`;
-    const fo=seg(t,.15,.35);
-    fx.style.opacity=fo;
-    fx.style.transform=`translateY(${lerp(12,0,fo)}px)`;
-  });
-  const cur=Math.min(NB,Math.floor(L+.3)+1);
-  bugN.textContent=`Desafío ${cur} / ${NB}`;
-  bugBars.forEach((b,j)=>b.style.transform=`scaleX(${clamp(L+.3-j)})`);
-};
-
-/* ============================================================
-   11 · TERMINAL
-   ============================================================ */
-const term=$('#term'),typed=$('#typed'),sideCards=$$('#side .card');
-const tLines=[
-  ['c','# 1. Clonar repositorio e instalar dependencias'],
-  ['g','PS> git clone https://github.com/adrianSG25/aprende-en.git'],
-  ['g','PS> npm install'],
-  ['b','✓ 142 packages installed in 1.4s'],
-  ['',''],
-  ['c','# 2. Compilar con Vite + TypeScript'],
-  ['g','PS> npm run build'],
-  ['b','✓ built in 580ms (PWA Cache uk-street-v19 active)'],
-  ['',''],
-  ['c','# 3. Desplegar en producción global'],
-  ['g','PS> npx gh-pages -d dist'],
-  ['y','🚀 Published to https://adriansg25.github.io/aprende-en/']
+const termLines=[
+  "$ git clone https://github.com/adrianSG25/aprende-en.git",
+  "$ cd aprende-en && npm install",
+  "✓ 142 packages installed in 0.9s",
+  "",
+  "$ npm run build",
+  "✓ [vite] transformed 1958 modules in 280ms",
+  "✓ [pwa] service worker registered: uk-street-v19",
+  "",
+  "$ npx gh-pages -d dist",
+  "🚀 Published to https://adriansg25.github.io/aprende-en/"
 ];
-const tTotal=tLines.reduce((s,l)=>s+l[1].length+1,0);
-let lastN=-1;
+const termFullText=termLines.join('\n');
+const cyberTermText=$('#cyberTermText');
 
 updaters['s-term']=p=>{
-  const a=eOut(seg(p,0,.2));
-  term.style.transform=`rotateX(${lerp(35,0,a)-mys*4}deg) rotateY(${lerp(-25,0,a)+mxs*6}deg) translateY(${lerp(90,0,a)}px)`;
-  term.style.opacity=a;
-  const n=Math.floor(seg(p,.14,.8)*tTotal);
-  if(n!==lastN){
-    lastN=n;let left=n,html='';
-    for(const [cls,txt] of tLines){
-      if(left<=0)break;
-      const part=txt.slice(0,left);
-      html+=`<span class="${cls}">${part}</span>`;
-      left-=txt.length+1;
-      if(left>=0)html+='\n';
-    }
-    typed.innerHTML=html+'<span class="caret"></span>';
-  }
-  sideCards.forEach((c,i)=>{
-    const t=eOut(seg(p,.3+i*.15,.45+i*.15));
-    c.style.opacity=t;
-    c.style.transform=`perspective(900px) rotateY(${lerp(-60,0,t)}deg) translateX(${lerp(80,0,t)}px)`;
+  const chars=Math.floor(seg(p,0.1,0.85)*termFullText.length);
+  cyberTermText.textContent=termFullText.slice(0,chars);
+};
+
+/* ============================================================
+   SPEED COUNTERS
+   ============================================================ */
+const speedVals=$$('.speed-val');
+updaters['s-speed']=p=>{
+  speedVals.forEach(v=>{
+    const target=+v.dataset.val;
+    const cur=Math.round(target*eOut(seg(p,0.2,0.85)));
+    v.textContent=cur + (v.dataset.suf||'');
   });
 };
 
 /* ============================================================
-   12 · END
-   ============================================================ */
-const endEl=$('#end'),endEmoji=$('#endEmoji');
-updaters['s-end']=(p,t,enter)=>{
-  const e=eOut(enter);
-  endEl.style.opacity=e;
-  endEl.style.transform=`scale(${lerp(.88,1,e)})`;
-  endEmoji.style.transform=`perspective(600px) rotateY(${t*.06}deg) rotateX(${mys*-15}deg)`;
-};
-
-/* ============================================================
-   MAIN SCROLL & RENDER LOOP
+   ANIMATION & SCROLL DISPATCHER
    ============================================================ */
 let layout=[];
 function measure(){
-  W=innerWidth;H=innerHeight;mobile=W<900;
-  onResize.forEach(f=>f());
-  layout=sceneEls.map(el=>({el,top:el.offsetTop,h:el.offsetHeight,fn:updaters[el.id]}));
+  layout=sceneEls.map(el=>({
+    el,
+    top:el.offsetTop,
+    h:el.offsetHeight,
+    fn:updaters[el.id]
+  }));
 }
-const bar=$('#bar');
+measure();
+addEventListener('resize',measure);
 
-function frame(t){
-  now=t;
-  const target=scrollY;
-  sy=reduce?target:sy+(target-sy)*.11;
-  if(Math.abs(target-sy)<.05) sy=target;
-  mxs+=(mx-mxs)*.06;
-  mys+=(my-mys)*.06;
+const progressBar=$('#tubeProgressBar');
 
-  let active=0;
+function loop(){
+  drawRain();
+  drawEqualizer();
+
+  const sy=scrollY;
+  let activeIdx=0;
+
   layout.forEach((s,i)=>{
-    if(s.top<=sy+H*.5) active=i;
-    if(sy+H<s.top-H*.25||sy>s.top+s.h+H*.25) return;
-    const p=clamp((sy-s.top)/Math.max(1,s.h-H)), enter=clamp((sy+H-s.top)/H);
-    s.fn&&s.fn(p,t,enter);
+    if(s.top <= sy + H*0.5) activeIdx=i;
+    if(sy + H < s.top || sy > s.top + s.h) return;
+    const p=clamp((sy - s.top) / Math.max(1, s.h - H));
+    s.fn && s.fn(p);
   });
 
-  dots.forEach((d,i)=>d.classList.toggle('on',i===active));
-  bar.style.width=(sy/Math.max(1,document.documentElement.scrollHeight-H)*100)+'%';
-  requestAnimationFrame(frame);
-}
+  navDots.forEach((d,i)=>d.classList.toggle('active',i===activeIdx));
+  progressBar.style.width=(sy / Math.max(1, document.documentElement.scrollHeight - H) * 100) + '%';
 
-addEventListener('resize',measure);
-measure();
-addEventListener('load',measure);
-requestAnimationFrame(frame);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
