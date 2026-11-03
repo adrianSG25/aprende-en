@@ -854,7 +854,7 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                           <div className="flex items-center gap-2">
                             <RotateCcw className="w-4 h-4 text-amber-700" />
                             <span className="font-extrabold text-amber-950 text-xs sm:text-sm">
-                              🔁 Repite tu frase corregida para fijarla ({repState?.repsCompleted || 0}/2)
+                              🔁 Repite de memoria para fijar el fallo ({repState?.repsCompleted || 0}/2)
                             </span>
                           </div>
                           {repState?.isCompleted && (
@@ -866,56 +866,58 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                         </div>
 
                         <p className="text-xs text-amber-900 font-medium leading-relaxed">
-                          Has tenido algún fallo o errata. Escribe la frase completa corregida <strong>2 veces seguidas</strong> para fijar la estructura en tu memoria muscular y no olvidarla:
+                          Has tenido algún fallo o errata. Recuerda la corrección de arriba y escribe la frase completa sin errores <strong>2 veces seguidas de memoria</strong> para fijarla:
                         </p>
 
-                        <div className="bg-white p-3 rounded-xl border border-amber-200 text-xs sm:text-sm font-semibold text-slate-900 flex items-center justify-between gap-2">
-                          <span>"{targetSentence}"</span>
-                          <button
-                            type="button"
-                            onClick={() => speakEnglishText(targetSentence)}
-                            title="Escuchar cómo se pronuncia"
-                            className="p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 cursor-pointer shrink-0"
-                          >
-                            <Volume2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                        {!repState?.isCompleted && (
+                          <div className="flex items-center justify-end">
+                            <button
+                              type="button"
+                              onClick={() => speakEnglishText(targetSentence)}
+                              title="Escuchar pista en audio"
+                              className="text-[11px] font-bold text-amber-900 hover:text-amber-950 flex items-center gap-1 bg-amber-100/70 hover:bg-amber-200 px-2.5 py-1 rounded-lg cursor-pointer transition-colors"
+                            >
+                              <Volume2 className="w-3.5 h-3.5" />
+                              <span>Pista en audio (escuchar)</span>
+                            </button>
+                          </div>
+                        )}
 
                         {!repState?.isCompleted ? (
-                          <div className="space-y-2">
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={repState?.currentInput || ''}
-                                onChange={(e) => {
-                                  const text = e.target.value;
-                                  setRepetitionMap((prev) => ({
-                                    ...prev,
-                                    [oq.id]: {
-                                      ...(prev[oq.id] || { repsCompleted: 0, isCompleted: false }),
-                                      currentInput: text,
-                                      errorNotice: undefined
-                                    }
-                                  }));
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    handleCheckRepetition(oq.id, targetSentence);
+                          <div className="space-y-2.5">
+                            <input
+                              type="text"
+                              value={repState?.currentInput || ''}
+                              onChange={(e) => {
+                                const text = e.target.value;
+                                setRepetitionMap((prev) => ({
+                                  ...prev,
+                                  [oq.id]: {
+                                    ...(prev[oq.id] || { repsCompleted: 0, isCompleted: false }),
+                                    currentInput: text,
+                                    errorNotice: undefined
                                   }
-                                }}
-                                placeholder={`Repetición ${(repState?.repsCompleted || 0) + 1} de 2: Escribe la frase corregida...`}
-                                className="flex-1 bg-white border-2 border-amber-300 focus:border-amber-600 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => handleCheckRepetition(oq.id, targetSentence)}
-                                disabled={!repState?.currentInput?.trim()}
-                                className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer min-h-[42px] shrink-0"
-                              >
-                                Comprobar
-                              </button>
-                            </div>
+                                }));
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleCheckRepetition(oq.id, targetSentence);
+                                }
+                              }}
+                              placeholder={`Repetición ${(repState?.repsCompleted || 0) + 1} de 2: Escribe la frase de memoria...`}
+                              className="w-full bg-white border-2 border-amber-300 focus:border-amber-600 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none"
+                            />
+
+                            <button
+                              type="button"
+                              onClick={() => handleCheckRepetition(oq.id, targetSentence)}
+                              disabled={!repState?.currentInput?.trim()}
+                              className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-[0.99] disabled:opacity-40 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs cursor-pointer min-h-[42px] flex items-center justify-center gap-1.5"
+                            >
+                              <Check className="w-4 h-4" />
+                              <span>Comprobar repetición</span>
+                            </button>
 
                             {repState?.errorNotice && (
                               <p className="text-xs text-rose-700 font-semibold bg-rose-50 p-2.5 rounded-lg border border-rose-200">
@@ -926,7 +928,7 @@ export const ReadingZone: React.FC<ReadingZoneProps> = ({
                             {(repState?.repsCompleted || 0) === 1 && !repState?.isCompleted && (
                               <p className="text-xs text-emerald-800 font-bold bg-emerald-50 p-2 rounded-lg border border-emerald-200 flex items-center gap-1.5">
                                 <Check className="w-4 h-4 text-emerald-600" />
-                                ¡1ª repetición perfecta! Escríbela 1 vez más para dominarla.
+                                ¡1ª repetición perfecta! Escríbela 1 vez más de memoria para dominarla.
                               </p>
                             )}
                           </div>
