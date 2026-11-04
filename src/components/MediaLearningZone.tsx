@@ -18,6 +18,7 @@ import {
   deleteMediaSession
 } from '../services/storageService';
 import { GameProgress } from '../types/streetGame';
+import { fetchOnlineEpisodeData, TVEpisodeInfo } from '../services/tvEpisodeService';
 import {
   Tv,
   Sparkles,
@@ -34,7 +35,8 @@ import {
   Wrench,
   Edit3,
   AlertCircle,
-  X
+  X,
+  Search
 } from 'lucide-react';
 
 interface MediaLearningZoneProps {
@@ -152,6 +154,10 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
   const [episodeOrPart, setEpisodeOrPart] = useState('Temporada 2, Episodio 2');
   const [userNotes, setUserNotes] = useState('Eddie Horniman y Susie Glass viajan a Milán para cerrar el acuerdo con Marco Moretti');
 
+  // Estados para búsqueda de datos oficiales en tiempo real
+  const [detectedOnlineInfo, setDetectedOnlineInfo] = useState<TVEpisodeInfo | null>(null);
+  const [isSearchingOnline, setIsSearchingOnline] = useState(false);
+
   // Estados de generación
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
@@ -193,6 +199,25 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
     setMediaTitle(preset.title);
     setEpisodeOrPart(preset.episode);
     setUserNotes(preset.notes);
+    setDetectedOnlineInfo(null);
+  };
+
+  // Buscar sinopsis oficial del episodio en tiempo real (TVMaze)
+  const handleSearchOnlineSynopsis = async () => {
+    if (!mediaTitle.trim()) return;
+    setIsSearchingOnline(true);
+    setGenerationError(null);
+    try {
+      const info = await fetchOnlineEpisodeData(mediaTitle.trim(), episodeOrPart.trim());
+      setDetectedOnlineInfo(info);
+      if (info && !userNotes.trim()) {
+        setUserNotes(`Episodio "${info.episodeName}": ${info.summary}`);
+      }
+    } catch (err) {
+      console.warn('Error al buscar en vivo:', err);
+    } finally {
+      setIsSearchingOnline(false);
+    }
   };
 
   // Generar sesión con IA
@@ -208,7 +233,8 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
         mediaTitle.trim(),
         mediaType,
         episodeOrPart.trim(),
-        userNotes.trim()
+        userNotes.trim(),
+        detectedOnlineInfo
       );
       const updatedList = saveMediaSession(session);
       setSavedSessions(updatedList);
@@ -223,6 +249,33 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
         err instanceof Error
           ? err.message
           : 'Error al generar el análisis con IA. Revisa tu API key en Ajustes IA.'
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Regenerar un episodio que se quedó con el mensaje de "no dispongo de información"
+  const handleRegenerateFailedSession = async (sessionToFix: MediaAnalysisSession) => {
+    setIsGenerating(true);
+    setGenerationError(null);
+    try {
+      const fixed = await generateMediaAnalysisWithAI(
+        sessionToFix.mediaTitle,
+        sessionToFix.mediaType,
+        sessionToFix.episodeOrPart
+      );
+      const updatedSession: MediaAnalysisSession = { ...fixed, id: sessionToFix.id };
+      const list = saveMediaSession(updatedSession);
+      setSavedSessions(list);
+      setActiveSession(updatedSession);
+      setWordAttempts({});
+      setQuestionAnswers({});
+      setQuestionFeedbacks({});
+      setRepetitionMap({});
+    } catch (err: unknown) {
+      setGenerationError(
+        err instanceof Error ? err.message : 'Error al regenerar el episodio con datos oficiales.'
       );
     } finally {
       setIsGenerating(false);
@@ -513,8 +566,11 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
             <input
               type="text"
               value={mediaTitle}
-              onChange={(e) => setMediaTitle(e.target.value)}
-              placeholder="Ej: The Gentlemen, Peaky Blinders, Ted Lasso..."
+              onChange={(e) => {
+                setMediaTitle(e.target.value);
+                setDetectedOnlineInfo(null);
+              }}
+              placeholder="Ej: The Gentlemen, Peaky Blinders, Reacher, Ted Lasso..."
               className="w-full bg-white border-2 border-slate-300 focus:border-indigo-600 rounded-2xl p-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none"
               required
             />
@@ -527,13 +583,68 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
             <input
               type="text"
               value={episodeOrPart}
-              onChange={(e) => setEpisodeOrPart(e.target.value)}
-              placeholder="Ej: Temporada 1, Episodio 2 (o Película completa)"
+              onChange={(e) => {
+                setEpisodeOrPart(e.target.value);
+                setDetectedOnlineInfo(null);
+              }}
+              placeholder="Ej: Temporada 4, Episodio 2 (o Película completa)"
               className="w-full bg-white border-2 border-slate-300 focus:border-indigo-600 rounded-2xl p-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none"
               required
             />
           </div>
         </div>
+
+        {/* Barra de Búsqueda Oficial en Tiempo Real para Series */}
+        {mediaType === 'series' && (
+          <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-2xl bg-slate-50 border border-slate-200">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-xl bg-indigo-100 text-indigo-700">
+                <Search className="w-3.5 h-3.5" />
+              </span>
+              <span className="text-[11px] sm:text-xs text-slate-700 font-bold">
+                ¿Temporada reciente o estreno? Conexión directa a base de datos de TV en tiempo real.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleSearchOnlineSynopsis}
+              disabled={isSearchingOnline || !mediaTitle.trim()}
+              className="px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all disabled:opacity-50"
+            >
+              {isSearchingOnline ? (
+                <>
+                  <RotateCcw className="w-3.5 h-3.5 animate-spin" />
+                  <span>Buscando datos oficiales...</span>
+                </>
+              ) : (
+                <>
+                  <Search className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Comprobar sinopsis oficial</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* Notificación de episodio oficial confirmado */}
+        {detectedOnlineInfo && (
+          <div className="p-3.5 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-emerald-950 text-xs space-y-1.5 animate-in fade-in">
+            <div className="flex flex-wrap items-center justify-between gap-1">
+              <span className="font-extrabold flex items-center gap-1.5 text-emerald-800">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                Episodio Oficial Confirmado: {detectedOnlineInfo.showName} S{detectedOnlineInfo.season}E{detectedOnlineInfo.number} — "{detectedOnlineInfo.episodeName}"
+              </span>
+              {detectedOnlineInfo.airdate && (
+                <span className="text-[11px] text-emerald-700 font-semibold px-2 py-0.5 rounded-md bg-emerald-100">
+                  Emisión: {detectedOnlineInfo.airdate}
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-emerald-900 leading-relaxed italic bg-white/70 p-2 rounded-xl border border-emerald-200">
+              "{detectedOnlineInfo.summary}"
+            </p>
+          </div>
+        )}
 
         {mediaTitle.toLowerCase().includes('gentlemen') && (
           <div className="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-950 space-y-1.5">
@@ -660,6 +771,45 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
             <h3 className="text-lg sm:text-2xl font-black text-slate-900">
               {activeSession.mediaTitle} — {activeSession.episodeOrPart}
             </h3>
+
+            {/* Aviso de rescate si el episodio se guardó anteriormente con "no dispongo de información" */}
+            {/no dispongo|no tengo informaci[oó]n|lo siento|i do not have|cannot provide/i.test(
+              activeSession.synopsisEs
+            ) && (
+              <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-950 space-y-2.5 animate-in fade-in">
+                <div className="flex items-start gap-2.5">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-extrabold text-xs sm:text-sm text-amber-900">
+                      Este episodio se generó con la base de datos desactualizada de la IA
+                    </h4>
+                    <p className="text-xs text-amber-800 leading-relaxed mt-0.5">
+                      Ahora la aplicación está conectada con la base de datos de televisión en tiempo real para evitar que la IA diga que no tiene información. Haz clic en el botón para regenerar este episodio con su trama oficial y vocabulario real:
+                    </p>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    disabled={isGenerating}
+                    onClick={() => handleRegenerateFailedSession(activeSession)}
+                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 disabled:opacity-50 text-white font-black text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-2 transition-all"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <RotateCcw className="w-4 h-4 animate-spin" />
+                        <span>Regenerando con datos en vivo...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 text-amber-300" />
+                        <span>Regenerar ahora con la base de datos oficial en vivo</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {!isEditingSynopsis ? (
               <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs sm:text-sm text-slate-700 space-y-1.5">

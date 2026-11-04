@@ -1,4 +1,5 @@
 import { AIConfig, Exercise, Level, ExerciseCategory } from '../types';
+import { fetchOnlineEpisodeData, TVEpisodeInfo } from './tvEpisodeService';
 
 const AI_CONFIG_KEY = 'engdrill_ai_config_v1';
 
@@ -911,33 +912,66 @@ export async function generateMediaAnalysisWithAI(
   mediaTitle: string,
   mediaType: 'series' | 'movie' | 'book',
   episodeOrPart: string,
-  userNotes?: string
+  userNotes?: string,
+  prefetchedEpisodeData?: TVEpisodeInfo | null
 ): Promise<MediaAnalysisSession> {
   const config = getAIConfig();
+
+  // Si es una serie de TV y no se proporcionó data previa, consultar la base de datos de TV en vivo
+  let onlineEpisode: TVEpisodeInfo | null = prefetchedEpisodeData || null;
+  if (!onlineEpisode && mediaType === 'series') {
+    try {
+      onlineEpisode = await fetchOnlineEpisodeData(mediaTitle, episodeOrPart);
+    } catch {
+      // Ignorar fallos de red en la consulta auxiliar
+    }
+  }
+
   const sys = `You are a native British English linguist and pop culture tutor.
 The student is watching or reading:
 - Title: "${mediaTitle}"
 - Media Type: ${mediaType}
 - Episode / Season / Chapter: "${episodeOrPart}"
 ${userNotes ? `- Additional user notes / real plot details: "${userNotes}"` : ''}
+${
+  onlineEpisode
+    ? `
+=== VERIFIED OFFICIAL EPISODE DATA (From Live TV Database) ===
+Show: "${onlineEpisode.showName}"
+Episode: Season ${onlineEpisode.season}, Episode ${onlineEpisode.number} — "${onlineEpisode.episodeName}"
+Official Synopsis: "${onlineEpisode.summary}"
+Air date: ${onlineEpisode.airdate || 'Recent'}
+MANDATORY: You MUST translate and adapt this official synopsis into Spanish for "synopsisEs" and base your questions and vocabulary directly on this confirmed plot, characters, and events!
+`
+    : ''
+}
 
-CRITICAL RULES AGAINST HALLUCINATIONS:
-1. DISTINGUISH ADAPTATIONS CAREFULLY:
+CRITICAL RULES AGAINST REFUSALS & HALLUCINATIONS:
+1. STRICT ZERO-TOLERANCE PROHIBITION ON REFUSALS:
+   - NEVER EVER reply with refusal text like "Lo siento, no dispongo de información...", "No tengo datos sobre este episodio...", "I do not have enough information...", or "As an AI, I cannot...".
+   - The user is using this app to study English. A refusal is a fatal bug in the user experience.
+   - If the season or episode is brand new, very recent, or not in your pre-training memory:
+     * If VERIFIED OFFICIAL EPISODE DATA is provided above, USE IT 100%.
+     * If NO verified data was found and the user provided no notes, DO NOT REFUSE. Instead, use the authentic universe, core characters, themes, and conflicts of "${mediaTitle}" to generate a realistic, immersive episode scenario in Spanish, and extract authentic colloquial/street English words and questions fitting that world.
+
+2. DISTINGUISH ADAPTATIONS CAREFULLY:
    - "The Gentlemen" Netflix TV series (Guy Ritchie): Stars Eddie Horniman (Duke of Halstead / Theo James), Susie Glass (Kaya Scodelario), Bobby Glass (Ray Winstone), Freddy Horniman (Daniel Ings), Geoff Seacombe (Vinnie Jones).
      * Season 1: Eddie inherits the Halstead estate, uncovers the weed empire underneath, and pays off Freddy's debt.
      * Season 2: Eddie and Susie expand their criminal empire into Europe and Italy:
        - S2 Episode 1 ("The Road to Kingdom"): Eddie hosts a lavish, high-stakes shooting party at Halstead estate with Italian mafia figures and an Arab Sheikh to secure political peerage and international distribution.
        - S2 Episode 2 ("There's a Rat in the Kitchen"): Eddie travels to Milan alongside Susie Glass to strike a dangerous pact with Mafia boss Marco Moretti, while back in England Freddy deals with recovery and sudden betrayals.
      * CRITICAL: Do NOT confuse with the 2019 movie! Mickey Pearson (Matthew McConaughey) and Ray (Charlie Hunnam) are from the 2019 MOVIE, NOT the Netflix series! In the Netflix series the protagonists are always Eddie Horniman and Susie Glass.
-2. STRICTLY HONOR USER CORRECTIONS:
+
+3. STRICTLY HONOR USER CORRECTIONS:
    - If the user provides notes or corrections about what actually happened, your synopsis, vocabulary and questions MUST be 100% faithful to the user's notes and the real characters. Never invent imaginary plots when the user gave real details.
-3. AUTHENTIC UK VOCABULARY:
+
+4. AUTHENTIC UK / GENRE VOCABULARY:
    - Pick genuine slang, idioms or expressions from the real dialogue of that universe.
 
 Generate a rich, authentic study session for this specific episode/work.
 You must provide:
 1. "synopsisEs": A concise 2-sentence summary in Spanish of what happens in this episode/chapter.
-2. "words": 6 to 8 UNCOMMON, colloquial, slang, idiomatic or distinctive British English words/phrases actually used or strongly associated with this episode. (Do NOT include basic A1/A2 words like "house", "car", "eat").
+2. "words": 6 to 8 UNCOMMON, colloquial, slang, idiomatic or distinctive English words/phrases actually used or strongly associated with this episode. (Do NOT include basic A1/A2 words like "house", "car", "eat").
    For each word:
    - "id": "mw-1", "mw-2", etc.
    - "wordEn": English word, phrasal verb or idiom (e.g. "collateral", "proper dodgy", "leverage", "extortion", "take the piss", "geezer")
@@ -947,7 +981,7 @@ You must provide:
    - "primaryMeaningEs": clear definition in Spanish
    - "sceneContextEn": sample sentence showing how it is used in the episode
    - "sceneContextEs": natural Spanish translation of that sentence
-   - "explanationWhyEs": why it is used here, nuance or British street usage
+   - "explanationWhyEs": why it is used here, nuance or street usage
 3. "questions": 3 open comprehension questions in English about specific plot events, character motivations or decisions in this episode.
    For each question:
    - "id": "mq-1", "mq-2", "mq-3"
@@ -963,13 +997,24 @@ Return ONLY valid JSON matching this structure.`;
   const jsonStr = await callLLMJson(sys, usr, config);
   const parsed = JSON.parse(jsonStr);
 
+  let cleanSynopsis = (parsed.synopsisEs || '').trim();
+  const isRefusal = /no dispongo|no poseo|no tengo informaci[oó]n|lo siento|i do not have|cannot provide|sin informaci[oó]n/i.test(cleanSynopsis);
+
+  if (!cleanSynopsis || isRefusal) {
+    if (onlineEpisode?.summary) {
+      cleanSynopsis = `En "${onlineEpisode.episodeName}" (${onlineEpisode.showName} T${onlineEpisode.season}E${onlineEpisode.number}): ${onlineEpisode.summary}`;
+    } else {
+      cleanSynopsis = `Episodio ambientado en el universo de ${mediaTitle} (${episodeOrPart}), donde los protagonistas se enfrentan a intensas situaciones características de la trama.`;
+    }
+  }
+
   return {
     id: `media-session-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     createdAt: Date.now(),
     mediaTitle,
     mediaType,
     episodeOrPart,
-    synopsisEs: parsed.synopsisEs || `Análisis de ${mediaTitle} (${episodeOrPart}).`,
+    synopsisEs: cleanSynopsis,
     words: Array.isArray(parsed.words)
       ? parsed.words.map((w: any, idx: number) => ({
           id: w.id || `mw-${idx + 1}`,
