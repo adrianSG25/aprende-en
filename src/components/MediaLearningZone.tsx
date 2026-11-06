@@ -140,6 +140,34 @@ const PRESET_SUGGESTIONS = [
     episode: 'Película completa',
     label: '⚡ Harry Potter (Película)',
     notes: 'Harry llega a Hogwarts, la selección de casas y el espejo de Oesed'
+  },
+  {
+    type: 'movie' as const,
+    title: 'Lock, Stock and Two Smoking Barrels',
+    episode: 'Película completa',
+    label: '🔫 Lock & Stock (Película)',
+    notes: 'Cuatro amigos del este de Londres pierden medio millón de libras en una partida de cartas'
+  },
+  {
+    type: 'book' as const,
+    title: '1984',
+    episode: 'Libro completo',
+    label: '👁️ 1984 (Libro)',
+    notes: 'Winston Smith en el Londres distópico bajo la vigilancia del Gran Hermano y la Neolengua'
+  },
+  {
+    type: 'book' as const,
+    title: 'The Picture of Dorian Gray',
+    episode: 'Libro completo',
+    label: '🖼️ Dorian Gray (Libro)',
+    notes: 'Dorian Gray vende su alma para mantener la juventud eterna en el Londres victoriano'
+  },
+  {
+    type: 'book' as const,
+    title: 'Sherlock Holmes: A Study in Scarlet',
+    episode: 'Libro completo',
+    label: '🔍 Sherlock Holmes (Libro)',
+    notes: 'El Dr. Watson conoce a Sherlock Holmes en 221B Baker Street y resuelven el misterio'
   }
 ];
 
@@ -153,6 +181,31 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
   const [mediaTitle, setMediaTitle] = useState('The Gentlemen');
   const [episodeOrPart, setEpisodeOrPart] = useState('Temporada 2, Episodio 2');
   const [userNotes, setUserNotes] = useState('Eddie Horniman y Susie Glass viajan a Milán para cerrar el acuerdo con Marco Moretti');
+
+  // Cambiar tipo de contenido adaptando los campos
+  const handleSelectMediaType = (type: 'series' | 'movie' | 'book') => {
+    setMediaType(type);
+    setDetectedOnlineInfo(null);
+    if (type === 'movie') {
+      if (!episodeOrPart.trim() || episodeOrPart.includes('Temporada')) {
+        setEpisodeOrPart('Película completa');
+      }
+      if (userNotes.includes('Eddie Horniman')) {
+        setUserNotes('');
+      }
+    } else if (type === 'book') {
+      if (!episodeOrPart.trim() || episodeOrPart.includes('Temporada')) {
+        setEpisodeOrPart('Libro completo');
+      }
+      if (userNotes.includes('Eddie Horniman')) {
+        setUserNotes('');
+      }
+    } else {
+      if (episodeOrPart === 'Película completa' || episodeOrPart === 'Libro completo') {
+        setEpisodeOrPart('Temporada 1, Episodio 1');
+      }
+    }
+  };
 
   // Estados para búsqueda de datos oficiales en tiempo real
   const [detectedOnlineInfo, setDetectedOnlineInfo] = useState<TVEpisodeInfo | null>(null);
@@ -223,7 +276,15 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
   // Generar sesión con IA
   const handleGenerateSession = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!mediaTitle.trim() || !episodeOrPart.trim()) return;
+    if (!mediaTitle.trim()) return;
+    if (mediaType === 'series' && !episodeOrPart.trim()) return;
+
+    const finalEpisodeOrPart =
+      mediaType === 'movie'
+        ? (episodeOrPart.trim() && episodeOrPart.trim() !== 'Temporada 2, Episodio 2' ? episodeOrPart.trim() : 'Película completa')
+        : mediaType === 'book'
+        ? (episodeOrPart.trim() && episodeOrPart.trim() !== 'Temporada 2, Episodio 2' ? episodeOrPart.trim() : 'Libro completo')
+        : episodeOrPart.trim();
 
     setIsGenerating(true);
     setGenerationError(null);
@@ -232,7 +293,7 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
       const session = await generateMediaAnalysisWithAI(
         mediaTitle.trim(),
         mediaType,
-        episodeOrPart.trim(),
+        finalEpisodeOrPart,
         userNotes.trim(),
         detectedOnlineInfo
       );
@@ -525,7 +586,7 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
               <button
                 key={t.id}
                 type="button"
-                onClick={() => setMediaType(t.id)}
+                onClick={() => handleSelectMediaType(t.id)}
                 className={`py-2.5 px-3 rounded-2xl font-bold text-xs sm:text-sm border transition-all cursor-pointer ${
                   mediaType === t.id
                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
@@ -541,10 +602,10 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
         {/* Sugerencias Rápidas */}
         <div className="space-y-1.5">
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-            Ejemplos en 1 clic:
+            Ejemplos en 1 clic ({mediaType === 'series' ? 'Series' : mediaType === 'movie' ? 'Películas' : 'Libros'}):
           </span>
           <div className="flex flex-wrap gap-1.5 text-xs">
-            {PRESET_SUGGESTIONS.map((preset, idx) => (
+            {PRESET_SUGGESTIONS.filter((p) => p.type === mediaType).map((preset, idx) => (
               <button
                 key={idx}
                 type="button"
@@ -558,10 +619,14 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
         </div>
 
         {/* Inputs de Título y Episodio */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div className={`grid gap-3.5 ${mediaType === 'series' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
           <div>
             <label className="text-xs font-bold text-slate-700 block mb-1">
-              Título de la Serie, Peli o Libro:
+              {mediaType === 'series'
+                ? 'Título de la Serie:'
+                : mediaType === 'movie'
+                ? 'Título de la Película:'
+                : 'Título del Libro:'}
             </label>
             <input
               type="text"
@@ -570,28 +635,36 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                 setMediaTitle(e.target.value);
                 setDetectedOnlineInfo(null);
               }}
-              placeholder="Ej: The Gentlemen, Peaky Blinders, Reacher, Ted Lasso..."
+              placeholder={
+                mediaType === 'series'
+                  ? 'Ej: The Gentlemen, Peaky Blinders, Reacher, Ted Lasso...'
+                  : mediaType === 'movie'
+                  ? 'Ej: Ghosts: The Possession of Button House, Snatch, Harry Potter...'
+                  : 'Ej: 1984, Sherlock Holmes, Dorian Gray...'
+              }
               className="w-full bg-white border-2 border-slate-300 focus:border-indigo-600 rounded-2xl p-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none"
               required
             />
           </div>
 
-          <div>
-            <label className="text-xs font-bold text-slate-700 block mb-1">
-              Temporada y Episodio / Capítulo:
-            </label>
-            <input
-              type="text"
-              value={episodeOrPart}
-              onChange={(e) => {
-                setEpisodeOrPart(e.target.value);
-                setDetectedOnlineInfo(null);
-              }}
-              placeholder="Ej: Temporada 4, Episodio 2 (o Película completa)"
-              className="w-full bg-white border-2 border-slate-300 focus:border-indigo-600 rounded-2xl p-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none"
-              required
-            />
-          </div>
+          {mediaType === 'series' && (
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">
+                Temporada y Episodio:
+              </label>
+              <input
+                type="text"
+                value={episodeOrPart}
+                onChange={(e) => {
+                  setEpisodeOrPart(e.target.value);
+                  setDetectedOnlineInfo(null);
+                }}
+                placeholder="Ej: Temporada 1, Episodio 2"
+                className="w-full bg-white border-2 border-slate-300 focus:border-indigo-600 rounded-2xl p-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none"
+                required
+              />
+            </div>
+          )}
         </div>
 
         {/* Barra de Búsqueda Oficial en Tiempo Real para Series */}
@@ -646,7 +719,7 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
           </div>
         )}
 
-        {mediaTitle.toLowerCase().includes('gentlemen') && (
+        {mediaType === 'series' && mediaTitle.toLowerCase().includes('gentlemen') && (
           <div className="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-950 space-y-1.5">
             <p className="font-bold flex items-center gap-1.5">
               <span>💡 Guía sobre The Gentlemen (Serie de Netflix):</span>
@@ -666,13 +739,23 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
         {/* Detalles opcionales que recuerde */}
         <div>
           <label className="text-xs font-bold text-slate-700 block mb-1">
-            ¿Quiénes salen o qué pasó? (Pega la sinopsis de Netflix o tus notas para que la IA no invente nada):
+            {mediaType === 'series'
+              ? '¿Quiénes salen o qué pasó? (Pega la sinopsis de Netflix o tus notas para que la IA no invente nada):'
+              : mediaType === 'movie'
+              ? '¿Quiénes salen o qué pasó en la película? (Pega la sinopsis o tus notas para enfocar el análisis):'
+              : '¿De qué trata el libro o qué recuerdas? (Pega la sinopsis, contraportada o tus notas):'}
           </label>
           <input
             type="text"
             value={userNotes}
             onChange={(e) => setUserNotes(e.target.value)}
-            placeholder="Ej: Es la serie de Netflix con Eddie Horniman / Pega aquí la sinopsis de Netflix / Escena del pub..."
+            placeholder={
+              mediaType === 'series'
+                ? 'Ej: Es la serie de Netflix con Eddie Horniman / Pega aquí la sinopsis...'
+                : mediaType === 'movie'
+                ? 'Ej: Película británica con gánsteres / Pega la sinopsis de la peli / Escena clave...'
+                : 'Ej: Novela distópica en Londres / Pega la sinopsis o resumen del libro...'
+            }
             className="w-full bg-white border-2 border-slate-300 focus:border-indigo-600 rounded-2xl p-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none"
           />
         </div>
@@ -691,18 +774,34 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
         {/* Botón de Enviar */}
         <button
           type="submit"
-          disabled={isGenerating || !mediaTitle.trim() || !episodeOrPart.trim()}
+          disabled={
+            isGenerating ||
+            !mediaTitle.trim() ||
+            (mediaType === 'series' && !episodeOrPart.trim())
+          }
           className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] disabled:opacity-40 text-white font-black text-xs sm:text-sm rounded-2xl shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-all min-h-[46px]"
         >
           {isGenerating ? (
             <>
               <RotateCcw className="w-4 h-4 animate-spin" />
-              <span>Analizando episodio y extrayendo vocabulario poco común...</span>
+              <span>
+                {mediaType === 'series'
+                  ? 'Analizando episodio y extrayendo vocabulario poco común...'
+                  : mediaType === 'movie'
+                  ? 'Analizando película y extrayendo vocabulario poco común...'
+                  : 'Analizando libro y extrayendo vocabulario poco común...'}
+              </span>
             </>
           ) : (
             <>
               <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>Analizar este Episodio con IA</span>
+              <span>
+                {mediaType === 'series'
+                  ? 'Analizar este Episodio con IA'
+                  : mediaType === 'movie'
+                  ? 'Analizar esta Película con IA'
+                  : 'Analizar este Libro con IA'}
+              </span>
             </>
           )}
         </button>
@@ -733,7 +832,14 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                 >
                   <span>
                     {s.mediaType === 'series' ? '📺' : s.mediaType === 'movie' ? '🎬' : '📖'}{' '}
-                    {s.mediaTitle} ({s.episodeOrPart})
+                    {s.mediaTitle}
+                    {s.mediaType === 'series' && s.episodeOrPart
+                      ? ` (${s.episodeOrPart})`
+                      : s.episodeOrPart &&
+                        s.episodeOrPart !== 'Película completa' &&
+                        s.episodeOrPart !== 'Libro completo'
+                      ? ` (${s.episodeOrPart})`
+                      : ''}
                   </span>
                   <button
                     type="button"
@@ -769,7 +875,14 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
             </div>
 
             <h3 className="text-lg sm:text-2xl font-black text-slate-900">
-              {activeSession.mediaTitle} — {activeSession.episodeOrPart}
+              {activeSession.mediaTitle}
+              {activeSession.mediaType === 'series' && activeSession.episodeOrPart
+                ? ` — ${activeSession.episodeOrPart}`
+                : activeSession.episodeOrPart &&
+                  activeSession.episodeOrPart !== 'Película completa' &&
+                  activeSession.episodeOrPart !== 'Libro completo'
+                ? ` — ${activeSession.episodeOrPart}`
+                : ''}
             </h3>
 
             {/* Aviso de rescate si el episodio se guardó anteriormente con "no dispongo de información" */}
@@ -882,7 +995,9 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                 className="text-xs text-rose-600 hover:text-rose-800 font-bold px-2 py-1 flex items-center gap-1 cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Borrar este episodio</span>
+                <span>
+                  Borrar {activeSession.mediaType === 'series' ? 'este episodio' : activeSession.mediaType === 'movie' ? 'esta película' : 'este libro'}
+                </span>
               </button>
             </div>
 
@@ -1007,11 +1122,11 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                   1
                 </span>
                 <h4 className="text-base sm:text-lg font-black text-slate-900">
-                  Palabras y Jerga Poco Comunes del Episodio
+                  Palabras y Jerga Poco Comunes {activeSession.mediaType === 'series' ? 'del Episodio' : activeSession.mediaType === 'movie' ? 'de la Película' : 'del Libro'}
                 </h4>
               </div>
               <p className="text-xs text-slate-600 mt-1">
-                La IA ha extraído las palabras no habituales de este episodio. <strong>Escribe tú qué significa cada una en español</strong> para entrenar tu cerebro:
+                La IA ha extraído las palabras no habituales de {activeSession.mediaType === 'series' ? 'este episodio' : activeSession.mediaType === 'movie' ? 'esta película' : 'este libro'}. <strong>Escribe tú qué significa cada una en español</strong> para entrenar tu cerebro:
               </p>
             </div>
 
@@ -1067,7 +1182,7 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                     {/* Frase de contexto en el episodio */}
                     <div className="text-xs sm:text-sm bg-white p-3 rounded-xl border border-slate-200 space-y-1">
                       <span className="text-[10px] font-black uppercase text-slate-400 block">
-                        Cómo se usó en el episodio:
+                        Cómo se usó en {activeSession.mediaType === 'series' ? 'el episodio' : activeSession.mediaType === 'movie' ? 'la película' : 'el libro'}:
                       </span>
                       <p className="font-semibold text-slate-900">"{w.sceneContextEn}"</p>
                       <button
@@ -1215,12 +1330,12 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                   2
                 </span>
                 <h4 className="text-base sm:text-lg font-black text-slate-900">
-                  ¿Qué ha pasado en este episodio? (Escribe en inglés)
+                  ¿Qué ha pasado en {activeSession.mediaType === 'series' ? 'este episodio' : activeSession.mediaType === 'movie' ? 'esta película' : 'este libro'}? (Escribe en inglés)
                 </h4>
               </div>
               <p className="text-xs text-slate-600 mt-1">
                 Escribe en inglés con tus propias palabras qué ocurrió. La IA revisará la exactitud
-                con lo que pasó en el episodio, corregirá tu gramática y te pedirá repetir los fallos de memoria.
+                con lo que pasó en {activeSession.mediaType === 'series' ? 'el episodio' : activeSession.mediaType === 'movie' ? 'la película' : 'el libro'}, corregirá tu gramática y te pedirá repetir los fallos de memoria.
               </p>
             </div>
 
@@ -1313,8 +1428,16 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                             }`}
                           >
                             {fb.isContentAccurate
-                              ? '🎬 Hechos del episodio correctos'
-                              : '⚠️ Revisa los hechos del episodio'}
+                              ? (activeSession.mediaType === 'series'
+                                ? '🎬 Hechos del episodio correctos'
+                                : activeSession.mediaType === 'movie'
+                                ? '🎬 Hechos de la película correctos'
+                                : '📖 Hechos del libro correctos')
+                              : (activeSession.mediaType === 'series'
+                                ? '⚠️ Revisa los hechos del episodio'
+                                : activeSession.mediaType === 'movie'
+                                ? '⚠️ Revisa los hechos de la película'
+                                : '⚠️ Revisa los hechos del libro')}
                           </span>
                         </div>
 
