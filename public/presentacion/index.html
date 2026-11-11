@@ -2,603 +2,892 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>UK Street English — Cómo se hizo · Showcase 3D Interactivo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="#0c1017" />
+<title>UK Street English — Cómo se hizo · London Press</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%230F2747'/%3E%3Ccircle cx='20' cy='20' r='11' stroke='%23C8102E' stroke-width='3.6' fill='%23F7F7F5'/%3E%3Crect x='4' y='16.5' width='32' height='7' rx='2' fill='%2312397A'/%3E%3C/svg%3E" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=JetBrains+Mono:wght@500;600;700&family=Onest:wght@400;500;600;700&display=swap"
+/>
 <style>
 :root{
-  --cyan:#38bdf8; --sky:#0284c7; --indigo:#6366f1; --violet:#8b5cf6; --amber:#fbbf24;
-  --gold:#f59e0b; --rose:#f43f5e; --pink:#ec4899; --green:#10b981; --text:#f8fafc;
-  --muted:#94a3b8; --line:rgba(255,255,255,.12); --bg:#030712;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html{background:#000;scroll-behavior:auto}
-body{
-  background:#000;color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
-  overflow-x:hidden;-webkit-font-smoothing:antialiased;
-}
-.scene{position:relative}
-.sticky{position:sticky;top:0;height:100vh;width:100%;overflow:hidden;display:flex;align-items:center;justify-content:center}
-.col{flex-direction:column}
-.kicker{
-  font-size:.82rem;font-weight:800;letter-spacing:.24em;text-transform:uppercase;
-  color:var(--cyan);margin-bottom:.85rem;display:inline-flex;align-items:center;gap:8px;
-}
-.kicker::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+  /* London Press & Underground — Edición Nocturna */
+  --bg:#0c1017;
+  --surface:#131924;
+  --surface-2:#1b2331;
+  --surface-well:#080c12;
 
-h1,.end-title{font-size:clamp(2.6rem,6.5vw,5.8rem);font-weight:900;letter-spacing:-.04em;line-height:1.02}
-h2{font-size:clamp(1.9rem,4.6vw,4rem);font-weight:800;letter-spacing:-.035em;line-height:1.06}
+  --ink:#f5f6f4;
+  --ink-muted:#a9b4c6;
+  --ink-subtle:#7c889c;
+
+  --border:rgba(245,246,244,.12);
+  --border-strong:rgba(245,246,244,.22);
+
+  /* Señalética británica calibrada sobre grafito nocturno */
+  --cobalt:#6498ff;
+  --cobalt-deep:#12397a;
+  --cobalt-soft:rgba(100,152,255,.14);
+  --cobalt-border:rgba(100,152,255,.42);
+
+  --crimson:#e64b5f;
+  --crimson-deep:#c8102e;
+  --crimson-soft:rgba(230,75,95,.14);
+  --crimson-border:rgba(230,75,95,.42);
+
+  --pine:#34d092;
+  --pine-deep:#0e6b47;
+  --pine-soft:rgba(52,208,146,.14);
+  --pine-border:rgba(52,208,146,.42);
+
+  --brass:#eeb446;
+  --brass-deep:#9a5d07;
+  --brass-soft:rgba(238,180,70,.14);
+  --brass-border:rgba(238,180,70,.42);
+
+  /* Curvas y tipografía (mismo sistema que src/index.css) */
+  --ease-out:cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out:cubic-bezier(0.77, 0, 0.175, 1);
+  --font-display:"Bricolage Grotesque", system-ui, -apple-system, sans-serif;
+  --font-sans:"Onest", system-ui, -apple-system, sans-serif;
+  --font-mono:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --nav-h:calc(52px + env(safe-area-inset-top, 0px));
+  color-scheme:dark;
+  accent-color:var(--cobalt);
+  scrollbar-color:rgba(245,246,244,.22) transparent;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{
+  background:var(--bg);
+  color:var(--ink);
+  scroll-behavior:auto;
+  -webkit-tap-highlight-color:transparent;
+  -webkit-text-size-adjust:100%;
+}
+@media (pointer:fine){
+  html{overscroll-behavior:none}
+}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font-sans);
+  line-height:1.5;
+  overflow-x:clip;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+::selection{background:var(--cobalt-deep);color:#fff}
+
 .visually-hidden:where(:not(:focus-within,:active)){
   position:absolute !important;clip-path:inset(50%) !important;overflow:hidden !important;
   width:1px !important;height:1px !important;margin:-1px !important;padding:0 !important;border:0 !important;white-space:nowrap !important;
 }
-:where(a:any-link,button,input):focus-visible{
-  outline:3px solid var(--cyan);outline-offset:3px;
+.skip-link:focus{
+  position:fixed;top:10px;left:12px;z-index:120;
+  padding:.55rem .95rem;border-radius:10px;background:var(--ink);color:var(--bg);
+  font-weight:700;font-size:.85rem;text-decoration:none;
 }
-.grad{background:linear-gradient(90deg,var(--cyan),var(--indigo) 50%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
-.grad-warm{background:linear-gradient(90deg,var(--amber),#f97316,var(--rose));-webkit-background-clip:text;background-clip:text;color:transparent}
-.grad-pub{background:linear-gradient(90deg,#38bdf8,#818cf8 50%,#ec4899);-webkit-background-clip:text;background-clip:text;color:transparent}
-.lead{font-size:clamp(1rem,1.4vw,1.28rem);color:var(--muted);line-height:1.55;max-width:56ch}
-.lead b{color:var(--text)}
-code,.mono{font-family:"SF Mono","Cascadia Code",Consolas,monospace}
-code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font-size:.88em;color:#7dd3fc}
-.center{text-align:center}
-.head-top{position:absolute;top:calc(48px + 5vh);left:0;right:0;text-align:center;z-index:5;padding:0 6vw}
-.card{
-  background:linear-gradient(180deg,rgba(30,41,59,.82),rgba(15,23,42,.94));
-  border:1px solid var(--line);border-radius:22px;padding:1.3rem 1.4rem;
-  box-shadow:0 30px 80px rgba(0,0,0,.65);backdrop-filter:blur(14px);
-}
-.card h3{font-size:1.05rem;font-weight:700;margin-bottom:.4rem}
-.card p{font-size:.92rem;color:var(--muted);line-height:1.5}
-.tag{
-  display:inline-block;font-size:.75rem;font-weight:700;padding:.32rem .75rem;
-  border-radius:99px;margin:.22rem;border:1px solid rgba(255,255,255,.18);
-  color:#e2e8f0;background:rgba(255,255,255,.06);letter-spacing:.02em;
+:where(a:any-link,button,input,[tabindex="0"]):focus-visible{
+  outline:2.5px solid var(--cobalt);outline-offset:3px;
 }
 
-/* Chrome Top Navigation */
+button,a,[role="button"],.tag-btn{
+  touch-action:manipulation;
+}
+button,.btn,.nav-link,.slang-btn,.audio-btn,.check-btn,.seg-btn,.motion-btn{
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+}
+.tabular-nums{font-variant-numeric:tabular-nums}
+
+h1,h2,h3,.end-title{
+  font-family:var(--font-display);
+  text-wrap:balance;
+}
+h1,.end-title{
+  font-size:clamp(2.2rem, 1.45rem + 3.2vw, 5.1rem);
+  font-weight:800;letter-spacing:-.028em;line-height:1.03;
+}
+h2{
+  font-size:clamp(1.55rem, 1.05rem + 2.15vw, 3.45rem);
+  font-weight:800;letter-spacing:-.025em;line-height:1.08;
+}
+p,li{text-wrap:pretty}
+
+/* Énfasis editorial sin gradientes IA genéricos */
+.hl-cobalt{color:var(--cobalt)}
+.hl-brass{color:var(--brass)}
+.hl-pine{color:var(--pine)}
+.hl-crimson{color:var(--crimson)}
+.hl-rule{
+  text-decoration:underline;
+  text-decoration-color:var(--crimson);
+  text-decoration-thickness:.085em;
+  text-underline-offset:.14em;
+}
+
+.lead{font-size:clamp(.98rem, .9rem + .4vw, 1.2rem);color:var(--ink-muted);line-height:1.58;max-width:58ch}
+.lead b{color:var(--ink);font-weight:600}
+code,.mono{font-family:var(--font-mono)}
+code{
+  background:var(--surface-2);border:1px solid var(--border);
+  padding:.12em .44em;border-radius:6px;font-size:.86em;color:#a8c8ff;
+}
+pre code{
+  background:none;border:none;padding:0;border-radius:0;font-size:inherit;color:inherit;
+}
+.center{text-align:center}
+.ico{display:inline-block;flex-shrink:0;vertical-align:middle}
+
+.scene,main{position:relative;overflow-x:clip}
+.sticky{
+  position:sticky;top:0;height:100vh;height:100dvh;width:100%;
+  overflow:hidden;display:flex;align-items:center;justify-content:center;
+}
+#s-hero .sticky{height:100svh}
+.col{flex-direction:column}
+.head-top{
+  position:absolute;top:calc(var(--nav-h) + 3.5vh);left:0;right:0;
+  text-align:center;z-index:5;padding:0 6vw;
+}
+.head-sub{
+  margin:.55rem auto 0;font-size:.95rem;color:var(--ink-muted);max-width:56ch;
+}
+
+/* Elevación única (borde limpio de 1px + radios 14-16px, sin blur ni halos neon) */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:1.25rem 1.35rem;
+}
+.card h3{font-size:1.06rem;font-weight:700;margin-bottom:.38rem;color:var(--ink)}
+.card p{font-size:.92rem;color:var(--ink-muted);line-height:1.52}
+.tag{
+  display:inline-flex;align-items:center;gap:6px;font-size:.76rem;font-weight:600;
+  padding:.3rem .72rem;border-radius:99px;margin:.2rem;
+  border:1px solid var(--border);color:var(--ink);background:var(--surface);
+  letter-spacing:.01em;
+}
+
+/* ---------- CHROME HEADER & NAVIGATION ---------- */
 #topnav{
-  position:fixed;top:0;left:0;right:0;height:48px;display:flex;align-items:center;
-  justify-content:space-between;padding:0 26px;z-index:60;
-  background:rgba(3,7,18,.75);backdrop-filter:saturate(180%) blur(20px);
-  -webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--line);
-  font-size:.82rem;color:#cbd5e1;
+  position:fixed;top:0;left:0;right:0;min-height:var(--nav-h);
+  padding:env(safe-area-inset-top, 0px) 24px 0;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;z-index:60;
+  background:rgba(12,16,23,.94);
+  border-bottom:1px solid var(--border);
+  font-size:.84rem;color:var(--ink-muted);
 }
-#topnav b{color:#fff;letter-spacing:.03em;display:flex;align-items:center;gap:8px}
-#topnav span{color:var(--muted)}
+.brand-lockup{
+  display:flex;align-items:center;gap:10px;min-width:0;
+}
+.brand-lockup b{
+  font-family:var(--font-display);font-size:.95rem;font-weight:800;
+  color:var(--ink);letter-spacing:-.01em;white-space:nowrap;
+}
+.brand-edition{
+  font-size:.74rem;font-weight:600;color:var(--ink-subtle);
+  border-left:1px solid var(--border);padding-left:10px;white-space:nowrap;
+}
+.nav-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.motion-btn{
+  display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 .75rem;
+  border-radius:10px;border:1px solid var(--border);background:var(--surface);
+  color:var(--ink-muted);font-family:var(--font-sans);font-size:.78rem;font-weight:600;
+  cursor:pointer;
+  transition:transform 140ms var(--ease-out), background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.motion-btn:active{transform:scale(0.97)}
 #topnav a.nav-link{
-  color:var(--cyan);text-decoration:none;font-weight:700;padding:.3rem .85rem;
-  border-radius:99px;border:1px solid rgba(56,189,248,.35);transition:.2s;
-  background:rgba(56,189,248,.08);
+  display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 .9rem;
+  border-radius:10px;background:var(--cobalt-deep);border:1px solid var(--cobalt-border);
+  color:#fff;text-decoration:none;font-weight:600;font-size:.8rem;
+  transition:transform 140ms var(--ease-out), background-color 150ms ease, border-color 150ms ease;
 }
-#topnav a.nav-link:hover{background:rgba(56,189,248,.2);border-color:var(--cyan);transform:scale(1.04)}
+#topnav a.nav-link:active{transform:scale(0.97)}
+
+@media (hover:hover) and (pointer:fine){
+  .motion-btn:hover{background:var(--surface-2);color:var(--ink);border-color:var(--border-strong)}
+  #topnav a.nav-link:hover{background:#184794;border-color:var(--cobalt)}
+}
+
+/* Barra de progreso: 100% compositor (scroll-driven CSS nativo con fallback scaleX en JS) */
 #bar{
-  position:fixed;top:48px;left:0;height:2.5px;width:0;
-  background:linear-gradient(90deg,var(--cyan),var(--indigo),var(--pink));
-  z-index:61;box-shadow:0 0 14px var(--cyan);
+  position:fixed;top:var(--nav-h);left:0;width:100%;height:2.5px;
+  background:linear-gradient(90deg,var(--crimson),var(--brass) 50%,var(--cobalt));
+  transform-origin:0 50%;transform:scaleX(0);
+  z-index:61;pointer-events:none;
 }
+@media (prefers-reduced-motion:no-preference){
+  @supports (animation-timeline:scroll()){
+    @keyframes grow-progress{
+      from{transform:scaleX(0)}
+      to{transform:scaleX(1)}
+    }
+    #bar{
+      animation:grow-progress auto linear;
+      animation-timeline:scroll();
+    }
+  }
+}
+
 #dots{position:fixed;right:18px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:4px;z-index:60}
 #dots a{
   display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;
   position:relative;cursor:pointer;text-decoration:none;
 }
 #dots a::before{
-  content:"";width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.26);
-  transition:transform .3s,background .3s,box-shadow .3s;
+  content:"";width:7px;height:7px;border-radius:50%;background:rgba(245,246,244,.24);
+  transition:transform 220ms var(--ease-out), background-color 180ms ease;
 }
-#dots a.on::before{background:var(--cyan);transform:scale(1.55);box-shadow:0 0 14px var(--cyan)}
+#dots a.on::before{background:var(--brass);transform:scale(1.5)}
 #dots a span{
   position:absolute;right:26px;top:50%;transform:translateY(-50%);white-space:nowrap;
-  font-size:.7rem;color:#e2e8f0;opacity:0;transition:.22s;pointer-events:none;
-  background:rgba(15,23,42,.92);padding:.25rem .55rem;border-radius:6px;border:1px solid var(--line);
+  font-size:.72rem;font-weight:600;color:var(--ink);opacity:0;pointer-events:none;
+  background:var(--surface);padding:.26rem .6rem;border-radius:8px;border:1px solid var(--border);
+  transition:opacity 160ms ease;
 }
-#dots a:hover span,#dots a:focus-visible span{opacity:1}
+@media (hover:hover) and (pointer:fine){
+  #dots a:hover span{opacity:1}
+}
+#dots a:focus-visible span{opacity:1}
 
 /* ---------- 1 · HERO: 3D GLOBE / UK PARTICLES ---------- */
 #ukCanvas{position:absolute;inset:0;width:100%;height:100%}
-.hero-text{position:absolute;left:7vw;top:50%;transform:translateY(-50%);max-width:min(620px,48vw);z-index:3;will-change:transform,opacity}
-.hero-text .lead{margin-top:1.3rem}
-.hero-text .tags{margin-top:1.4rem;margin-left:-.2rem}
-.hero-mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;opacity:0;z-index:3;pointer-events:none;padding:0 6vw}
-.hero-mid h2{font-size:clamp(2.2rem,5.4vw,4.8rem);max-width:17ch;text-shadow:0 10px 50px #000,0 0 30px #000}
-.scroll-cue{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;font-size:.72rem;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;z-index:3}
-.mouse{width:24px;height:38px;border:2px solid rgba(255,255,255,.45);border-radius:14px;position:relative}
-.mouse::after{content:"";position:absolute;left:50%;top:7px;width:4px;height:8px;margin-left:-2px;border-radius:2px;background:#fff}
+.hero-text{
+  position:absolute;left:7vw;top:50%;transform:translateY(-50%);
+  max-width:min(620px, 48vw);z-index:3;will-change:transform,opacity;
+}
+.hero-text .lead{margin-top:1.15rem}
+.hero-text .tags{margin-top:1.25rem;margin-left:-.2rem}
+.hero-mid{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;opacity:0;z-index:3;pointer-events:none;padding:0 6vw;
+}
+.hero-mid h2{
+  font-size:clamp(2rem, 1.3rem + 3vw, 4.3rem);max-width:18ch;
+  text-shadow:0 8px 36px rgba(8,12,18,.95);
+}
+.scroll-cue{
+  position:absolute;bottom:28px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  font-size:.74rem;font-weight:600;color:var(--ink-muted);letter-spacing:.08em;z-index:3;
+}
+.mouse{width:22px;height:36px;border:1.5px solid var(--border-strong);border-radius:12px;position:relative}
+.mouse::after{content:"";position:absolute;left:50%;top:7px;width:3px;height:7px;margin-left:-1.5px;border-radius:2px;background:var(--ink)}
 @media (prefers-reduced-motion:no-preference){
   .mouse::after{animation:wheel 1.6s infinite}
 }
-@keyframes wheel{0%{opacity:0;transform:translateY(0)}30%{opacity:1}100%{opacity:0;transform:translateY(13px)}}
+@keyframes wheel{0%{opacity:0;transform:translateY(0)}30%{opacity:1}100%{opacity:0;transform:translateY(12px)}}
 
 /* ---------- 2 · 3D CYLINDRICAL CAROUSEL ---------- */
-.ring-stage{position:absolute;inset:0;perspective:1500px;display:flex;align-items:center;justify-content:center;padding-top:10vh}
-.ring{position:relative;width:290px;height:370px;transform-style:preserve-3d;will-change:transform}
+.ring-stage{position:absolute;inset:0;perspective:1500px;display:flex;align-items:center;justify-content:center;padding-top:9vh}
+.ring{position:relative;width:295px;height:365px;transform-style:preserve-3d;will-change:transform}
 .pcard{
-  position:absolute;inset:0;border-radius:28px;padding:28px 24px;
-  background:linear-gradient(160deg,rgba(30,41,59,.96),rgba(15,23,42,.98));
-  border:1px solid rgba(255,255,255,.14);display:flex;flex-direction:column;justify-content:flex-end;
+  position:absolute;inset:0;border-radius:20px;padding:24px 22px;
+  background:var(--surface);border:1px solid var(--border);
+  border-top:3px solid var(--c,var(--cobalt));
+  display:flex;flex-direction:column;justify-content:flex-end;
   backface-visibility:hidden;-webkit-backface-visibility:hidden;
-  box-shadow:0 40px 90px rgba(0,0,0,.7);overflow:hidden;
+  box-shadow:0 28px 60px rgba(0,0,0,.52);overflow:hidden;
 }
-.pcard::before{content:"";position:absolute;inset:-40%;background:radial-gradient(circle at 30% 22%,var(--c),transparent 42%);opacity:.45}
-.pcard>*{position:relative}
-.pcard .big{font-size:4.6rem;position:absolute;top:22px;left:20px;filter:drop-shadow(0 12px 22px rgba(0,0,0,.6))}
-.pcard .num{position:absolute;top:24px;right:22px;font-size:.78rem;color:var(--muted);font-weight:700;letter-spacing:.12em}
-.pcard b{font-size:1.7rem;letter-spacing:-.025em;line-height:1.15}
-.pcard p{color:#cbd5e1;font-size:.9rem;margin-top:8px;line-height:1.45}
+.pcard-emblem{
+  position:absolute;top:22px;left:22px;
+  width:52px;height:52px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface-2);border:1px solid var(--border);color:var(--c,var(--cobalt));
+}
+.pcard .num{
+  position:absolute;top:24px;right:22px;font-family:var(--font-mono);
+  font-size:.78rem;color:var(--ink-subtle);font-weight:700;letter-spacing:.08em;
+  font-variant-numeric:tabular-nums;
+}
+.pcard b{font-family:var(--font-display);font-size:1.55rem;letter-spacing:-.02em;line-height:1.15;color:var(--ink)}
+.pcard p{color:var(--ink-muted);font-size:.9rem;margin-top:8px;line-height:1.45}
 .pcard code{margin-top:12px;align-self:flex-start}
-.ring-bottom{position:absolute;bottom:6vh;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:14px;z-index:4;padding:0 8vw}
-.ring-cap{font-size:clamp(.95rem,1.3vw,1.15rem);color:#e2e8f0;text-align:center;max-width:62ch;min-height:3em;transition:opacity .3s}
+.ring-bottom{position:absolute;bottom:5.5vh;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:12px;z-index:4;padding:0 8vw}
+.ring-cap{font-size:clamp(.95rem, .88rem + .35vw, 1.12rem);color:var(--ink);text-align:center;max-width:64ch;min-height:3em;transition:opacity 200ms ease}
 .steps{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:92vw}
-.steps i{width:clamp(22px,6.5vw,38px);height:4px;border-radius:2px;background:rgba(255,255,255,.16);overflow:hidden;position:relative}
-.steps i b{position:absolute;inset:0;background:var(--cyan);transform-origin:left;transform:scaleX(0)}
+.steps i{width:clamp(22px,6.5vw,38px);height:4px;border-radius:2px;background:var(--surface-2);overflow:hidden;position:relative}
+.steps i b{position:absolute;inset:0;background:var(--brass);transform-origin:left;transform:scaleX(0)}
 
 /* ---------- 3 · EXPLODED TECH STACK (3D Layers) ---------- */
-.caps{position:absolute;left:7vw;top:50%;transform:translateY(-50%);width:min(440px,35vw);height:360px;z-index:5}
+.caps{position:absolute;left:7vw;top:50%;transform:translateY(-50%);width:min(440px,35vw);height:340px;z-index:5}
 .cap{position:absolute;inset:0;opacity:0;display:flex;flex-direction:column;justify-content:center}
-.cap h2{font-size:clamp(1.8rem,3.2vw,3rem)}
-.cap .lead{margin-top:1rem;font-size:clamp(.95rem,1.2vw,1.1rem)}
+.cap h2{font-size:clamp(1.75rem, 1.25rem + 1.6vw, 2.85rem)}
+.cap .lead{margin-top:.9rem;font-size:clamp(.95rem, .88rem + .3vw, 1.08rem)}
 .explode-stage{position:absolute;inset:0;perspective:1800px;display:flex;align-items:center;justify-content:center}
-.browser3d{position:relative;width:min(660px,62vw);height:min(410px,39vw);transform-style:preserve-3d;will-change:transform}
-.layer{position:absolute;inset:0;border-radius:18px;transform-style:preserve-3d;border:1px solid rgba(255,255,255,.18);overflow:visible}
-.layer .inner{position:absolute;inset:0;border-radius:18px;overflow:hidden}
+.browser3d{position:relative;width:min(650px,60vw);height:min(400px,38vw);transform-style:preserve-3d;will-change:transform}
+.layer{position:absolute;inset:0;border-radius:16px;transform-style:preserve-3d;border:1px solid var(--border-strong);overflow:visible}
+.layer .inner{position:absolute;inset:0;border-radius:16px;overflow:hidden}
 .lbl{
   position:absolute;left:100%;top:50%;transform-origin:0 50%;white-space:nowrap;
-  font-size:.82rem;font-weight:700;padding:.45rem .85rem;border-radius:99px;
-  background:rgba(15,23,42,.88);border:1px solid;opacity:0;margin-left:18px;backdrop-filter:blur(8px);
+  font-size:.8rem;font-weight:700;padding:.4rem .8rem;border-radius:10px;
+  background:var(--surface);border:1px solid;opacity:0;margin-left:18px;
 }
-.lbl::before{content:"";position:absolute;right:100%;top:50%;width:18px;height:1px;background:currentColor;opacity:.6}
+.lbl::before{content:"";position:absolute;right:100%;top:50%;width:18px;height:1px;background:currentColor;opacity:.65}
 
-.l-pwa .inner{background:radial-gradient(circle at 50% 50%,rgba(16,185,129,.2),rgba(2,6,23,.98) 75%);padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;align-content:center;font-family:Consolas,monospace;font-size:.78rem;color:#6ee7b7}
-.l-pwa .inner div::before{content:"⚙️ ";color:var(--green)}
-.l-ai .inner{background:rgba(23,15,38,.96);padding:20px;font-family:Consolas,monospace;font-size:.72rem;line-height:1.6;color:#c084fc;word-break:break-all}
-.l-ai .inner b{color:#38bdf8}
-.l-react .inner{background:rgba(15,23,42,.95);display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:22px;align-content:center}
-.l-react .sw{aspect-ratio:1;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;border:1px solid rgba(255,255,255,.1)}
-.l-react .rc-title{grid-column:span 5;font-size:.9rem;font-weight:800;color:#93c5fd;display:flex;align-items:center;gap:8px;margin-bottom:4px}
-.l-page .inner{background:#090d16}
-.l-page .bar{height:28px;background:#1e293b;display:flex;align-items:center;gap:6px;padding:0 10px;font-size:.68rem;color:var(--muted)}
-.l-page .bar i{width:9px;height:9px;border-radius:50%;background:#ff5f57;display:inline-block}
-.l-page .bar i:nth-child(2){background:#febc2e}.l-page .bar i:nth-child(3){background:#28c840}
-.l-page .ui{position:absolute;top:28px;left:0;right:0;bottom:0;display:flex;flex-direction:column;padding:12px;gap:8px;background:#090d16}
-.l-page .ui-header{display:flex;justify-content:space-between;align-items:center;padding:4px 8px;border-bottom:1px solid rgba(255,255,255,.08)}
-.l-page .ui-badge{font-size:.7rem;padding:.2rem .6rem;border-radius:99px;background:rgba(251,191,36,.2);color:#fbbf24;font-weight:700}
-.l-page .ui-card{flex:1;background:#1e293b;border-radius:12px;padding:12px;display:flex;flex-direction:column;justify-content:center;gap:8px;border:1px solid rgba(255,255,255,.08)}
-.l-page .ui-bar-nav{height:32px;background:#0f172a;border-radius:8px;display:flex;align-items:center;justify-content:space-around;font-size:1rem}
+.l-pwa .inner{
+  background:var(--surface-well);padding:20px;display:grid;grid-template-columns:1fr 1fr;
+  gap:8px 16px;align-content:center;font-family:var(--font-mono);font-size:.76rem;color:var(--pine);
+}
+.l-pwa .inner div{display:flex;align-items:center;gap:6px}
+.l-ai .inner{
+  background:#111722;padding:20px;font-family:var(--font-mono);font-size:.73rem;
+  line-height:1.65;color:var(--ink-muted);word-break:break-word;
+}
+.l-ai .inner b{color:var(--brass)}
+.l-ai .inner .str{color:var(--pine)}
+.l-react .inner{
+  background:var(--surface);display:grid;grid-template-columns:repeat(5,1fr);
+  gap:10px;padding:20px;align-content:center;
+}
+.l-react .sw{
+  aspect-ratio:1;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);background:var(--surface-2);color:var(--cobalt);
+}
+.l-react .rc-title{
+  grid-column:span 5;font-family:var(--font-display);font-size:.88rem;font-weight:700;
+  color:var(--ink);display:flex;align-items:center;gap:8px;margin-bottom:2px;
+}
+.l-page .inner{background:var(--bg)}
+.l-page .bar{
+  height:28px;background:var(--surface-2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:6px;padding:0 10px;font-size:.68rem;color:var(--ink-muted);
+}
+.l-page .bar i{width:8px;height:8px;border-radius:50%;background:var(--crimson);display:inline-block}
+.l-page .bar i:nth-child(2){background:var(--brass)}.l-page .bar i:nth-child(3){background:var(--pine)}
+.l-page .ui{
+  position:absolute;top:28px;left:0;right:0;bottom:0;display:flex;flex-direction:column;
+  padding:12px;gap:8px;background:var(--bg);
+}
+.l-page .ui-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:4px 6px 8px;border-bottom:1px solid var(--border);
+}
+.l-page .ui-badge{
+  font-family:var(--font-mono);font-size:.68rem;padding:.2rem .55rem;border-radius:8px;
+  background:var(--brass-soft);border:1px solid var(--brass-border);color:var(--brass);font-weight:700;
+}
+.l-page .ui-card{
+  flex:1;background:var(--surface);border-radius:12px;padding:12px;display:flex;
+  flex-direction:column;justify-content:center;gap:8px;border:1px solid var(--border);
+}
+.l-page .ui-bar-nav{
+  height:32px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
+  display:flex;align-items:center;justify-content:space-around;color:var(--ink-muted);
+}
 
 .burst{position:absolute;inset:0;perspective:1000px;pointer-events:none;z-index:6}
 .chip{
-  position:absolute;left:50%;top:50%;padding:.45rem .85rem;border-radius:99px;
-  background:rgba(56,189,248,.14);border:1px solid rgba(56,189,248,.5);
-  font-family:Consolas,monospace;font-size:.8rem;color:#7dd3fc;white-space:nowrap;
-  opacity:0;box-shadow:0 0 24px rgba(56,189,248,.2);backdrop-filter:blur(6px);
+  position:absolute;left:50%;top:50%;padding:.38rem .75rem;border-radius:8px;
+  background:var(--surface);border:1px solid var(--cobalt-border);
+  font-family:var(--font-mono);font-size:.76rem;color:var(--ink);white-space:nowrap;
+  opacity:0;box-shadow:0 12px 28px rgba(0,0,0,.45);
 }
 
 /* ---------- 4 · BUILD & STATS ---------- */
-.bigtext{font-size:clamp(1.5rem,3.2vw,2.9rem);font-weight:700;letter-spacing:-.025em;line-height:1.24;max-width:26em;padding:0 7vw;will-change:transform}
+.bigtext{
+  font-family:var(--font-display);font-size:clamp(1.4rem, 1rem + 1.8vw, 2.75rem);
+  font-weight:700;letter-spacing:-.02em;line-height:1.25;max-width:26em;padding:0 7vw;will-change:transform;
+}
 .bigtext .w{opacity:.15}
-.bigtext .kw{background:linear-gradient(90deg,var(--cyan),var(--indigo) 50%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;padding:0 7vw;margin-top:6vh;width:100%;max-width:1250px;perspective:1100px}
+.bigtext .kw{color:var(--brass)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:0 7vw;margin-top:5vh;width:100%;max-width:1250px;perspective:1100px}
 .stat{transform-origin:50% 100%;opacity:0;text-align:center}
 .stat .n{
-  font-size:clamp(2.2rem,4.2vw,3.8rem);font-weight:800;letter-spacing:-.03em;
-  background:linear-gradient(180deg,#fff,#94a3b8);-webkit-background-clip:text;background-clip:text;
-  color:transparent;line-height:1.05;
+  font-family:var(--font-mono);font-variant-numeric:tabular-nums;
+  font-size:clamp(2rem, 1.4rem + 2vw, 3.4rem);font-weight:700;letter-spacing:-.03em;
+  color:var(--ink);line-height:1.08;
 }
-.stat p{margin-top:.35rem;font-size:.88rem;color:var(--muted)}
+.stat p{margin-top:.35rem;font-size:.86rem;color:var(--ink-muted)}
 
 /* ---------- 5 · MOTOR DE FIJACIÓN (3D Tilted Orbit) ---------- */
 .split{display:grid;grid-template-columns:1fr 1.05fr;gap:3vw;align-items:center;width:100%;max-width:1280px;padding:0 6vw}
 .term-split{display:grid;grid-template-columns:1.25fr 1fr;gap:3vw;align-items:center;width:100%;max-width:1280px;padding:0 6vw}
-.feat{list-style:none;margin-top:1.6rem}
+.feat{list-style:none;margin-top:1.4rem}
 .feat li{
-  padding:.75rem 0;border-bottom:1px solid var(--line);color:#475569;
-  font-weight:600;transition:color .5s;display:flex;gap:.8rem;align-items:center;
-  font-size:clamp(.9rem,1.1vw,1.02rem);
+  padding:.72rem 0;border-bottom:1px solid var(--border);color:var(--ink-subtle);
+  font-weight:500;transition:color 260ms ease;display:flex;gap:.8rem;align-items:center;
+  font-size:clamp(.9rem, .86rem + .2vw, 1rem);
 }
-.feat li.on{color:var(--text)}
-.feat li i{width:9px;height:9px;border-radius:50%;background:#334155;transition:.5s;flex:none}
-.feat li.on i{background:var(--cyan);box-shadow:0 0 14px var(--cyan)}
-.board-wrap{position:relative;height:min(560px,70vh);perspective:1100px;display:flex;align-items:center;justify-content:center}
+.feat li.on{color:var(--ink)}
+.feat li i{width:8px;height:8px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);transition:background-color 260ms ease, border-color 260ms ease;flex:none}
+.feat li.on i{background:var(--brass);border-color:var(--brass)}
+.board-wrap{position:relative;height:min(540px,68dvh);perspective:1100px;display:flex;align-items:center;justify-content:center}
 .board-tilt{transform-style:preserve-3d}
 .board{
   position:relative;width:440px;height:440px;transform-style:preserve-3d;border-radius:50%;
-  background:radial-gradient(circle,rgba(99,102,241,.24),rgba(99,102,241,.04) 55%,transparent 70%);will-change:transform;
+  background:radial-gradient(circle,rgba(100,152,255,.16),rgba(18,57,122,.05) 58%,transparent 72%);
+  will-change:transform;
 }
-.board .orb{position:absolute;inset:60px;border-radius:50%;border:2px dashed rgba(255,255,255,.18)}
-.board .orb2{position:absolute;inset:20px;border-radius:50%;border:1px solid rgba(56,189,248,.15)}
+.board .orb{position:absolute;inset:58px;border-radius:50%;border:1.5px dashed rgba(245,246,244,.2)}
+.board .orb2{position:absolute;inset:18px;border-radius:50%;border:1px solid rgba(100,152,255,.2)}
 .snode{position:absolute;width:0;height:0;transform-style:preserve-3d}
 .snode .disc{
-  position:absolute;width:58px;height:58px;left:-29px;top:-29px;border-radius:50%;
-  background:#0f172a;border:2px solid #334155;transition:background .4s,border-color .4s,box-shadow .4s;
+  position:absolute;width:54px;height:54px;left:-27px;top:-27px;border-radius:50%;
+  background:var(--surface);border:2px solid var(--border-strong);
+  transition:background-color 250ms ease,border-color 250ms ease;
 }
-.snode.on .disc{background:rgba(56,189,248,.25);border-color:var(--cyan);box-shadow:0 0 40px rgba(56,189,248,.7)}
-.snode .up{position:absolute;left:0;top:0;transform-origin:0 0;display:flex;flex-direction:column;align-items:center;gap:2px;white-space:nowrap}
-.snode .up .e{font-size:2rem;filter:drop-shadow(0 8px 10px rgba(0,0,0,.6))}
-.snode .up code{font-size:.72rem;color:#cbd5e1}
-.snode.on .up code{color:#7dd3fc;background:rgba(56,189,248,.18)}
+.snode.on .disc{background:var(--cobalt-deep);border-color:var(--cobalt)}
+.snode .up{position:absolute;left:0;top:0;transform-origin:0 0;display:flex;flex-direction:column;align-items:center;gap:4px;white-space:nowrap}
+.snode .up .snode-ico{
+  width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  background:var(--surface);border:1px solid var(--border);color:var(--ink);
+  box-shadow:0 8px 18px rgba(0,0,0,.45);
+}
+.snode.on .up .snode-ico{color:var(--brass);border-color:var(--brass-border)}
+.snode .up code{font-size:.7rem;color:var(--ink-muted)}
+.snode.on .up code{color:var(--ink);border-color:var(--cobalt-border)}
 .token{
-  position:absolute;left:0;top:0;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;
-  background:radial-gradient(circle at 35% 35%,#fff,var(--amber) 45%,#b45309);box-shadow:0 0 30px var(--amber);
+  position:absolute;left:0;top:0;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#fff,var(--brass) 52%,var(--brass-deep));
+  box-shadow:0 4px 16px rgba(238,180,70,.5);
 }
-.board-cap{position:absolute;bottom:0;left:0;right:0;text-align:center;color:#e2e8f0;font-size:.98rem;min-height:3em;padding:0 2rem}
+.board-cap{position:absolute;bottom:0;left:0;right:0;text-align:center;color:var(--ink);font-size:.96rem;min-height:3em;padding:0 2rem}
 .room{
-  margin-top:1.4rem;font-size:.78rem;line-height:1.6;color:#94a3b8;background:rgba(15,23,42,.7);
-  border:1px solid var(--line);border-radius:14px;padding:.9rem 1rem;opacity:0;
+  margin-top:1.3rem;font-size:.78rem;line-height:1.65;color:var(--ink-muted);background:var(--surface-well);
+  border:1px solid var(--border);border-radius:12px;padding:.9rem 1rem;opacity:0;overflow-x:auto;text-align:left;
 }
-.room .y{color:#fcd34d}.room .c{color:#64748b}
+.room .y{color:var(--brass)}.room .c{color:var(--ink-subtle)}
 
 /* ---------- 6 · 3D SVG ARCHITECTURE (Live Motion Packets) ---------- */
-.arch-stage{position:absolute;inset:0;perspective:1500px;display:flex;align-items:center;justify-content:center;padding-top:8vh}
-.arch{position:relative;width:min(1150px,88vw);aspect-ratio:1150/470;transform-style:preserve-3d;will-change:transform}
+.arch-stage{position:absolute;inset:0;perspective:1500px;display:flex;align-items:center;justify-content:center;padding-top:7vh}
+.arch{position:relative;width:min(1140px,88vw);aspect-ratio:1150/470;transform-style:preserve-3d;will-change:transform}
 .arch .plane{
-  position:absolute;inset:-4%;border-radius:30px;
-  background:radial-gradient(ellipse at 50% 50%,rgba(99,102,241,.12),transparent 70%);
-  border:1px solid rgba(255,255,255,.06);
-  background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+  position:absolute;inset:-4%;border-radius:20px;
+  background-color:rgba(19,25,36,.65);
+  border:1px solid var(--border);
+  background-image:linear-gradient(rgba(245,246,244,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(245,246,244,.04) 1px,transparent 1px);
   background-size:40px 40px;
 }
 .arch svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 .wire{fill:none;stroke:url(#gw);stroke-width:2.5}
-.wire.dash{stroke:rgba(255,255,255,.18);stroke-dasharray:6 6;stroke-width:1.5}
+.wire.dash{stroke:rgba(245,246,244,.22);stroke-dasharray:6 6;stroke-width:1.5}
 .node{
-  position:absolute;text-align:center;padding:.8rem 1rem;border-radius:18px;
-  background:rgba(15,23,42,.96);border:1px solid rgba(255,255,255,.16);
-  min-width:150px;box-shadow:0 24px 50px rgba(0,0,0,.65);opacity:0;backdrop-filter:blur(8px);
+  position:absolute;text-align:center;padding:.72rem .9rem;border-radius:14px;
+  background:var(--surface);border:1px solid var(--border-strong);
+  min-width:146px;box-shadow:0 18px 36px rgba(0,0,0,.55);opacity:0;
 }
-.node .e{font-size:1.7rem;display:block}
-.node b{font-size:.9rem;display:block}
-.node small{font-size:.7rem;color:var(--muted);display:block;margin-top:.15rem}
-.node.hl{border-color:rgba(56,189,248,.7);box-shadow:0 0 34px rgba(56,189,248,.24),0 24px 50px rgba(0,0,0,.6)}
-.node.hv{border-color:rgba(139,92,246,.7);box-shadow:0 0 34px rgba(139,92,246,.24),0 24px 50px rgba(0,0,0,.6)}
-.node.ho{border-color:rgba(251,191,36,.7);box-shadow:0 0 34px rgba(251,191,36,.24),0 24px 50px rgba(0,0,0,.6)}
-.node.hg{border-color:rgba(16,185,129,.7);box-shadow:0 0 34px rgba(16,185,129,.24),0 24px 50px rgba(0,0,0,.6)}
-.node.node-sm{min-width:120px;padding:.45rem .8rem}
-.bottom-cap{position:absolute;bottom:5vh;left:0;right:0;text-align:center;color:#cbd5e1;padding:0 8vw;opacity:0}
+.node .node-ico{
+  width:28px;height:28px;margin:0 auto .35rem;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;background:var(--surface-2);color:var(--cobalt);
+}
+.node b{font-size:.86rem;display:block;color:var(--ink)}
+.node small{font-size:.7rem;color:var(--ink-muted);display:block;margin-top:.15rem}
+.node.hl{border-color:var(--cobalt-border)}
+.node.hl .node-ico{color:var(--cobalt)}
+.node.hv{border-color:var(--crimson-border)}
+.node.hv .node-ico{color:var(--crimson)}
+.node.ho{border-color:var(--brass-border)}
+.node.ho .node-ico{color:var(--brass)}
+.node.hg{border-color:var(--pine-border)}
+.node.hg .node-ico{color:var(--pine)}
+.node.node-sm{min-width:124px;padding:.42rem .78rem}
+.bottom-cap{position:absolute;bottom:4.5vh;left:0;right:0;text-align:center;color:var(--ink-muted);font-size:.92rem;padding:0 8vw;opacity:0}
 
 /* ---------- 7 & 8 · INTERACTIVE SIMULATORS ---------- */
-.sim-stage{width:100%;max-width:1150px;padding:0 5vw;margin-top:6vh;display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+.sim-stage{width:100%;max-width:1120px;padding:0 5vw;margin-top:6vh;display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
 .phone-mockup{
-  background:#0b1329;border:3px solid #1e293b;border-radius:36px;padding:20px;
-  box-shadow:0 35px 80px rgba(0,0,0,.8),0 0 30px rgba(56,189,248,.15);
-  display:flex;flex-direction:column;gap:14px;
+  background:var(--surface);border:1px solid var(--border-strong);border-radius:20px;padding:16px;
+  box-shadow:0 24px 54px rgba(0,0,0,.55);
+  display:flex;flex-direction:column;gap:12px;
 }
+.wa-tabs{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;
+  background:var(--surface-well);border:1px solid var(--border);border-radius:10px;
+}
+.seg-btn{
+  min-height:36px;padding:4px 8px;border:none;border-radius:7px;background:transparent;
+  color:var(--ink-muted);font-family:var(--font-sans);font-size:.76rem;font-weight:600;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;
+  transition:transform 140ms var(--ease-out), background-color 150ms ease, color 150ms ease;
+}
+@media (pointer:coarse){
+  .seg-btn,.motion-btn,#topnav a.nav-link,.audio-btn{min-height:40px}
+}
+.seg-btn:active{transform:scale(0.97)}
+.seg-btn.is-active{background:var(--surface-2);color:var(--ink);border:1px solid var(--border)}
 .phone-header{
-  display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.08);
-  padding-bottom:12px;
+  display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);
+  padding-bottom:10px;gap:10px;
 }
-.phone-contact{display:flex;align-items:center;gap:10px}
+.phone-contact{display:flex;align-items:center;gap:10px;min-width:0}
 .avatar-circle{
-  width:42px;height:42px;border-radius:50%;display:flex;align-items:center;
-  justify-content:center;font-size:1.4rem;background:#1e293b;border:2px solid var(--cyan);
+  width:40px;height:40px;border-radius:50%;display:flex;align-items:center;flex-shrink:0;
+  justify-content:center;font-family:var(--font-display);font-weight:800;font-size:1rem;
+  background:var(--cobalt-deep);border:1.5px solid var(--cobalt);color:#fff;
 }
 .chat-bubble{
-  padding:12px 16px;border-radius:18px;max-width:85%;font-size:.9rem;line-height:1.45;
-  box-shadow:0 8px 20px rgba(0,0,0,.3);
+  padding:11px 14px;border-radius:14px;max-width:88%;font-size:.9rem;line-height:1.45;
 }
 @media (prefers-reduced-motion:no-preference){
-  .chat-bubble{animation:popIn .3s ease-out}
+  .chat-bubble{animation:popIn 220ms var(--ease-out)}
 }
-.chat-incoming{background:#1e293b;color:#f1f5f9;align-self:flex-start;border-bottom-left-radius:4px}
-.chat-outgoing{background:linear-gradient(135deg,var(--indigo),var(--cyan));color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.chat-incoming{background:var(--surface-2);color:var(--ink);align-self:flex-start;border-bottom-left-radius:4px;border:1px solid var(--border)}
+.chat-outgoing{background:var(--cobalt-deep);border:1px solid var(--cobalt-border);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
 .slang-btn{
-  width:100%;background:rgba(30,41,59,.9);border:1px solid rgba(255,255,255,.14);
-  color:#f8fafc;padding:12px 14px;border-radius:14px;text-align:left;font-family:inherit;
-  font-size:.88rem;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;gap:4px;
+  width:100%;background:var(--surface-2);border:1px solid var(--border);
+  color:var(--ink);padding:11px 13px;border-radius:12px;text-align:left;font-family:inherit;
+  font-size:.86rem;cursor:pointer;display:flex;flex-direction:column;gap:4px;
+  transition:transform 140ms var(--ease-out), background-color 150ms ease, border-color 150ms ease;
 }
-.slang-btn:hover{background:#334155;border-color:var(--cyan);transform:translateY(-2px)}
-.slang-btn.correct{border-color:var(--green);background:rgba(16,185,129,.2)}
-.slang-btn.wrong{border-color:var(--amber);background:rgba(245,158,11,.14)}
+.slang-btn:active{transform:scale(0.985)}
+@media (hover:hover) and (pointer:fine){
+  .slang-btn:hover{background:#232d3f;border-color:var(--cobalt-border)}
+}
+.slang-btn.correct{border-color:var(--pine);background:var(--pine-soft)}
+.slang-btn.wrong{border-color:var(--brass);background:var(--brass-soft)}
 .expl-box{
-  background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.4);
-  border-radius:14px;padding:12px 14px;font-size:.84rem;color:#a7f3d0;display:none;line-height:1.45;
+  background:var(--pine-soft);border:1px solid var(--pine-border);
+  border-radius:12px;padding:11px 13px;font-size:.83rem;color:#c9f6e2;display:none;line-height:1.48;
 }
 .expl-box.warn{
-  background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.45);color:#fde68a;
+  background:var(--brass-soft);border-color:var(--brass-border);color:#fde6b0;
 }
 .audio-btn{
-  background:rgba(56,189,248,.18);border:1px solid var(--cyan);color:#38bdf8;
-  padding:6px 14px;border-radius:99px;font-size:.82rem;font-weight:700;cursor:pointer;
-  display:inline-flex;align-items:center;gap:6px;transition:.2s;
+  background:var(--surface-2);border:1px solid var(--border-strong);color:var(--ink);
+  min-height:38px;padding:0 12px;border-radius:10px;font-family:var(--font-sans);
+  font-size:.8rem;font-weight:600;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;flex-shrink:0;
+  transition:transform 140ms var(--ease-out), background-color 150ms ease, border-color 150ms ease;
 }
-.audio-btn:hover{background:rgba(56,189,248,.35);transform:scale(1.04)}
+.audio-btn:active{transform:scale(0.97)}
+@media (hover:hover) and (pointer:fine){
+  .audio-btn:hover{background:#242e40;border-color:var(--cobalt)}
+}
 .drill-input{
-  width:100%;padding:14px 16px;background:rgba(15,23,42,.8);border:2px solid rgba(255,255,255,.16);
-  border-radius:14px;color:#fff;font-size:.95rem;font-family:inherit;outline:none;transition:border-color .2s;
+  width:100%;padding:12px 14px;background:var(--surface-well);border:1.5px solid var(--border-strong);
+  border-radius:12px;color:var(--ink);font-size:16px;font-family:inherit;min-height:46px;
+  transition:border-color 150ms ease;
 }
-.drill-input:focus{border-color:var(--cyan);box-shadow:0 0 16px rgba(56,189,248,.25)}
+.drill-input:focus{outline:none;border-color:var(--cobalt)}
 .check-btn{
-  padding:12px 20px;border-radius:14px;background:linear-gradient(135deg,var(--indigo),var(--cyan));
-  color:#fff;font-weight:700;font-size:.92rem;border:none;cursor:pointer;transition:.2s;
+  min-height:44px;padding:0 18px;border-radius:12px;background:var(--cobalt-deep);border:1px solid var(--cobalt-border);
+  color:#fff;font-family:var(--font-sans);font-weight:600;font-size:.9rem;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;flex-shrink:0;
+  transition:transform 140ms var(--ease-out), background-color 150ms ease;
 }
-.check-btn:hover{transform:scale(1.03);box-shadow:0 8px 24px rgba(99,102,241,.4)}
+.check-btn:active{transform:scale(0.97)}
+@media (hover:hover) and (pointer:fine){
+  .check-btn:hover{background:#184794}
+}
+.drill-reset-btn{
+  background:var(--surface-2);border:1px solid var(--border);color:var(--ink);
+  min-height:40px;padding:0 14px;border-radius:10px;font-size:.82rem;font-weight:600;cursor:pointer;
+  display:none;align-items:center;gap:6px;
+  transition:transform 140ms var(--ease-out), background-color 150ms ease;
+}
+.drill-reset-btn:active{transform:scale(0.97)}
 
 /* ---------- 9 · 4 FLIP CARDS (Resilience) ---------- */
-.flipgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;width:100%;max-width:1250px;padding:0 6vw;perspective:1300px;margin-top:6vh}
-.flip{height:310px;position:relative;transform-style:preserve-3d;will-change:transform}
+.flipgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;width:100%;max-width:1250px;padding:0 6vw;perspective:1300px;margin-top:5vh}
+.flip{height:305px;position:relative;transform-style:preserve-3d;will-change:transform}
 .face{
-  position:absolute;inset:0;border-radius:26px;backface-visibility:hidden;-webkit-backface-visibility:hidden;
-  padding:24px;border:1px solid var(--line);
-  background:linear-gradient(180deg,rgba(30,41,59,.96),rgba(15,23,42,.98));
+  position:absolute;inset:0;border-radius:18px;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  padding:22px;border:1px solid var(--border);background:var(--surface);
   display:flex;flex-direction:column;
 }
-.face .icon{font-size:2.2rem;margin-bottom:.6rem}
-.face h3{font-size:1.15rem;margin-bottom:.45rem}
-.face p{font-size:.88rem;color:var(--muted);line-height:1.5;flex:1}
-.face.back{transform:rotateY(180deg);align-items:center;justify-content:center;font-size:4.5rem;background:linear-gradient(135deg,#1e1b4b,#0c4a6e)}
-.meter{height:5px;border-radius:3px;background:#334155;overflow:hidden;margin-top:10px}
-.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--green));transform-origin:left;transform:scaleX(0)}
-.shieldnote{margin-top:4vh;max-width:900px;display:flex;gap:1.2rem;align-items:center;opacity:0}
+.face .ico-box{
+  width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  background:var(--surface-2);border:1px solid var(--border);color:var(--cobalt);margin-bottom:.75rem;
+}
+.face h3{font-size:1.1rem;margin-bottom:.42rem}
+.face p{font-size:.87rem;color:var(--ink-muted);line-height:1.5;flex:1}
+.face.back{
+  transform:rotateY(180deg);align-items:center;justify-content:center;gap:10px;
+  background:var(--surface-2);border-color:var(--border-strong);color:var(--brass);
+}
+.face.back span{font-family:var(--font-mono);font-size:.76rem;color:var(--ink-muted);letter-spacing:.08em}
+.meter{height:5px;border-radius:3px;background:var(--surface-2);overflow:hidden;margin-top:10px}
+.meter i{display:block;height:100%;background:var(--pine);transform-origin:left;transform:scaleX(0)}
+.shieldnote{margin-top:3.5vh;max-width:880px;display:flex;gap:1rem;align-items:center;opacity:0}
 
 /* ---------- 10 · 3D FLY-THROUGH BUG CARDS ---------- */
-.bug-stage{position:absolute;inset:0;perspective:1000px;display:flex;align-items:center;justify-content:center;padding-top:8vh}
-.bug-world{position:relative;width:min(660px,88vw);height:290px;transform-style:preserve-3d}
+.bug-stage{position:absolute;inset:0;perspective:1000px;display:flex;align-items:center;justify-content:center;padding-top:7vh}
+.bug-world{position:relative;width:min(660px,88vw);height:285px;transform-style:preserve-3d}
 .bug{
-  position:absolute;left:0;top:0;width:100%;padding:32px 34px;border-radius:28px;
-  background:linear-gradient(160deg,rgba(30,41,59,.98),rgba(15,23,42,.98));
-  border:1px solid rgba(255,255,255,.14);box-shadow:0 40px 100px rgba(0,0,0,.75);
+  position:absolute;left:0;top:0;width:100%;padding:28px 30px;border-radius:18px;
+  background:var(--surface);border:1px solid var(--border-strong);
+  box-shadow:0 32px 72px rgba(0,0,0,.62);
   opacity:0;will-change:transform,opacity;
 }
-.bug .sev{font-size:.72rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase}
-.bug .q{font-size:clamp(1.3rem,2.5vw,1.95rem);font-weight:800;letter-spacing:-.02em;margin-top:.5rem;line-height:1.2}
-.bug .why{color:var(--muted);margin-top:.8rem;line-height:1.5;font-size:.92rem}
-.bug .fixl{margin-top:1.1rem;color:#6ee7b7;font-weight:600;line-height:1.5;opacity:0;font-size:.92rem}
-.stamp{
-  position:absolute;top:24px;right:26px;border:3px solid var(--green);color:var(--green);
-  font-weight:900;padding:5px 12px;border-radius:10px;letter-spacing:.12em;font-size:.8rem;opacity:0;
+.bug .sev{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--font-mono);font-size:.72rem;font-weight:700;letter-spacing:.04em;
 }
-.bug-count{position:absolute;bottom:6vh;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--muted);font-size:.85rem;font-weight:600}
+.bug .q{font-family:var(--font-display);font-size:clamp(1.22rem, 1rem + 1vw, 1.85rem);font-weight:800;letter-spacing:-.02em;margin-top:.55rem;line-height:1.22}
+.bug .why{color:var(--ink-muted);margin-top:.75rem;line-height:1.5;font-size:.92rem}
+.bug .fixl{margin-top:1rem;color:var(--pine);font-weight:600;line-height:1.5;opacity:0;font-size:.92rem}
+.stamp{
+  position:absolute;top:22px;right:24px;border:2px solid var(--pine);color:var(--pine);
+  font-family:var(--font-mono);font-weight:700;padding:4px 10px;border-radius:8px;letter-spacing:.08em;font-size:.74rem;opacity:0;
+}
+.bug-count{position:absolute;bottom:5.5vh;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--ink-muted);font-size:.85rem;font-weight:600}
 
 /* ---------- 11 · 3D TERMINAL ---------- */
 .term-stage{perspective:1400px}
 .term{
-  background:#090d16;border:1px solid #1e293b;border-radius:18px;overflow:hidden;
-  font-family:Consolas,"SF Mono",monospace;font-size:.9rem;box-shadow:0 50px 120px rgba(0,0,0,.75);will-change:transform;
+  background:var(--surface-well);border:1px solid var(--border-strong);border-radius:16px;overflow:hidden;
+  font-family:var(--font-mono);font-size:.86rem;box-shadow:0 36px 84px rgba(0,0,0,.65);will-change:transform;
 }
-.term .tbar{background:#111827;padding:.65rem .95rem;color:#94a3b8;font-size:.75rem;display:flex;gap:6px;align-items:center}
-.term .tbar i{width:11px;height:11px;border-radius:50%;background:#ff5f57;display:inline-block}
-.term .tbar i:nth-child(2){background:#febc2e}.term .tbar i:nth-child(3){background:#28c840}
-.term pre{padding:1.1rem 1.25rem;line-height:1.75;min-height:310px;white-space:pre-wrap}
-.term .c{color:#64748b}.term .g{color:#4ade80}.term .y{color:#facc15}.term .b{color:#38bdf8}
-.caret{display:inline-block;width:8px;height:1em;background:#4ade80;vertical-align:-2px}
+.term .tbar{
+  background:var(--surface-2);border-bottom:1px solid var(--border);
+  padding:.6rem .9rem;color:var(--ink-muted);font-size:.74rem;display:flex;gap:6px;align-items:center;
+}
+.term .tbar i{width:9px;height:9px;border-radius:50%;background:var(--crimson);display:inline-block}
+.term .tbar i:nth-child(2){background:var(--brass)}.term .tbar i:nth-child(3){background:var(--pine)}
+.term pre{padding:1rem 1.2rem;line-height:1.72;min-height:295px;white-space:pre-wrap;overscroll-behavior:contain;overflow-x:auto;text-align:left}
+.term .c{color:var(--ink-subtle)}.term .g{color:var(--pine)}.term .y{color:var(--brass)}.term .b{color:var(--cobalt)}
+.caret{display:inline-block;width:8px;height:1em;background:var(--pine);vertical-align:-2px}
 @media (prefers-reduced-motion:no-preference){
   .caret{animation:blink 1s step-end infinite}
 }
+.motion-paused .caret,.motion-paused .mouse::after{animation:none !important}
 @keyframes blink{50%{opacity:0}}
 .side .card{margin-bottom:14px;opacity:0}
 
 /* ---------- 12 · FINAL & LAUNCH ---------- */
-.end-emoji{font-size:clamp(4.5rem,11vw,8rem);display:inline-block;will-change:transform;filter:drop-shadow(0 15px 30px rgba(56,189,248,.3))}
+.end-mark{display:inline-flex;align-items:center;justify-content:center;will-change:transform}
+.end-mark svg{width:clamp(4.4rem, 3.2rem + 4.5vw, 6.8rem);height:auto}
 .end .end-title{margin-top:1rem}
-.end .lead{margin:1.2rem auto 0}
-.btn-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:2.2rem}
+.end .lead{margin:1rem auto 0}
+.btn-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:2rem}
 .btn{
-  display:inline-flex;align-items:center;gap:8px;padding:.9rem 1.8rem;border-radius:99px;
-  background:#fff;color:#000;font-weight:700;border:none;cursor:pointer;font-size:.98rem;
-  transition:all .2s;text-decoration:none;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:46px;padding:.75rem 1.45rem;border-radius:12px;
+  background:var(--ink);color:var(--bg);font-family:var(--font-sans);font-weight:700;
+  border:1px solid transparent;cursor:pointer;font-size:.95rem;text-decoration:none;
+  transition:transform 140ms var(--ease-out), background-color 150ms ease, border-color 150ms ease;
 }
-.btn:hover{transform:scale(1.05);box-shadow:0 12px 30px rgba(255,255,255,.25)}
-.btn-ghost{
-  background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.2);
+.btn:active{transform:scale(0.97)}
+.btn-ghost{background:var(--surface);color:var(--ink);border-color:var(--border-strong)}
+@media (hover:hover) and (pointer:fine){
+  .btn:hover{background:#ffffff}
+  .btn-ghost:hover{background:var(--surface-2);border-color:var(--ink-muted)}
 }
-.btn-ghost:hover{background:rgba(255,255,255,.15);border-color:#fff}
 
-@keyframes popIn{0%{opacity:0;transform:scale(.95)}100%{opacity:1;transform:scale(1)}}
+@keyframes popIn{0%{opacity:0;transform:scale(.96)}100%{opacity:1;transform:scale(1)}}
 
+/* ---------- FORCED COLORS MODE FALLBACK ---------- */
+@media (forced-colors:active){
+  .card,.pcard,.bug,.phone-mockup,.term,#topnav,.chip,.tag,.node{
+    border:1px solid CanvasText;
+    box-shadow:none;
+  }
+  #bar{background:Highlight}
+  #dots a.on::before{background:Highlight}
+}
+
+/* ---------- MOBILE RESPONSIVE (<= 900px) ---------- */
 @media (max-width:900px){
-  /* Navigation */
-  #topnav{padding:0 14px}
-  #topnav span{display:none}
-  #topnav a.nav-link{padding:.26rem .65rem;font-size:.74rem}
+  #topnav{padding:env(safe-area-inset-top, 0px) 12px 0}
+  .brand-edition{display:none}
+  .motion-btn span{display:none}
+  .motion-btn{min-height:36px;padding:0 10px}
+  #topnav a.nav-link{padding:0 11px;font-size:.76rem}
   #dots{display:none}
 
-  /* Structural Sticky Container for Mobile (All scenes stack vertically, never flex-row) */
   .sticky{
     flex-direction:column !important;
     align-items:center !important;
     justify-content:center !important;
-    padding-top:52px !important;
+    padding-top:var(--nav-h) !important;
+    padding-bottom:env(safe-area-inset-bottom, 0px) !important;
     height:100vh !important;
     height:100dvh !important;
     overflow:hidden !important;
   }
+  #s-hero .sticky{height:100svh !important}
 
-  /* Mobile Titles in Normal Flow (Eliminates Absolute Overlap) */
   .head-top{
-    position:relative !important;
-    top:0 !important;
-    left:auto !important;
-    right:auto !important;
-    padding:4px 16px 8px 16px !important;
-    margin-bottom:6px !important;
-    flex-shrink:0 !important;
-    width:100% !important;
-    text-align:center !important;
-    z-index:10 !important;
+    position:relative !important;top:0 !important;left:auto !important;right:auto !important;
+    padding:4px 16px 6px !important;margin-bottom:4px !important;
+    flex-shrink:0 !important;width:100% !important;text-align:center !important;z-index:10 !important;
   }
+  .head-sub{display:none}
+  .desk-only{display:none !important}
 
-  /* Hide Desktop-Only Secondary Columns */
-  .desk-only{
-    display:none !important;
-  }
-
-  /* Typography */
-  h1{font-size:clamp(1.85rem,7.2vw,3.6rem);line-height:1.06}
-  h2{font-size:clamp(1.35rem,5.2vw,2.2rem);line-height:1.12}
-  .lead{font-size:.88rem;line-height:1.45;max-width:92vw}
-  .kicker{font-size:.7rem;letter-spacing:.15em;margin-bottom:.35rem}
+  h1{font-size:clamp(1.75rem, 1.1rem + 3.2vw, 2.7rem);line-height:1.06}
+  h2{font-size:clamp(1.28rem, .95rem + 1.8vw, 1.95rem);line-height:1.12}
+  .lead{font-size:.86rem;line-height:1.46;max-width:92vw}
 
   /* 1 · Hero */
-  .hero-text{left:4vw;right:4vw;top:10vh;transform:none;max-width:none;text-align:center}
-  .hero-text .tags{margin-top:.8rem;display:flex;justify-content:center;flex-wrap:wrap}
-  .hero-text .tag{font-size:.66rem;padding:.22rem .5rem;margin:.15rem}
-  .hero-mid{padding:0 4vw}
-  .hero-mid h2{font-size:clamp(1.45rem,5.8vw,2.4rem);max-width:90vw}
-  .scroll-cue{bottom:16px;font-size:.65rem;gap:5px}
+  .hero-text{left:5vw;right:5vw;top:calc(var(--nav-h) + 22px);transform:none;max-width:none;text-align:center}
+  .hero-text .lead{margin-top:.65rem}
+  .hero-text .tags{margin-top:.75rem;display:flex;justify-content:center;flex-wrap:wrap;margin-left:0}
+  .hero-text .tag{font-size:.68rem;padding:.22rem .54rem;margin:.14rem}
+  .hero-mid{padding:0 5vw}
+  .hero-mid h2{font-size:clamp(1.4rem, 1rem + 2vw, 2.2rem);max-width:90vw}
+  .scroll-cue{bottom:max(14px,env(safe-area-inset-bottom,0px));font-size:.68rem;gap:6px}
   .mouse{width:18px;height:30px}
 
   /* 2 · Carousel */
-  .ring-stage{position:relative !important;inset:auto !important;width:100% !important;flex-shrink:0 !important;padding-top:0 !important;height:min(300px,42dvh) !important}
-  .ring{width:min(240px,74vw);height:min(300px,42vh)}
-  .pcard{padding:16px 14px;border-radius:20px}
-  .pcard .big{font-size:3rem;top:12px;left:12px}
-  .pcard .num{font-size:.68rem;top:14px;right:14px}
-  .pcard b{font-size:1.2rem}
-  .pcard p{font-size:.78rem;line-height:1.3;margin-top:3px}
-  .ring-bottom{position:relative !important;bottom:auto !important;width:100% !important;flex-shrink:0 !important;margin-top:8px !important;gap:6px;padding:0 4vw}
-  .ring-cap{font-size:.8rem;min-height:2.4em;line-height:1.3}
+  .ring-stage{position:relative !important;inset:auto !important;width:100% !important;flex-shrink:0 !important;padding-top:0 !important;height:min(285px,39dvh) !important}
+  .ring{width:min(235px,72vw);height:min(285px,39vh)}
+  .pcard{padding:16px 14px;border-radius:16px}
+  .pcard-emblem{width:42px;height:42px;top:14px;left:14px;border-radius:11px}
+  .pcard .num{font-size:.7rem;top:16px;right:14px}
+  .pcard b{font-size:1.18rem}
+  .pcard p{font-size:.78rem;line-height:1.32;margin-top:4px}
+  .pcard code{margin-top:8px;font-size:.74rem}
+  .ring-bottom{position:relative !important;bottom:auto !important;width:100% !important;flex-shrink:0 !important;margin-top:8px !important;gap:8px;padding:0 5vw}
+  .ring-cap{font-size:.82rem;min-height:2.5em;line-height:1.34}
 
   /* 3 · Exploded Tech Stack */
-  .caps{position:relative !important;inset:auto !important;width:100% !important;height:160px !important;transform:none !important;text-align:center;padding:0 16px;flex-shrink:0 !important}
-  .cap h2{font-size:clamp(1.25rem,5vw,1.85rem)}
-  .cap .lead{font-size:.8rem;margin-top:.35rem;line-height:1.32}
-  .explode-stage{position:relative !important;inset:auto !important;width:100% !important;height:215px !important;padding-top:0 !important;flex-shrink:0 !important}
-  .browser3d{width:min(310px,86vw);height:min(190px,52vw)}
-  .burst .chip{font-size:.62rem;padding:.18rem .4rem;max-width:44vw;overflow:hidden;text-overflow:ellipsis}
+  .caps{position:relative !important;inset:auto !important;width:100% !important;height:130px !important;transform:none !important;text-align:center;padding:0 16px;flex-shrink:0 !important}
+  .cap h2{font-size:clamp(1.2rem, .9rem + 1.5vw, 1.75rem)}
+  .cap .lead{font-size:.8rem;margin-top:.35rem;line-height:1.35}
+  .explode-stage{position:relative !important;inset:auto !important;width:100% !important;height:210px !important;padding-top:0 !important;flex-shrink:0 !important}
+  .browser3d{width:min(305px,85vw);height:min(188px,52vw)}
+  .burst .chip{font-size:.64rem;padding:.2rem .42rem;max-width:44vw;overflow:hidden;text-overflow:ellipsis}
   .lbl{display:none}
 
   /* 4 · Build & Stats */
-  .bigtext{font-size:clamp(1.08rem,3.8vw,1.9rem);padding:0 4vw;line-height:1.32;text-align:center}
-  .stats{grid-template-columns:repeat(2,1fr);gap:8px;padding:0 4vw;margin-top:2vh}
-  .stat.card{padding:.65rem .5rem;border-radius:14px}
-  .stat .n{font-size:clamp(1.5rem,5.8vw,2.2rem)}
-  .stat p{font-size:.7rem}
+  .bigtext{font-size:clamp(1.06rem, .85rem + 1.1vw, 1.65rem);padding:0 5vw;line-height:1.34;text-align:center}
+  .stats{grid-template-columns:repeat(2,1fr);gap:8px;padding:0 5vw;margin-top:2vh}
+  .stat.card{padding:.7rem .55rem;border-radius:12px}
+  .stat .n{font-size:clamp(1.45rem, 1.1rem + 1.8vw, 2.1rem)}
+  .stat p{font-size:.72rem}
 
   /* 5 · Learning Cycle / Board */
-  .split{grid-template-columns:1fr;gap:6px;padding:0 4vw;text-align:center}
-  .split>div:first-child{margin-bottom:4px}
-  .feat{display:none !important}
-  .room{display:none !important}
-  .board-wrap{height:min(290px,42vh);margin-top:2px}
-  .board-cap{font-size:.82rem;padding:0 1rem;min-height:2.2em}
+  .split{grid-template-columns:1fr;gap:8px;padding:0 5vw;text-align:center}
+  .feat,.room{display:none !important}
+  .board-wrap{height:min(280px,40dvh);margin-top:2px}
+  .board-cap{font-size:.82rem;padding:0 .75rem;min-height:2.3em}
 
   /* 6 · Architecture SVG */
-  .arch-stage{position:relative !important;inset:auto !important;width:100% !important;height:240px !important;padding-top:0 !important;flex-shrink:0 !important}
-  .arch{width:94vw;max-width:420px}
-  .node,.node.node-sm{padding:.25rem .4rem !important;min-width:68px !important;border-radius:8px}
-  .node .e{font-size:1rem}
-  .node b{font-size:.62rem;line-height:1.1}
+  .arch-stage{position:relative !important;inset:auto !important;width:100% !important;height:225px !important;padding-top:0 !important;flex-shrink:0 !important}
+  .arch{width:94vw;max-width:410px}
+  .node,.node.node-sm{padding:.26rem .4rem !important;min-width:64px !important;border-radius:9px}
+  .node .node-ico{width:20px;height:20px;margin-bottom:2px}
+  .node .node-ico svg{width:13px;height:13px}
+  .node b{font-size:.62rem;line-height:1.12}
   .node small{display:none}
-  .bottom-cap{position:relative !important;bottom:auto !important;width:100% !important;flex-shrink:0 !important;margin-top:8px !important;font-size:.72rem;padding:0 4vw}
+  .bottom-cap{position:relative !important;bottom:auto !important;width:100% !important;flex-shrink:0 !important;margin-top:8px !important;font-size:.74rem;padding:0 5vw}
 
   /* 7 & 8 · Simulators */
   .sim-stage{
-    grid-template-columns:1fr !important;
-    gap:0 !important;
-    margin-top:0 !important;
-    padding:0 16px !important;
-    width:100% !important;
-    max-width:390px !important;
-    display:flex !important;
-    flex-direction:column !important;
-    align-items:center !important;
+    grid-template-columns:1fr !important;gap:0 !important;margin-top:0 !important;
+    padding:0 14px !important;width:100% !important;max-width:390px !important;
+    display:flex !important;flex-direction:column !important;align-items:center !important;
   }
-  .phone-mockup{padding:12px;border-radius:22px;width:100%;max-width:350px}
-  #waChatLog{min-height:76px !important}
+  .phone-mockup{padding:11px;border-radius:16px;width:100%;max-width:356px;gap:9px}
+  .avatar-circle{width:34px;height:34px;font-size:.88rem}
+  #waChatLog{min-height:62px !important;gap:6px !important}
   .chat-bubble{font-size:.8rem;padding:8px 11px}
-  .slang-btn{padding:8px 10px;font-size:.78rem}
-  .drill-input{font-size:16px;padding:11px 13px}
-  .check-btn{padding:10px 16px;font-size:.85rem}
-  #s-sim-rep .card{padding:12px 14px !important;border-radius:18px !important;width:100% !important;max-width:360px !important}
-  #s-sim-wa .phone-mockup{width:100% !important;max-width:350px !important}
+  .slang-btn{padding:8px 10px;font-size:.77rem}
+  .expl-box{padding:9px 11px;font-size:.76rem}
+  .drill-input{font-size:16px;padding:10px 12px}
+  .check-btn{padding:0 14px;font-size:.84rem;min-height:42px}
+  #s-sim-rep .card{padding:12px 13px !important;border-radius:16px !important;width:100% !important;max-width:356px !important}
+  #s-sim-wa .phone-mockup{width:100% !important;max-width:356px !important}
 
   /* 9 · 4 Flip Cards */
-  .flipgrid{grid-template-columns:repeat(2,1fr);gap:8px;padding:0 4vw;margin-top:1.5vh}
-  .flip{height:202px}
-  .face{padding:10px 9px;border-radius:14px}
-  .face .icon{font-size:1.25rem;margin-bottom:.15rem}
-  .face h3{font-size:.82rem;margin-bottom:.15rem}
-  .face p{font-size:.68rem;line-height:1.24}
-  .face.back{font-size:2.8rem}
-  .shieldnote{flex-direction:column;text-align:center;font-size:.75rem;padding:8px 10px;margin-top:1vh;gap:4px}
+  .flipgrid{grid-template-columns:repeat(2,1fr);gap:8px;padding:0 5vw;margin-top:1.2vh}
+  .flip{height:188px}
+  .face{padding:10px;border-radius:13px}
+  .face .ico-box{width:30px;height:30px;border-radius:8px;margin-bottom:.35rem}
+  .face .ico-box svg{width:16px;height:16px}
+  .face h3{font-size:.82rem;margin-bottom:.2rem}
+  .face p{font-size:.69rem;line-height:1.26}
+  .shieldnote{flex-direction:column;text-align:center;font-size:.75rem;padding:9px 12px;margin-top:1vh;gap:4px}
 
   /* 10 · 3D Fly-Through Bugs */
-  .bug-stage{position:relative !important;inset:auto !important;width:100% !important;height:270px !important;padding-top:0 !important;flex-shrink:0 !important}
-  .bug-world{width:min(660px,92vw);height:270px}
-  .bug{padding:15px 14px;border-radius:18px;min-height:220px}
-  .bug .q{font-size:clamp(.98rem,3.8vw,1.3rem);line-height:1.22}
-  .bug .why{font-size:.78rem;margin-top:.35rem;line-height:1.3}
-  .bug .fixl{font-size:.78rem;margin-top:.45rem;line-height:1.3}
-  .stamp{top:10px;right:10px;font-size:.64rem;padding:2px 7px}
-  .bug-count{position:relative !important;bottom:auto !important;width:100% !important;flex-shrink:0 !important;margin-top:10px !important;font-size:.76rem;gap:6px}
+  .bug-stage{position:relative !important;inset:auto !important;width:100% !important;height:260px !important;padding-top:0 !important;flex-shrink:0 !important}
+  .bug-world{width:min(660px,92vw);height:260px}
+  .bug{padding:15px 14px;border-radius:15px;min-height:212px}
+  .bug .q{font-size:clamp(.98rem, .86rem + 1vw, 1.25rem);line-height:1.22}
+  .bug .why,.bug .fixl{font-size:.78rem;margin-top:.4rem;line-height:1.32}
+  .stamp{top:10px;right:12px;font-size:.62rem;padding:2px 6px}
+  .bug-count{position:relative !important;bottom:auto !important;width:100% !important;flex-shrink:0 !important;margin-top:10px !important;font-size:.78rem;gap:6px}
 
-  /* 11 · Terminal (Fixed for Mobile - No Side Overlap) */
+  /* 11 · Terminal */
   .term-split{
-    grid-template-columns:1fr !important;
-    width:100% !important;
-    max-width:100% !important;
-    padding:0 16px !important;
-    display:block !important;
+    grid-template-columns:1fr !important;width:100% !important;max-width:100% !important;
+    padding:0 16px !important;display:block !important;
   }
-  .term-stage{
-    width:100% !important;
-    max-width:100% !important;
-    display:block !important;
-  }
-  .term{
-    width:100% !important;
-    border-radius:14px;
-    margin:0 auto !important;
-  }
-  .term .tbar{padding:.42rem .65rem;font-size:.66rem}
-  .term pre{min-height:150px;font-size:.7rem;padding:.7rem .8rem;line-height:1.38;word-break:break-word}
+  .term-stage{width:100% !important;max-width:100% !important;display:block !important}
+  .term{width:100% !important;border-radius:13px;margin:0 auto !important}
+  .term .tbar{padding:.44rem .68rem;font-size:.68rem}
+  .term pre{min-height:152px;font-size:.71rem;padding:.72rem .82rem;line-height:1.42;word-break:break-word}
   #side{display:none !important}
 
   /* 12 · Final CTA */
-  .end-emoji{font-size:clamp(3rem,13vw,5rem)}
-  .end .end-title{font-size:clamp(1.65rem,6.5vw,2.8rem);margin-top:.5rem}
-  .end .lead{font-size:.85rem;line-height:1.4;padding:0 4vw;margin-top:.6rem}
-  .btn-row{margin-top:1.2rem;gap:8px}
-  .btn{padding:.7rem 1.3rem;font-size:.88rem}
+  .end .end-title{font-size:clamp(1.6rem, 1.1rem + 2.4vw, 2.5rem);margin-top:.6rem}
+  .end .lead{font-size:.86rem;line-height:1.44;padding:0 5vw;margin-top:.65rem}
+  .btn-row{margin-top:1.25rem;gap:8px}
+  .btn{padding:.65rem 1.2rem;font-size:.88rem;min-height:44px}
 }
 </style>
 </head>
 <body>
+<a href="#presentation-main" class="skip-link visually-hidden">Saltar al contenido</a>
 
-<!-- TOP CHROME -->
 <header id="topnav">
-  <b>🇬🇧 UK STREET ENGLISH <span>· London Press · PWA v20</span></b>
-  <div style="display:flex;align-items:center;gap:12px">
-    <a href="https://adriansg25.github.io/aprende-en/" target="_blank" rel="noopener noreferrer" class="nav-link">🚀 Abrir App</a>
+  <div class="brand-lockup">
+    <svg width="28" height="28" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+      <rect width="40" height="40" rx="10" fill="#0F2747"/>
+      <circle cx="20" cy="20" r="11" stroke="#C8102E" stroke-width="3.6" fill="#F7F7F5"/>
+      <rect x="4" y="16.5" width="32" height="7" rx="2" fill="#12397A"/>
+    </svg>
+    <b>UK Street English</b>
+    <span class="brand-edition">London Press · PWA v20</span>
+  </div>
+  <div class="nav-actions">
+    <button type="button" id="motionToggleBtn" class="motion-btn" aria-label="Pausar animación continua">
+      <svg id="motionPauseIco" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+      <svg id="motionPlayIco" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+      <span id="motionToggleLabel">Pausar</span>
+    </button>
+    <a href="https://adriansg25.github.io/aprende-en/" target="_blank" rel="noopener noreferrer" class="nav-link">
+      <span>Abrir App</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg>
+    </a>
   </div>
 </header>
-<div id="bar"></div>
-<nav id="dots" aria-label="Índice de secciones"></nav>
-<main id="presentation-main">
+<div id="bar" aria-hidden="true"></div>
+<nav id="dots" aria-label="Navegación entre escenas"></nav>
+
+<main id="presentation-main" tabindex="-1">
 
 <!-- ================= 1 · HERO: 3D GLOBE / UK PARTICLES ================= -->
 <section class="scene" id="s-hero" data-len="280" data-title="Inicio">
   <div class="sticky">
     <canvas id="ukCanvas" aria-hidden="true"></canvas>
     <div class="hero-text" id="heroText">
-      <div class="kicker">Proyecto · Noviembre 2026 · PWA v20 &amp; Multi-LLM</div>
-      <h1>Cómo creamos<br><span class="grad">UK Street English</span>.</h1>
-      <p class="lead">De la frustración del inglés académico de libro a una app progresiva con diseño editorial <b>London Press &amp; Underground</b>, conexión en vivo a <b>TVMaze</b>, 5 proveedores de IA y gamificación por barrios en Reino Unido.</p>
+      <h1>Cómo creamos<br><span class="hl-cobalt">UK Street English</span>.</h1>
+      <p class="lead">De la frustración del inglés académico de libro a una aplicación progresiva con identidad editorial <b>London Press &amp; Underground</b>, conexión en vivo a <b>TVMaze</b>, 5 proveedores de IA y aprendizaje por barrios en Reino Unido.</p>
       <div class="tags">
         <span class="tag">React 19</span>
         <span class="tag">TypeScript</span>
         <span class="tag">Tailwind 4</span>
         <span class="tag">Multi-LLM (5 APIs)</span>
-        <span class="tag">TVMaze API en vivo</span>
+        <span class="tag">TVMaze en vivo</span>
         <span class="tag">London Press UI</span>
         <span class="tag">PWA v20 Offline</span>
-        <span class="tag">0€ Servidor</span>
+        <span class="tag">0 € Servidor</span>
       </div>
     </div>
     <div class="hero-mid" id="heroMid">
-      <h2>El inglés de libro te aprueba un examen.<br><span class="grad-warm">El inglés de la calle te hace amigos.</span></h2>
+      <h2>El inglés de libro te aprueba un examen.<br><span class="hl-brass">El inglés de la calle te hace amigos.</span></h2>
     </div>
-    <div class="scroll-cue" id="cue"><div class="mouse"></div>Desliza para explorar</div>
+    <div class="scroll-cue" id="cue"><div class="mouse" aria-hidden="true"></div><span>Desliza para explorar</span></div>
   </div>
 </section>
 
-<!-- ================= 2 · 3D CAROUSEL (5 MÓDULOS) ================= -->
+<!-- ================= 2 · 3D CYLINDRICAL CAROUSEL (5 MÓDULOS) ================= -->
 <section class="scene" id="s-game" data-len="440" data-title="Módulos 3D">
   <div class="sticky">
     <div class="head-top">
-      <div class="kicker">01 · El Aprendizaje Real</div>
-      <h2>Cinco módulos. <span class="grad">Cero teoría aburrida.</span></h2>
+      <h2>Cinco módulos. <span class="hl-rule">Cero teoría aburrida.</span></h2>
+      <p class="head-sub">Desliza para recorrer la arquitectura jugable del aprendizaje.</p>
     </div>
     <div class="ring-stage"><div class="ring" id="ring"></div></div>
     <div class="ring-bottom"><div class="ring-cap" id="ringCap"></div><div class="steps" id="steps"></div></div>
@@ -610,81 +899,89 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
   <div class="sticky">
     <div class="caps">
       <div class="cap">
-        <div class="kicker">02 · Identidad London Press</div>
-        <h2>Diseño <span class="grad">editorial y Web Nativa</span>.</h2>
-        <p class="lead">Superficies limpias de papel neutro, tipografías <i>Bricolage Grotesque</i> &amp; <i>Onest</i>, emblema Roundel propio, barra móvil de 5 botones con Popover nativo y diálogos accesibles <code>&lt;dialog&gt;</code>.</p>
+        <h2>Identidad <span class="hl-cobalt">London Press</span> y Web Nativa.</h2>
+        <p class="lead">Superficies limpias de papel neutro, tipografías <i>Bricolage Grotesque</i> &amp; <i>Onest</i>, emblema Roundel propio, barra móvil de 5 ítems con Popover API y diálogos <code>&lt;dialog&gt;</code>.</p>
       </div>
       <div class="cap">
-        <div class="kicker">Vista desmontada</div>
-        <h2>Una app son <span class="grad">cuatro capas</span>.</h2>
-        <p class="lead">En la cima React 19 con <code>View Transitions</code>. Debajo operan la API oficial de <b>TVMaze</b> para series recientes, el enrutador Multi-LLM (5 proveedores) y el Service Worker <code>uk-street-v20</code>.</p>
+        <h2>Una app son <span class="hl-brass">cuatro capas</span>.</h2>
+        <p class="lead">En la cima React 19 con <code>View Transitions</code>. Debajo operan la API oficial de <b>TVMaze</b> para series recientes, el router Multi-LLM (5 proveedores) y el Service Worker <code>uk-street-v20</code>.</p>
       </div>
       <div class="cap">
-        <div class="kicker">Resiliencia absoluta</div>
-        <h2>Cero caída, <span class="grad">cero desfase temporal</span>.</h2>
-        <p class="lead">Toda la lógica corre en cliente: si sale una temporada nueva (como <i>The Gentlemen T2</i> o <i>Reacher T4</i>), consulta TVMaze en directo; si falla un proveedor IA, conmuta en milisegundos.</p>
+        <h2>Cero caída, <span class="hl-pine">cero desfase temporal</span>.</h2>
+        <p class="lead">Toda la lógica corre en cliente: si sale una temporada nueva (como <i>The Gentlemen T2</i> o <i>Reacher T4</i>), consulta TVMaze en directo; si falla una API IA, conmuta al instante.</p>
       </div>
     </div>
     <div class="explode-stage">
       <div class="browser3d" id="b3d">
-        <!-- Layer 1: PWA & Native Web APIs -->
         <div class="layer l-pwa">
           <div class="inner">
-            <div>sw.js (uk-street-v20)</div><div>manifest.json</div><div>SpeechSynthesis (en-GB)</div>
-            <div>localStorage SRS</div><div>NativeDialog (&lt;dialog&gt;)</div><div>Popover API (Más)</div>
-            <div>viewTransition.ts</div><div>TVMaze Live API</div>
+            <div><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span>sw.js (uk-street-v20)</span></div>
+            <div><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span>manifest.json</span></div>
+            <div><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span>SpeechSynthesis en-GB</span></div>
+            <div><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span>localStorage SRS</span></div>
+            <div><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span>NativeDialog &lt;dialog&gt;</span></div>
+            <div><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span>Popover API (Más)</span></div>
+            <div><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span>viewTransition.ts</span></div>
+            <div><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span>TVMaze Live API</span></div>
           </div>
-          <div class="lbl" style="color:#6ee7b7;border-color:rgba(16,185,129,.6)">Capa 1: PWA v20 &amp; Web APIs</div>
+          <div class="lbl" style="color:var(--pine);border-color:var(--pine-border)">Capa 1: PWA v20 &amp; Web APIs</div>
         </div>
-        <!-- Layer 2: Multi-LLM + TVMaze Router -->
         <div class="layer l-ai">
           <div class="inner">
-            <div><b>const</b> DATA_&_AI = {</div>
-            <div>  tvLive: 'api.tvmaze.com/shows/:id/episodes',</div>
-            <div>  llm: ['groq/llama-3.3-70b', 'gemini-2.5-flash'],</div>
-            <div>  also: ['openai', 'xai-grok', 'openrouter'],</div>
-            <div>  guards: 'no-refusal + Levenshtein'</div>
-            <div>}; // Datos reales 2026 sin backend propio</div>
+            <div><b>const</b> DATA_ROUTER = {</div>
+            <div>  tvLive: <span class="str">'api.tvmaze.com/shows/:id/episodes'</span>,</div>
+            <div>  llm: [<span class="str">'groq/llama-3.3-70b'</span>, <span class="str">'gemini-2.5-flash'</span>],</div>
+            <div>  fallback: [<span class="str">'openai'</span>, <span class="str">'xai-grok'</span>, <span class="str">'openrouter'</span>],</div>
+            <div>  guards: <span class="str">'no-refusal + Levenshtein'</span></div>
+            <div>}; // Sin backend propio · datos en tiempo real</div>
           </div>
-          <div class="lbl" style="color:#c084fc;border-color:rgba(168,85,247,.6)">Capa 2: Multi-LLM &amp; TVMaze</div>
+          <div class="lbl" style="color:var(--brass);border-color:var(--brass-border)">Capa 2: Multi-LLM &amp; TVMaze</div>
         </div>
-        <!-- Layer 3: React 19 Components -->
         <div class="layer l-react">
           <div class="inner">
-            <div class="rc-title">⚛️ 19 Componentes React 19 + BrandMark</div>
-            <div class="sw" title="StreetLevelMap">🗺️</div>
-            <div class="sw" title="StreetWhatsAppSimulator">💬</div>
-            <div class="sw" title="MediaLearningZone + TVMaze">🎬</div>
-            <div class="sw" title="FieldDictionaryZone">📖</div>
-            <div class="sw" title="ReadingZone Rayos X">📑</div>
-            <div class="sw" title="StreetBossFight">👑</div>
-            <div class="sw" title="StreetDrillArena 0/2">🔥</div>
-            <div class="sw" title="BrandMark Roundel">🚇</div>
-            <div class="sw" title="NativeDialog showModal">🪟</div>
-            <div class="sw" title="SettingsModal">⚙️</div>
+            <div class="rc-title">19 Componentes React 19 + BrandMark</div>
+            <div class="sw" title="StreetLevelMap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg></div>
+            <div class="sw" title="StreetWhatsAppSimulator"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+            <div class="sw" title="MediaLearningZone"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg></div>
+            <div class="sw" title="FieldDictionaryZone"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+            <div class="sw" title="ReadingZone"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+            <div class="sw" title="StreetBossFight"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></div>
+            <div class="sw" title="StreetDrillArena"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+            <div class="sw" title="BrandMark Roundel"><svg width="20" height="20" viewBox="0 0 40 40" fill="none" aria-hidden="true"><circle cx="20" cy="20" r="11" stroke="#C8102E" stroke-width="3.6" fill="#F7F7F5"/><rect x="4" y="16.5" width="32" height="7" rx="2" fill="#12397A"/></svg></div>
+            <div class="sw" title="NativeDialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg></div>
+            <div class="sw" title="SettingsModal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.78 1 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
           </div>
-          <div class="lbl" style="color:#93c5fd;border-color:rgba(59,130,246,.6)">Capa 3: React 19 + Tailwind 4</div>
+          <div class="lbl" style="color:var(--cobalt);border-color:var(--cobalt-border)">Capa 3: React 19 + Tailwind 4</div>
         </div>
-        <!-- Layer 4: UI Screen -->
         <div class="layer l-page">
           <div class="inner">
             <div class="bar"><i></i><i></i><i></i>&nbsp; London Press &amp; Underground — Niveles 3/3</div>
             <div class="ui">
               <div class="ui-header">
-                <span style="font-weight:700;font-size:.78rem">🚇 UK Street English</span>
-                <span class="ui-badge">✨ 300 XP · 45 Quids · 3/3 Jefes</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;font-family:var(--font-display);font-weight:700;font-size:.76rem">
+                  <svg width="16" height="16" viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect width="40" height="40" rx="10" fill="#0F2747"/><circle cx="20" cy="20" r="11" stroke="#C8102E" stroke-width="3.6" fill="#F7F7F5"/><rect x="4" y="16.5" width="32" height="7" rx="2" fill="#12397A"/></svg>
+                  UK Street English
+                </span>
+                <span class="ui-badge">300 XP · 45 Quids · 3/3 Jefes</span>
               </div>
               <div class="ui-card">
-                <span style="font-size:.7rem;color:#38bdf8;font-weight:700">SERIES IA + TVMAZE EN VIVO</span>
-                <p style="font-size:.82rem;font-weight:600">"Reacher S04E02 verificado al segundo: vocabulario callejero y preguntas sin alucinaciones."</p>
-                <div style="background:#0f172a;padding:6px 10px;border-radius:8px;font-size:.72rem;color:#4ade80">✓ Episodio oficial confirmado · Sinopsis inyectada</div>
+                <span style="font-family:var(--font-mono);font-size:.66rem;color:var(--cobalt);font-weight:700">SERIES IA + TVMAZE EN VIVO</span>
+                <p style="font-size:.8rem;font-weight:600;color:var(--ink)">"Reacher S04E02 verificado al segundo: vocabulario callejero y preguntas sin alucinaciones."</p>
+                <div style="background:var(--surface-well);border:1px solid var(--pine-border);padding:5px 9px;border-radius:8px;font-size:.7rem;color:var(--pine);display:flex;align-items:center;gap:5px">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Episodio oficial confirmado · Sinopsis inyectada</span>
+                </div>
               </div>
               <div class="ui-bar-nav">
-                <span>🗺️</span><span>📖</span><span>🎬</span><span>🔥</span><span>⊞</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="7" width="20" height="15" rx="2"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
               </div>
             </div>
           </div>
-          <div class="lbl" style="color:#fff;border-color:rgba(255,255,255,.5)">Capa 4: Interfaz London Press</div>
+          <div class="lbl" style="color:var(--ink);border-color:var(--border-strong)">Capa 4: Interfaz London Press</div>
         </div>
       </div>
     </div>
@@ -695,7 +992,6 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
 <!-- ================= 4 · BUILD & STATS ================= -->
 <section class="scene" id="s-build" data-len="380" data-title="Métricas">
   <div class="sticky col">
-    <div class="kicker">03 · Métricas Reales del Proyecto</div>
     <p class="bigtext" id="bigtext">Desarrollamos una arquitectura 100% *Client-Side* en *React* *19*, *TypeScript* y *Tailwind* *4*. Más de *600* ítems curados más lotes infinitos con *5* *IAs*, sinopsis oficiales de *TVMaze* en tiempo real, estética *London* *Press* y *cero* *euros* al mes en servidores.</p>
     <div class="stats">
       <div class="stat card"><div class="n" data-count="600" data-suf="+">0</div><p>ítems curados (+ lotes ×50 IA)</p></div>
@@ -711,9 +1007,8 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
   <div class="sticky">
     <div class="split">
       <div>
-        <div class="kicker">04 · Ciencia del Aprendizaje</div>
-        <h2>El ciclo de fijación<br><span class="grad">en memoria muscular</span>.</h2>
-        <p class="lead desk-only" style="margin-top:1rem">Elegir en un test de cuatro opciones es pasivo y engañoso. Para hablar de verdad, obligamos al cerebro a producir la frase y a reescribirla si comete un error.</p>
+        <h2>El ciclo de fijación<br><span class="hl-brass">en memoria muscular</span>.</h2>
+        <p class="lead desk-only" style="margin-top:.9rem">Elegir en un test de cuatro opciones es pasivo y engañoso. Para hablar de verdad, obligamos al cerebro a producir la frase y a reescribirla si comete un error.</p>
         <ul class="feat desk-only" id="feat">
           <li><i></i>Contexto real en calle, pub o serie de TV</li>
           <li><i></i>Pronunciación británica nativa + fonética española</li>
@@ -721,12 +1016,12 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
           <li><i></i>Detección inteligente de erratas leves vs fallos gramaticales</li>
           <li><i></i>Regla de oro: repetición 2 veces de la frase corregida (0/2)</li>
         </ul>
-        <pre class="room mono desk-only" id="room">recallState = {
+        <pre class="room mono desk-only" id="room"><code>recallState = {
   attempt: <span class="y">'He were go to pub'</span>,
   corrected: <span class="y">'He went down the pub'</span>,
   phonetic: <span class="y">'[hi uént daun de pab]'</span>,
-  drillsRemaining: <span class="y">2</span> <span class="c">// → fijación muscular</span>
-}</pre>
+  drillsRemaining: <span class="y">2</span> <span class="c">// -&gt; fijación muscular</span>
+}</code></pre>
       </div>
       <div class="board-wrap">
         <div class="board-tilt" id="boardTilt">
@@ -744,16 +1039,15 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
 <section class="scene" id="s-arch" data-len="380" data-title="Flujo SVG">
   <div class="sticky">
     <div class="head-top">
-      <div class="kicker">05 · Flujo de Datos & Resiliencia</div>
-      <h2>Cómo viaja la información <span class="grad">sin fricción</span>.</h2>
+      <h2>Cómo viaja la información <span class="hl-cobalt">sin fricción</span>.</h2>
     </div>
     <div class="arch-stage">
       <div class="arch" id="arch">
         <div class="plane"></div>
-        <svg viewBox="0 0 1150 470" preserveAspectRatio="none">
+        <svg id="archSvg" viewBox="0 0 1150 470" preserveAspectRatio="none" aria-hidden="true">
           <defs>
             <linearGradient id="gw" x1="0" x2="1">
-              <stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#8b5cf6"/>
+              <stop offset="0" stop-color="#6498ff"/><stop offset="1" stop-color="#e64b5f"/>
             </linearGradient>
           </defs>
           <path id="w1" class="wire" d="M150 110 C 300 110, 330 235, 450 235"/>
@@ -763,20 +1057,38 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
           <path id="w5" class="wire" d="M820 235 C 900 235, 900 360, 1000 360"/>
           <path class="wire dash" id="w6" d="M150 110 C 250 20, 900 20, 1000 20"/>
           <g id="packets" opacity="0">
-            <circle r="6" fill="#38bdf8"><animateMotion dur="2s" repeatCount="indefinite"><mpath href="#w1"/></animateMotion></circle>
-            <circle r="6" fill="#8b5cf6"><animateMotion dur="2.4s" repeatCount="indefinite" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#w2"/></animateMotion></circle>
-            <circle r="6" fill="#fbbf24"><animateMotion dur="1.2s" repeatCount="indefinite"><mpath href="#w3"/></animateMotion></circle>
-            <circle r="5" fill="#10b981"><animateMotion dur="1.8s" repeatCount="indefinite"><mpath href="#w4"/></animateMotion></circle>
-            <circle r="5" fill="#f43f5e"><animateMotion dur="1.8s" repeatCount="indefinite" begin=".9s"><mpath href="#w5"/></animateMotion></circle>
+            <circle r="6" fill="#6498ff"><animateMotion dur="2s" repeatCount="indefinite"><mpath href="#w1"/></animateMotion></circle>
+            <circle r="6" fill="#e64b5f"><animateMotion dur="2.4s" repeatCount="indefinite" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#w2"/></animateMotion></circle>
+            <circle r="6" fill="#eeb446"><animateMotion dur="1.2s" repeatCount="indefinite"><mpath href="#w3"/></animateMotion></circle>
+            <circle r="5" fill="#34d092"><animateMotion dur="1.8s" repeatCount="indefinite"><mpath href="#w4"/></animateMotion></circle>
+            <circle r="5" fill="#eeb446"><animateMotion dur="1.8s" repeatCount="indefinite" begin=".9s"><mpath href="#w5"/></animateMotion></circle>
           </g>
         </svg>
-        <div class="node hl" style="left:13%;top:23%"><span class="e">📱</span><b>Tu Teléfono (PWA)</b><small>Service Worker v20</small></div>
-        <div class="node hl" style="left:13%;top:77%"><span class="e">🗣️</span><b>Web APIs + Voz</b><small>en-GB, Dialog &amp; Popover</small></div>
-        <div class="node ho" style="left:44%;top:50%"><span class="e">⚡</span><b>Router IA + TVMaze</b><small>Auto-prefijos + Sinopsis</small></div>
-        <div class="node hv" style="left:66%;top:50%"><span class="e">🧠</span><b>Groq / Gemini / GPT</b><small>xAI y OpenRouter libres</small></div>
-        <div class="node hg" style="left:88%;top:23%"><span class="e">📡</span><b>TVMaze en Tiempo Real</b><small>Estrenos sin negativas</small></div>
-        <div class="node" style="left:88%;top:77%"><span class="e">📦</span><b>Banco Local + SRS</b><small>600+ ítems y Baúl</small></div>
-        <div class="node node-sm" style="left:88%;top:2%"><b style="font-size:.78rem">🛡️ No-Pedante &amp; Rescate</b></div>
+        <div class="node hl" style="left:13%;top:23%">
+          <span class="node-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span>
+          <b>Tu Teléfono (PWA)</b><small>Service Worker v20</small>
+        </div>
+        <div class="node hl" style="left:13%;top:77%">
+          <span class="node-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></span>
+          <b>Web APIs + Voz</b><small>en-GB, Dialog &amp; Popover</small>
+        </div>
+        <div class="node ho" style="left:44%;top:50%">
+          <span class="node-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
+          <b>Router IA + TVMaze</b><small>Auto-prefijos + Sinopsis</small>
+        </div>
+        <div class="node hv" style="left:66%;top:50%">
+          <span class="node-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></svg></span>
+          <b>Groq / Gemini / GPT</b><small>xAI y OpenRouter libres</small>
+        </div>
+        <div class="node hg" style="left:88%;top:23%">
+          <span class="node-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/></svg></span>
+          <b>TVMaze en Tiempo Real</b><small>Estrenos sin negativas</small>
+        </div>
+        <div class="node" style="left:88%;top:77%">
+          <span class="node-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg></span>
+          <b>Banco Local + SRS</b><small>600+ ítems y Baúl</small>
+        </div>
+        <div class="node node-sm" style="left:88%;top:2%"><b style="font-size:.76rem">Rescate No-Pedante</b></div>
       </div>
     </div>
     <div class="bottom-cap" id="archCap">
@@ -789,53 +1101,57 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
 <section class="scene" id="s-sim-wa" data-len="460" data-title="Simulador WhatsApp">
   <div class="sticky col">
     <div class="head-top">
-      <div class="kicker">06 · Demostración Interactiva</div>
-      <h2>Chatea como un local en <span class="grad">WhatsApp UK</span>.</h2>
+      <h2>Chatea como un local en <span class="hl-pine">WhatsApp UK</span>.</h2>
     </div>
     <div class="sim-stage">
       <div class="phone-mockup">
+        <div class="wa-tabs" role="group" aria-label="Elegir conversación británica">
+          <button type="button" class="seg-btn is-active" data-wa-scene="dave">Dave · Concierto</button>
+          <button type="button" class="seg-btn" data-wa-scene="chloe">Chloe · Camden</button>
+          <button type="button" class="seg-btn" data-wa-scene="liam">Liam · Soho</button>
+        </div>
         <div class="phone-header">
           <div class="phone-contact">
-            <div class="avatar-circle">🎸</div>
+            <div class="avatar-circle" id="waAvatar" aria-hidden="true">D</div>
             <div>
-              <b style="font-size:.95rem" id="waName">Dave (Londres)</b>
-              <small style="color:#4ade80;display:block;font-size:.72rem">● en línea</small>
+              <b style="font-size:.94rem;display:block;color:var(--ink)" id="waName">Dave (Londres)</b>
+              <small style="color:var(--pine);display:flex;align-items:center;gap:5px;font-size:.74rem">
+                <span style="width:6px;height:6px;border-radius:50%;background:var(--pine);display:inline-block" aria-hidden="true"></span>en línea
+              </small>
             </div>
           </div>
-          <button type="button" class="audio-btn" id="waSpeakerBtn">🔊 Escuchar</button>
+          <button type="button" class="audio-btn" id="waSpeakerBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+            <span>Escuchar</span>
+          </button>
         </div>
-        <div id="waChatLog" style="display:flex;flex-direction:column;gap:10px;min-height:160px">
-          <div class="chat-bubble chat-incoming" id="waIncomingMsg">
+        <div id="waChatLog" style="display:flex;flex-direction:column;gap:8px;min-height:130px">
+          <div class="chat-bubble chat-incoming" id="waIncomingMsg" lang="en-GB">
             mate, that gig ticket was forty quid!! are they proper taking the piss?!
           </div>
         </div>
         <div id="waChoices" style="display:flex;flex-direction:column;gap:8px">
           <button type="button" class="slang-btn" data-wa-choice="correct">
-            <b>🇬🇧 Respuesta Callejera Auténtica:</b>
-            <span>"madness innit! forty quid is daylight robbery tbh, proper taking the piss"</span>
+            <b>Respuesta callejera auténtica</b>
+            <span lang="en-GB">"madness innit! forty quid is daylight robbery tbh, proper taking the piss"</span>
           </button>
           <button type="button" class="slang-btn" data-wa-choice="robot">
-            <b>🤖 Respuesta Robótica de Academia:</b>
-            <span>"I consider 40 pounds to be a reasonable investment in musical culture."</span>
+            <b>Respuesta robótica de academia</b>
+            <span lang="en-GB">"I consider 40 pounds to be a reasonable investment in musical culture."</span>
           </button>
         </div>
         <div class="expl-box" id="waExpl" role="status" aria-live="polite">
-          🎉 <b>¡Exacto! Hablas como un local.</b><br>
-          • <b>Quid</b> = Libra (£).<br>
-          • <b>Taking the piss</b> = Tomar el pelo o pasarse de la raya.<br>
-          • <b>Innit</b> = ¿Verdad? / ¿A que sí?<br>
-          • <b>Daylight robbery</b> = Un robo a mano armada.
+          <b>Exacto, hablas como un local:</b><br>
+          · <b>Quid</b> = Libra (£).<br>
+          · <b>Taking the piss</b> = Tomar el pelo o pasarse de la raya.<br>
+          · <b>Innit</b> = ¿Verdad? / ¿A que sí?<br>
+          · <b>Daylight robbery</b> = Un robo descarado.
         </div>
       </div>
       <div class="card desk-only" style="align-self:center">
         <h3>¿Por qué este enfoque?</h3>
-        <p style="margin-top:.6rem">En los libros de texto te enseñan a decir <i>"Good afternoon sir, how do you do?"</i>. Si le dices eso a un amigo en un pub de Camden o por WhatsApp, se pensará que eres un robot victoriano.</p>
-        <p style="margin-top:.8rem">En nuestra app entrenas con <b>mensajes reales</b> de británicos cotidianos (Liam, Sarah, Dave, Chloe), aprendiendo cuándo usar <i>innit</i>, <i>dodgy</i>, <i>sorted</i>, <i>bloke</i> o <i>fancy</i> de manera natural.</p>
-        <div style="margin-top:1.2rem;display:flex;gap:8px;flex-wrap:wrap" id="waScenarioBtns">
-          <button type="button" class="tag" style="cursor:pointer" data-wa-scene="dave">🎸 Dave · Concierto</button>
-          <button type="button" class="tag" style="cursor:pointer" data-wa-scene="chloe">☕ Chloe · Plan finde</button>
-          <button type="button" class="tag" style="cursor:pointer" data-wa-scene="liam">🍻 Liam · El pub</button>
-        </div>
+        <p style="margin-top:.6rem">En los libros de texto te enseñan a decir <i lang="en-GB">"Good afternoon sir, how do you do?"</i>. Si le dices eso a un amigo en un pub de Camden o por WhatsApp, pensará que hablas como un manual antiguo.</p>
+        <p style="margin-top:.8rem">En la app entrenas con <b>mensajes reales</b> de británicos cotidianos (Liam, Sarah, Dave, Chloe), aprendiendo cuándo usar <i lang="en-GB">innit</i>, <i lang="en-GB">dodgy</i>, <i lang="en-GB">sorted</i>, <i lang="en-GB">bloke</i> o <i lang="en-GB">fancy</i> con naturalidad.</p>
       </div>
     </div>
   </div>
@@ -845,41 +1161,46 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
 <section class="scene" id="s-sim-rep" data-len="460" data-title="Memoria Muscular">
   <div class="sticky col">
     <div class="head-top">
-      <div class="kicker">07 · Memoria Activa 0/2</div>
-      <h2>Fija estructuras con <span class="grad">repetición muscular</span>.</h2>
+      <h2>Fija estructuras con <span class="hl-brass">repetición muscular</span>.</h2>
     </div>
     <div class="sim-stage" style="align-items:center">
-      <div class="card" style="border-color:rgba(56,189,248,.3)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <span style="font-size:.76rem;font-weight:700;color:#fbbf24;letter-spacing:.1em">ENTRENAMIENTO #44</span>
-          <span id="drillCounterBadge" style="background:#1e293b;padding:.3rem .8rem;border-radius:99px;font-size:.8rem;font-weight:800;color:#38bdf8">
+      <div class="card" style="border-color:var(--cobalt-border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap">
+          <span class="mono" style="font-size:.75rem;font-weight:700;color:var(--brass);letter-spacing:.04em">ENTRENAMIENTO #44</span>
+          <span id="drillCounterBadge" class="mono tabular-nums" style="background:var(--surface-2);border:1px solid var(--border);padding:.26rem .72rem;border-radius:8px;font-size:.78rem;font-weight:700;color:var(--cobalt)">
             REPETICIÓN 0 / 2
           </span>
         </div>
-        <p style="font-size:.86rem;color:var(--muted)">Has tenido un fallo en la estructura. Escribe la frase corregida 2 veces para fijarla en tu memoria motora:</p>
+        <p style="font-size:.86rem;color:var(--ink-muted)">Has tenido un fallo en la estructura. Escribe la frase corregida 2 veces para fijarla en tu memoria motora:</p>
         
-        <div style="margin:16px 0;padding:14px;background:#0f172a;border-radius:14px;border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <b id="drillTargetText" style="color:#f8fafc;font-size:1.05rem">"He was focused on looking for his charger"</b>
-            <small style="display:block;color:#7dd3fc;margin-top:4px">[ji uós fócast on lúking for jis cháryer]</small>
+        <div style="margin:12px 0;padding:12px;background:var(--surface-well);border-radius:12px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <div style="min-width:0">
+            <b id="drillTargetText" lang="en-GB" style="color:var(--ink);font-size:1rem;display:block">"He was focused on looking for his charger"</b>
+            <small class="mono" style="display:block;color:var(--cobalt);margin-top:4px;font-size:.76rem">[ji uós fócast on lúking for jis cháryer]</small>
           </div>
-          <button type="button" class="audio-btn" id="drillSpeakerBtn">🔊 Oír</button>
+          <button type="button" class="audio-btn" id="drillSpeakerBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            <span>Oír</span>
+          </button>
         </div>
 
-        <form id="drillForm" style="display:flex;flex-direction:column;gap:12px">
+        <form id="drillForm" style="display:flex;flex-direction:column;gap:10px">
           <label for="drillInput" class="visually-hidden">Escribe exactamente la frase corregida</label>
-          <input type="text" id="drillInput" class="drill-input" placeholder="Escribe la frase exacta aquí..." autocomplete="off" />
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-            <span id="drillFeedback" role="status" aria-live="polite" style="font-size:.82rem;color:var(--muted)">Escribe exactamente la frase y pulsa Comprobar</span>
-            <button type="submit" class="check-btn">Comprobar ✓</button>
+          <input type="text" id="drillInput" class="drill-input" placeholder="Escribe la frase exacta aquí..." autocomplete="off" autocapitalize="none" enterkeyhint="send" />
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+            <span id="drillFeedback" role="status" aria-live="polite" style="font-size:.82rem;color:var(--ink-muted);flex:1;min-width:160px">Escribe exactamente la frase y pulsa Comprobar</span>
+            <button type="submit" id="drillSubmitBtn" class="check-btn">
+              <span>Comprobar</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <button type="button" id="drillResetBtn" class="drill-reset-btn">Repetir prueba</button>
           </div>
         </form>
       </div>
 
       <div class="desk-only">
-        <div class="kicker">Ciencia Cognitiva</div>
-        <h2>Escribir a mano activa <span class="grad">circuitos neuronales</span>.</h2>
-        <p class="lead" style="margin-top:1rem">Los estudios demuestran que seleccionar una respuesta entre cuatro (el clásico botón verde) produce la ilusión de saber. Al cabo de 2 horas se ha olvidado el 80%.</p>
+        <h2>Escribir a mano activa <span class="hl-cobalt">circuitos neuronales</span>.</h2>
+        <p class="lead" style="margin-top:.9rem">Los estudios demuestran que seleccionar una respuesta entre cuatro (el clásico botón verde) produce la ilusión de saber. Al cabo de 2 horas se olvida el 80%.</p>
         <p class="lead" style="margin-top:.8rem">En <b>UK Street English</b>, cuando tienes un fallo o errata, el sistema activa la <b>repetición guiada (0/2)</b>. Hasta que no reproduces tú mismo la frase completa dos veces seguidas sin pistas, no avanzas de nivel.</p>
       </div>
     </div>
@@ -889,40 +1210,51 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
 <!-- ================= 9 · 4 PILARES DE RESILIENCIA (Flip 3D) ================= -->
 <section class="scene" id="s-robust" data-len="360" data-title="Robustez 3D">
   <div class="sticky col">
-    <div class="kicker">08 · A Prueba de Fallos</div>
-    <h2 class="center">Cuatro capas de <span class="grad">máxima fiabilidad</span>.</h2>
+    <h2 class="center">Cuatro capas de <span class="hl-pine">máxima fiabilidad</span>.</h2>
     <div class="flipgrid" id="flipgrid">
       <div class="flip">
-        <div class="face back">⚡</div>
+        <div class="face back">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span>MULTI-LLM</span>
+        </div>
         <div class="face">
-          <div class="icon">⚡</div>
+          <div class="ico-box" style="color:var(--brass)" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
           <h3>Router 5-IA + Prefijos</h3>
           <p>Auto-detecta Groq, Gemini, OpenAI, xAI Grok y OpenRouter por el prefijo de clave y evita errores 404 descubriendo modelos en vivo.</p>
           <div class="meter"><i></i></div>
         </div>
       </div>
       <div class="flip">
-        <div class="face back">📡</div>
+        <div class="face back">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/></svg>
+          <span>TVMAZE LIVE</span>
+        </div>
         <div class="face">
-          <div class="icon">📡</div>
+          <div class="ico-box" style="color:var(--crimson)" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/></svg></div>
           <h3>TVMaze en Tiempo Real</h3>
           <p>Consulta la sinopsis oficial de series recién estrenadas (como Reacher T4 o The Gentlemen T2) y rescata episodios sin negativas.</p>
           <div class="meter"><i></i></div>
         </div>
       </div>
       <div class="flip">
-        <div class="face back">🚇</div>
+        <div class="face back">
+          <svg width="36" height="36" viewBox="0 0 40 40" fill="none" aria-hidden="true"><circle cx="20" cy="20" r="11" stroke="#C8102E" stroke-width="3.6" fill="#F7F7F5"/><rect x="4" y="16.5" width="32" height="7" rx="2" fill="#12397A"/></svg>
+          <span>LONDON PRESS</span>
+        </div>
         <div class="face">
-          <div class="icon">🚇</div>
+          <div class="ico-box" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="10" fill="#0F2747"/><circle cx="20" cy="20" r="11" stroke="#C8102E" stroke-width="3.6" fill="#F7F7F5"/><rect x="4" y="16.5" width="32" height="7" rx="2" fill="#12397A"/></svg></div>
           <h3>London Press &amp; Nativo</h3>
           <p>Estética editorial cuidada, <code>&lt;dialog showModal()&gt;</code>, Popover API en móvil, View Transitions y síntesis de voz <code>en-GB</code>.</p>
           <div class="meter"><i></i></div>
         </div>
       </div>
       <div class="flip">
-        <div class="face back">📵</div>
+        <div class="face back">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>PWA v20</span>
+        </div>
         <div class="face">
-          <div class="icon">📵</div>
+          <div class="ico-box" style="color:var(--pine)" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg></div>
           <h3>PWA v20 Offline</h3>
           <p>Service Worker <code>uk-street-v20</code> precachea la app completa: practica en el metro, en el avión o sin datos móviles.</p>
           <div class="meter"><i></i></div>
@@ -930,8 +1262,10 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
       </div>
     </div>
     <div class="card shieldnote" id="shield">
-      <span style="font-size:2rem">🛡️</span>
-      <p>Diseñado con tolerancia total: el usuario jamás ve una pantalla en blanco. Los fallos de red degradan suavemente a ejercicios precompilados de la base de datos local.</p>
+      <span style="width:40px;height:40px;border-radius:10px;background:var(--pine-soft);border:1px solid var(--pine-border);color:var(--pine);display:flex;align-items:center;justify-content:center;flex-shrink:0" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+      </span>
+      <p>Diseñado con tolerancia total: el usuario jamás ve una pantalla en blanco. Los fallos de red degradan suavemente a ejercicios precompilados de la base local.</p>
     </div>
   </div>
 </section>
@@ -940,15 +1274,14 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
 <section class="scene" id="s-bugs" data-len="700" data-title="Depuración 3D">
   <div class="sticky">
     <div class="head-top">
-      <div class="kicker">09 · Diario de Desarrollo</div>
-      <h2>Retos y mejoras del usuario, <span class="grad">resueltos</span>.</h2>
+      <h2>Retos y mejoras del usuario, <span class="hl-pine">resueltos</span>.</h2>
     </div>
     <div class="bug-stage">
       <div class="bug-world" id="bugWorld">
         <!-- Bug 1 -->
         <div class="bug">
           <div class="stamp">RESUELTO</div>
-          <div class="sev" style="color:#f43f5e">● Crítico · Metodología</div>
+          <div class="sev" style="color:var(--crimson)">● Crítico · Metodología</div>
           <div class="q">"Las opciones eran muy obvias y el slang era de acrónimos raros."</div>
           <div class="why">Elegir entre 2 opciones evidentes no requiere pensar, y los acrónimos no reflejan cómo habla la gente real.</div>
           <div class="fixl">✓ Slang cotidiano natural (quid, innit, mate) y modo escritura manual obligatoria.</div>
@@ -956,7 +1289,7 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
         <!-- Bug 2 -->
         <div class="bug">
           <div class="stamp">RESUELTO</div>
-          <div class="sev" style="color:#f43f5e">● Crítico · Despliegue PWA</div>
+          <div class="sev" style="color:var(--crimson)">● Crítico · Despliegue PWA</div>
           <div class="q">"No se me actualiza en el móvil, actualízala bien."</div>
           <div class="why">Los navegadores móviles cacheaban agresivamente el bundle antiguo de Vite sin refrescar el Service Worker.</div>
           <div class="fixl">✓ Service Worker con cache-busting 'uk-street-v20', skipWaiting() y recarga limpia.</div>
@@ -964,7 +1297,7 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
         <!-- Bug 3 -->
         <div class="bug">
           <div class="stamp">RESUELTO</div>
-          <div class="sev" style="color:#fbbf24">● Usabilidad · UX Móvil</div>
+          <div class="sev" style="color:var(--brass)">● Usabilidad · UX Móvil</div>
           <div class="q">"El botón de comprobar queda fuera de su sitio con el teclado."</div>
           <div class="why">El teclado virtual de iOS y Android descolocaba el layout flotante y causaba auto-zoom en inputs.</div>
           <div class="fixl">✓ Campos a 16px mínimo, flexbox fluido, scroll seguro y targets táctiles amplios.</div>
@@ -972,7 +1305,7 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
         <!-- Bug 4 -->
         <div class="bug">
           <div class="stamp">RESUELTO</div>
-          <div class="sev" style="color:#fbbf24">● Precisión · Desambiguación</div>
+          <div class="sev" style="color:var(--brass)">● Precisión · Desambiguación</div>
           <div class="q">"La IA confunde The Gentlemen T2 con la película de 2019."</div>
           <div class="why">Mezclaba a Eddie Horniman y Susie Glass con Mickey Pearson de la peli original.</div>
           <div class="fixl">✓ Contexto explícito de adaptación, edición inline y panel de corrección guiada.</div>
@@ -980,7 +1313,7 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
         <!-- Bug 5 -->
         <div class="bug">
           <div class="stamp">RESUELTO</div>
-          <div class="sev" style="color:#f43f5e">● IA Desactualizada · TVMaze</div>
+          <div class="sev" style="color:var(--crimson)">● IA Desactualizada · TVMaze</div>
           <div class="q">"Me dice 'no dispongo de información' con temporadas nuevas (Reacher T4)."</div>
           <div class="why">La memoria estática de los modelos no cubre estrenos recientes tras su fecha de corte.</div>
           <div class="fixl">✓ Conexión en vivo con api.tvmaze.com + bloqueo anti-negativas y botón de rescate.</div>
@@ -988,7 +1321,7 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
         <!-- Bug 6 -->
         <div class="bug">
           <div class="stamp">RESUELTO</div>
-          <div class="sev" style="color:#38bdf8">● Vocabulario &amp; Lectura</div>
+          <div class="sev" style="color:var(--cobalt)">● Vocabulario &amp; Lectura</div>
           <div class="q">"Quiero Top 50 palabras, verbos en pasado y buscar palabras al leer."</div>
           <div class="why">Faltaban cimientos con fonética legible en español y lookup contextual en historias.</div>
           <div class="fixl">✓ Diccionario Top 50 + fonética [uént] + lotes ×50 IA + buscador contextual en Lecturas.</div>
@@ -996,15 +1329,15 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
         <!-- Bug 7 -->
         <div class="bug">
           <div class="stamp">RESUELTO</div>
-          <div class="sev" style="color:#38bdf8">● Gamificación</div>
+          <div class="sev" style="color:var(--cobalt)">● Gamificación</div>
           <div class="q">"Quiero que sea progresivo rollo videojuego con requisitos para avanzar."</div>
           <div class="why">Sin objetivos claros ni cierres de distrito, faltaba sensación de progreso tangible.</div>
-          <div class="fixl">✓ Mapa de Londres por distritos, Quids 💷, XP y combate dinámico contra Jefes (3/3).</div>
+          <div class="fixl">✓ Mapa de Londres por distritos, Quids (£), XP y combate dinámico contra Jefes (3/3).</div>
         </div>
         <!-- Bug 8 -->
         <div class="bug">
           <div class="stamp">RESUELTO</div>
-          <div class="sev" style="color:#10b981">● Identidad Visual &amp; Web APIs</div>
+          <div class="sev" style="color:var(--pine)">● Identidad Visual &amp; Web APIs</div>
           <div class="q">"La app parece muy hecha con IA y los 7 botones del móvil se apretujan."</div>
           <div class="why">Degradados genéricos por defecto, iconos amontonados en la barra inferior y modals con divs.</div>
           <div class="fixl">✓ Diseño 'London Press', Roundel propio, barra móvil de 5 ítems + Popover y &lt;dialog&gt; nativo.</div>
@@ -1012,7 +1345,7 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
       </div>
     </div>
     <div class="bug-count">
-      <span id="bugN">Desafío 1 / 8</span>
+      <span id="bugN" class="mono tabular-nums">Desafío 1 / 8</span>
       <div class="steps" id="bugSteps"></div>
     </div>
   </div>
@@ -1023,24 +1356,23 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
   <div class="sticky">
     <div class="split term-split">
       <div class="term-stage">
-        <div class="kicker">10 · Puesta en Producción</div>
-        <h2 style="margin-bottom:3vh">Compilación instantánea.<br><span class="grad">GitHub Pages &amp; PWA.</span></h2>
+        <h2 style="margin-bottom:2.4vh">Compilación instantánea.<br><span class="hl-pine">GitHub Pages &amp; PWA.</span></h2>
         <div class="term" id="term">
           <div class="tbar"><i></i><i></i><i></i>&nbsp; PowerShell — Aprende_EN</div>
-          <pre id="typed"></pre>
+          <pre role="region" aria-label="Comandos de compilación y despliegue en PowerShell" tabindex="0"><code id="typed"></code></pre>
         </div>
       </div>
       <div class="side desk-only" id="side">
         <div class="card">
-          <h3>⚡ Build &amp; PDF en segundos</h3>
+          <h3>Build &amp; PDF en segundos</h3>
           <p>Vite compila TypeScript + Tailwind 4 y genera además la memoria técnica en PDF mediante <code>generate_doc_pdf.cjs</code>.</p>
         </div>
         <div class="card">
-          <h3>🌐 Despliegue en GitHub Pages</h3>
+          <h3>Despliegue en GitHub Pages</h3>
           <p>Publicado en <code>adriansg25.github.io/aprende-en/</code> con certificado SSL, zero-backend y sincronización directa con TVMaze.</p>
         </div>
         <div class="card">
-          <h3>📲 Instálalo en tu móvil</h3>
+          <h3>Instálalo en tu móvil</h3>
           <p>Abre el enlace en Safari o Chrome, pulsa <b>"Añadir a pantalla de inicio"</b> y disfruta de la interfaz <b>London Press</b> nativa.</p>
         </div>
       </div>
@@ -1051,14 +1383,26 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
 <!-- ================= 12 · FINAL & LAUNCH ================= -->
 <section class="scene" id="s-end" data-len="100" data-title="Fin">
   <div class="sticky col end center" id="end">
-    <span class="end-emoji" id="endEmoji" aria-hidden="true">🇬🇧</span>
+    <div class="end-mark" id="endMark" aria-hidden="true">
+      <svg viewBox="0 0 40 40" fill="none">
+        <rect width="40" height="40" rx="10" fill="#0F2747"/>
+        <circle cx="20" cy="20" r="11" stroke="#C8102E" stroke-width="3.6" fill="#F7F7F5"/>
+        <rect x="4" y="16.5" width="32" height="7" rx="2" fill="#12397A"/>
+      </svg>
+    </div>
     <h2 class="end-title">¡Aprende el inglés de verdad!</h2>
     <p class="lead">UK Street English está listo para llevarte desde tus primeras palabras hasta sentirte como en casa en cualquier pub de Londres o Manchester.</p>
     <div class="btn-row">
-      <a href="https://adriansg25.github.io/aprende-en/" target="_blank" rel="noopener noreferrer" class="btn">🚀 Abrir App en Vivo</a>
-      <button type="button" id="backToTopBtn" class="btn btn-ghost">↑ Volver al inicio</button>
+      <a href="https://adriansg25.github.io/aprende-en/" target="_blank" rel="noopener noreferrer" class="btn">
+        <span>Abrir App en Vivo</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg>
+      </a>
+      <button type="button" id="backToTopBtn" class="btn btn-ghost">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        <span>Volver al inicio</span>
+      </button>
     </div>
-    <div style="margin-top:2rem">
+    <div style="margin-top:1.75rem">
       <span class="tag">React 19</span>
       <span class="tag">TypeScript</span>
       <span class="tag">Tailwind 4</span>
@@ -1072,7 +1416,7 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
 
 <script>
 /* ============================================================
-   HELPERS & MATH (Physics & Easing)
+   HELPERS, MOTION PREFERENCES & PHYSICS
    ============================================================ */
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const clamp=(v,a=0,b=1)=>v<a?a:v>b?b:v;
@@ -1082,10 +1426,16 @@ const eOut=t=>1-Math.pow(1-t,3);
 const eIn=t=>t*t*t;
 const eIO=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
 const hash=n=>{const x=Math.sin(n*127.1)*43758.5453;return x-Math.floor(x)};
-const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const mqReduce=matchMedia('(prefers-reduced-motion: reduce)');
+let reduce=mqReduce.matches;
+let userPaused=reduce;
+const isMotionPaused=()=>userPaused;
+
 let W=innerWidth,H=innerHeight,mobile=W<900;
 const updaters={}, onResize=[];
-let mx=0,my=0,mxs=0,mys=0,sy=scrollY,now=0;
+let mx=0,my=0,mxs=0,mys=0,sy=scrollY,ambientT=0,lastFrameT=0;
+
 addEventListener('mousemove',e=>{mx=e.clientX/W*2-1;my=e.clientY/H*2-1});
 addEventListener('touchmove',e=>{
   if(e.touches && e.touches[0]){
@@ -1094,10 +1444,39 @@ addEventListener('touchmove',e=>{
   }
 },{passive:true});
 
+const motionToggleBtn=$('#motionToggleBtn'),
+      motionPauseIco=$('#motionPauseIco'),
+      motionPlayIco=$('#motionPlayIco'),
+      motionToggleLabel=$('#motionToggleLabel'),
+      archSvg=$('#archSvg');
+
+function syncAmbientMotion(){
+  const paused=isMotionPaused();
+  document.documentElement.classList.toggle('motion-paused',paused);
+  if(motionToggleBtn){
+    motionToggleBtn.setAttribute('aria-label',paused?'Reanudar animación continua':'Pausar animación continua');
+    motionPauseIco.style.display=paused?'none':'inline-block';
+    motionPlayIco.style.display=paused?'inline-block':'none';
+    motionToggleLabel.textContent=paused?'Reanudar':'Pausar';
+  }
+  if(archSvg && typeof archSvg.pauseAnimations==='function'){
+    if(paused) archSvg.pauseAnimations();
+    else archSvg.unpauseAnimations();
+  }
+}
+motionToggleBtn?.addEventListener('click',()=>{
+  userPaused=!userPaused;
+  syncAmbientMotion();
+});
+mqReduce.addEventListener?.('change',e=>{
+  reduce=e.matches;
+  userPaused=e.matches;
+  syncAmbientMotion();
+});
+
 const sceneEls=$$('.scene');
 sceneEls.forEach(s=>s.style.height=(+s.dataset.len||100)+'vh');
 
-/* dots nav */
 const dotsNav=$('#dots');
 sceneEls.forEach(s=>{
   const a=document.createElement('a');
@@ -1113,12 +1492,11 @@ sceneEls.forEach(s=>{
 const dots=$$('#dots a');
 
 /* ============================================================
-   1 · HERO — 3D Canvas UK & Globe Constellation
+   1 · HERO — 3D Canvas UK & Globe Constellation (London Press Night)
    ============================================================ */
 const cv=$('#ukCanvas'),ctx=cv.getContext('2d');
 let dpr=1,gScale=1,gCx=.68,gCy=.5,gAlpha=1;
 
-// 2200 3D Sphere Points with Fibonacci Distribution
 const gpts=[];
 (()=>{
   const N=2200, ga=Math.PI*(3-Math.sqrt(5));
@@ -1127,7 +1505,6 @@ const gpts=[];
     const r=Math.sqrt(1-y*y);
     const th=i*ga;
     const x=Math.cos(th)*r, z=Math.sin(th)*r;
-    // Continent density mask focusing around UK coordinates (lat ~51 to 56, lon ~ -3 to 0)
     const f=Math.sin(2.3*x+1.1)*Math.cos(1.7*y-.4) + Math.sin(2.9*z+.6)*Math.cos(2.1*x) + .6*Math.sin(4.1*y+3.3*z);
     gpts.push([x,y,z, f>.42 || Math.abs(y)>.93]);
   }
@@ -1138,18 +1515,16 @@ const ll=(la,lo)=>{
   return [Math.cos(la)*Math.cos(lo), Math.sin(la), Math.cos(la)*Math.sin(lo)];
 };
 
-// UK & Connected Hubs
 const cities=[
-  {n:'London', v:ll(51.5,-0.12), hub:true},
-  {n:'Birmingham', v:ll(52.48,-1.89), hub:true},
-  {n:'Manchester', v:ll(53.48,-2.24), hub:true},
-  {n:'Bristol', v:ll(51.45,-2.58), hub:true},
+  {n:'London', v:ll(51.50,-0.12), hub:true},
+  {n:'Madrid', v:ll(40.42,-3.70), hub:true},
   {n:'Edinburgh', v:ll(55.95,-3.18), hub:true},
+  {n:'Manchester', v:ll(53.48,-2.24), hub:true},
+  {n:'Belfast', v:ll(54.60,-5.93), hub:true},
+  {n:'Bristol', v:ll(51.45,-2.58), hub:false},
+  {n:'Birmingham', v:ll(52.48,-1.89), hub:false},
   {n:'Liverpool', v:ll(53.40,-2.99), hub:false},
-  {n:'Oxford', v:ll(51.75,-1.25), hub:false},
-  {n:'Camden', v:ll(51.54,-0.14), hub:false},
-  {n:'Soho', v:ll(51.51,-0.13), hub:false},
-  {n:'Brixton', v:ll(51.46,-0.11), hub:false}
+  {n:'Brighton', v:ll(50.82,-0.14), hub:false}
 ];
 
 function proj(v,rot,tilt,cx,cy,R){
@@ -1180,40 +1555,37 @@ function drawGlobe(t){
 
   const R=Math.min(w,h)*.34*gScale;
   const cx=w*gCx, cy=h*gCy;
-  const rot=t*.00012 + sy*.00075 + mxs*.08;
-  const tilt=.44 + mys*.06;
+  const rot=Math.PI*.44 + t*.00012 + sy*.00075 + mxs*.08;
+  const tilt=.62 + mys*.06;
   const s=dpr;
 
-  // Outer radial atmosphere halo
-  let g=ctx.createRadialGradient(cx,cy,R*.7,cx,cy,R*1.45);
-  g.addColorStop(0,'rgba(56,189,248,.25)');
-  g.addColorStop(0.5,'rgba(99,102,241,.12)');
-  g.addColorStop(1,'rgba(0,0,0,0)');
+  /* London Underground Cobalt + Tarmac Navy glow */
+  let g=ctx.createRadialGradient(cx,cy,R*.68,cx,cy,R*1.42);
+  g.addColorStop(0,'rgba(100,152,255,.2)');
+  g.addColorStop(0.55,'rgba(18,57,122,.12)');
+  g.addColorStop(1,'rgba(12,16,23,0)');
   ctx.fillStyle=g;
-  ctx.beginPath();ctx.arc(cx,cy,R*1.45,0,7);ctx.fill();
+  ctx.beginPath();ctx.arc(cx,cy,R*1.42,0,7);ctx.fill();
 
-  // Core globe volume
   g=ctx.createRadialGradient(cx-R*.32,cy-R*.38,R*.05,cx,cy,R);
-  g.addColorStop(0,'#0f172a');
-  g.addColorStop(1,'#020617');
+  g.addColorStop(0,'#172030');
+  g.addColorStop(1,'#0a0e15');
   ctx.fillStyle=g;
   ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.fill();
 
-  // 3D Particles
   for(const q of gpts){
     const [px,py,z]=proj(q,rot,tilt,cx,cy,R);
     if(z<0) continue;
     if(q[3]){
-      const sz=(1.4+z*1.6)*s;
-      ctx.fillStyle=`rgba(56,189,248,${.22+.78*z})`;
+      const sz=(1.4+z*1.55)*s;
+      ctx.fillStyle=`rgba(100,152,255,${.24+.72*z})`;
       ctx.fillRect(px-sz/2,py-sz/2,sz,sz);
     } else {
-      ctx.fillStyle=`rgba(129,140,248,${.1+.28*z})`;
+      ctx.fillStyle=`rgba(169,180,198,${.08+.22*z})`;
       ctx.fillRect(px,py,s,s);
     }
   }
 
-  // 3D Arcs connecting London to other UK hubs
   const london=cities[0].v;
   for(let k=1;k<cities.length;k++){
     const to=cities[k].v;
@@ -1225,72 +1597,103 @@ function drawGlobe(t){
       if(prev && z>-.12 && prev[2]>-.12){
         const d=ph-u;
         const hd=(d>=0 && d<.22)?1-d/.22:0;
-        ctx.strokeStyle=hd>0?`rgba(251,191,36,${.4+.6*hd})`:'rgba(139,92,246,.3)';
-        ctx.lineWidth=(hd>0?2.6:1.2)*s;
+        ctx.strokeStyle=hd>0?`rgba(238,180,70,${.45+.55*hd})`:'rgba(100,152,255,.28)';
+        ctx.lineWidth=(hd>0?2.5:1.15)*s;
         ctx.beginPath();ctx.moveTo(prev[0],prev[1]);ctx.lineTo(px,py);ctx.stroke();
       }
       prev=[px,py,z];
     }
   }
 
-  // Pulsing Radar Rings & City Text Badges
-  const pulse=(t/1300)%1;
+  const pulse=(t/1450)%1;
+  const drawnLabels=[];
   for(const c of cities){
     const [px,py,z]=proj(c.v,rot,tilt,cx,cy,R);
     if(z<0) continue;
 
-    // Pulse wave
-    ctx.strokeStyle=`rgba(56,189,248,${(1-pulse)*z})`;
-    ctx.lineWidth=1.5*s;
-    ctx.beginPath();ctx.arc(px,py,(4+pulse*20)*s,0,7);ctx.stroke();
+    ctx.strokeStyle=`rgba(230,75,95,${(1-pulse)*z*0.85})`;
+    ctx.lineWidth=1.4*s;
+    ctx.beginPath();ctx.arc(px,py,(4+pulse*18)*s,0,7);ctx.stroke();
 
-    // Solid core dot
-    ctx.fillStyle=c.hub?'#fbbf24':'#38bdf8';
-    ctx.beginPath();ctx.arc(px,py,3.6*s,0,7);ctx.fill();
+    ctx.fillStyle=c.hub?'#eeb446':'#6498ff';
+    ctx.beginPath();ctx.arc(px,py,3.5*s,0,7);ctx.fill();
 
-    // City Name Label
-    if(z>.25 && gScale<1.6){
-      ctx.fillStyle=`rgba(248,250,252,${z*(1.6-gScale)/.6})`;
-      ctx.font=`700 ${11*s}px system-ui`;
-      ctx.fillText(c.n, px+8*s, py-6*s);
+    if(z>.28 && gScale<1.6){
+      const lx=px+8*s, ly=py-7*s;
+      const collides=drawnLabels.some(([ox,oy])=>Math.abs(lx-ox)<66*s && Math.abs(ly-oy)<16*s);
+      if(!collides){
+        drawnLabels.push([lx,ly]);
+        ctx.fillStyle=`rgba(245,246,244,${z*(1.6-gScale)/.6})`;
+        ctx.font=`600 ${11*s}px "Onest", system-ui`;
+        ctx.fillText(c.n, lx, ly);
+      }
     }
   }
-
   ctx.globalAlpha=1;
 }
 
 const heroText=$('#heroText'),heroMid=$('#heroMid'),cue=$('#cue');
 updaters['s-hero']=(p,t)=>{
   const e=eIO(seg(p,.12,1));
-  gScale=lerp(1,2.8,e);
+  gScale=lerp(1,2.7,e);
   gCx=mobile?.5:lerp(.7,.5,eOut(seg(p,0,.45)));
-  gCy=lerp(mobile?.62:.5,1.25,e);
+  gCy=lerp(mobile?.72:.5,1.25,e);
   gAlpha=1-seg(p,.88,1);
-  const o=1-seg(p,.04,.3),dy=p*180,sc=1-seg(p,0,.35)*.1;
+  const o=1-seg(p,.04,.3),dy=p*160,sc=1-seg(p,0,.35)*.08;
   heroText.style.opacity=o;
   heroText.style.transform=mobile?`translateY(${-dy}px) scale(${sc})`:`translateY(calc(-50% - ${dy}px)) scale(${sc})`;
   heroMid.style.opacity=seg(p,.36,.5)*(1-seg(p,.78,.92));
-  heroMid.style.transform=`scale(${lerp(.9,1.05,seg(p,.36,.92))})`;
+  heroMid.style.transform=`scale(${lerp(.92,1.04,seg(p,.36,.92))})`;
   cue.style.opacity=1-seg(p,0,.06);
   drawGlobe(t);
 };
 
 /* ============================================================
-   2 · 3D CAROUSEL
+   2 · 3D CYLINDRICAL CAROUSEL (Unified Stroke SVGs + London Press Tokens)
    ============================================================ */
 const phases=[
-  {e:'🚇',n:'London Press UI',c:'london-press-ui',d:'Identidad editorial y barra móvil de 5 ítems.',l:'Rediseño completo "London Press & Underground": tipografía propia, emblema Roundel, <dialog showModal()>, Popover API y View Transitions.',col:'#38bdf8'},
-  {e:'📱',n:'WhatsApp UK',c:'chat-simulator',d:'Conversaciones reales con Liam, Sarah, Dave y Chloe.',l:'Chatea por turnos usando expresiones reales ("forty quid", "sorted", "pop into the shop") con evaluación tolerante no pedante.',col:'#6366f1'},
-  {e:'🗺️',n:'Barrios & Jefes 3/3',c:'street-levels',d:'Progresión por distritos, Quids y combate final.',l:'Avanza por Heathrow, The Red Lion Pub y El Metro ganando Quids 💷 y XP hasta derrotar a los 3 Jefes de distrito.',col:'#fbbf24'},
-  {e:'🧠',n:'Machaque & 0/2',c:'muscle-memory-2x',d:'Top 50, fonética [uént] y repetición muscular.',l:'Diccionario con fonética española, lotes infinitos ×50 palabras con IA, Lecturas con Rayos X y regla obligatoria de escribir 2 veces cada fallo.',col:'#10b981'},
-  {e:'📡',n:'Series IA + TVMaze',c:'tvmaze-live-api',d:'Sinopsis oficiales en vivo sin alucinaciones.',l:'Conectado a api.tvmaze.com para verificar estrenos recientes como Reacher T4 o The Gentlemen T2 antes de pedir el análisis a Groq, Gemini o Grok.',col:'#f43f5e'}
+  {
+    svg:'<svg width="24" height="24" viewBox="0 0 40 40" fill="none" aria-hidden="true"><circle cx="20" cy="20" r="11" stroke="#C8102E" stroke-width="3.6" fill="#F7F7F5"/><rect x="4" y="16.5" width="32" height="7" rx="2" fill="#12397A"/></svg>',
+    n:'London Press UI',c:'london-press-ui',
+    d:'Identidad editorial y barra móvil de 5 ítems.',
+    l:'Rediseño completo "London Press & Underground": tipografía propia, emblema Roundel, <dialog showModal()>, Popover API y View Transitions.',
+    col:'#6498ff'
+  },
+  {
+    svg:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+    n:'WhatsApp UK',c:'chat-simulator',
+    d:'Conversaciones reales con Liam, Sarah, Dave y Chloe.',
+    l:'Chatea por turnos usando expresiones reales ("forty quid", "sorted", "pop into the shop") con evaluación tolerante no pedante.',
+    col:'#34d092'
+  },
+  {
+    svg:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>',
+    n:'Barrios & Jefes 3/3',c:'street-levels',
+    d:'Progresión por distritos, Quids y combate final.',
+    l:'Avanza por Heathrow, The Red Lion Pub y El Metro ganando Quids (£) y XP hasta derrotar a los 3 Jefes de distrito.',
+    col:'#eeb446'
+  },
+  {
+    svg:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+    n:'Machaque & 0/2',c:'muscle-memory-2x',
+    d:'Top 50, fonética [uént] y repetición muscular.',
+    l:'Diccionario con fonética española, lotes infinitos ×50 palabras con IA, Lecturas con Rayos X y regla obligatoria de escribir 2 veces cada fallo.',
+    col:'#6498ff'
+  },
+  {
+    svg:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/></svg>',
+    n:'Series IA + TVMaze',c:'tvmaze-live-api',
+    d:'Sinopsis oficiales en vivo sin alucinaciones.',
+    l:'Conectado a api.tvmaze.com para verificar estrenos recientes como Reacher T4 o The Gentlemen T2 antes de pedir el análisis a Groq, Gemini o Grok.',
+    col:'#e64b5f'
+  }
 ];
 
 const ring=$('#ring'),ringCap=$('#ringCap'),stepsEl=$('#steps');
 const pcards=phases.map((ph,i)=>{
   const d=document.createElement('div');
   d.className='pcard';d.style.setProperty('--c',ph.col);
-  d.innerHTML=`<span class="big">${ph.e}</span><span class="num">0${i+1}</span><b>${ph.n}</b><p>${ph.d}</p><code>${ph.c}</code>`;
+  d.innerHTML=`<div class="pcard-emblem">${ph.svg}</div><span class="num">0${i+1}</span><b>${ph.n}</b><p>${ph.d}</p><code>${ph.c}</code>`;
   ring.appendChild(d);
   stepsEl.insertAdjacentHTML('beforeend','<i><b></b></i>');
   return d;
@@ -1298,22 +1701,22 @@ const pcards=phases.map((ph,i)=>{
 const stepBars=$$('#steps b');
 let RR=380,lastAct=-1;
 onResize.push(()=>{
-  RR=mobile?Math.min(240,Math.max(150,W*0.42)):Math.min(410,W*.4);
+  RR=mobile?Math.min(235,Math.max(150,W*0.42)):Math.min(410,W*.4);
   pcards.forEach((c,i)=>c.style.transform=`rotateY(${i*72}deg) translateZ(${RR}px)`);
 });
 
 updaters['s-game']=p=>{
   const k=clamp((p-.04)/.9)*4,i=Math.floor(Math.min(k,3.9999)),f=k-i,sn=i+eIO(clamp((f-.2)/.6));
   const rot=-sn*72;
-  ring.style.transform=`translateZ(${-RR}px) rotateX(${-6-mys*6}deg) rotateY(${rot+mxs*10}deg)`;
+  ring.style.transform=`translateZ(${-RR}px) rotateX(${-6-mys*5}deg) rotateY(${rot+mxs*9}deg)`;
   pcards.forEach((c,j)=>{
     const a=((j*72+rot)%360+540)%360-180,cs=Math.cos(a*Math.PI/180);
-    c.style.opacity=clamp(.1+cs*.9);c.style.filter=`brightness(${.45+.55*clamp(cs)})`;
+    c.style.opacity=clamp(.12+cs*.88);c.style.filter=`brightness(${.5+.5*clamp(cs)})`;
   });
   const act=Math.round(sn);
   if(act!==lastAct){
     lastAct=act;ringCap.style.opacity=0;
-    setTimeout(()=>{ringCap.textContent=phases[act].l;ringCap.style.opacity=1},150);
+    setTimeout(()=>{ringCap.textContent=phases[act].l;ringCap.style.opacity=1},140);
   }
   stepBars.forEach((b,j)=>b.style.transform=`scaleX(${clamp(sn+1-j)})`);
 };
@@ -1336,22 +1739,22 @@ let chipT=[];
 onResize.push(()=>{
   chipT=chips.map((c,i)=>{
     const cols=mobile?2:3,col=i%cols,row=Math.floor(i/cols);
-    const baseX=mobile?0:W*.16,spanX=mobile?W*.32:W*.42;
+    const baseX=mobile?0:W*.16,spanX=mobile?W*.34:W*.42;
     return {
-      x:baseX+(col/(cols-1)-.5)*spanX+(hash(i)-.5)*20,
-      y:(row/(Math.ceil(chips.length/cols)-1)-.5)*H*(mobile?.35:.62)+(mobile?H*.1:0)+(hash(i+9)-.5)*16,
-      r:(hash(i+3)-.5)*16
+      x:baseX+(col/(cols-1)-.5)*spanX+(hash(i)-.5)*16,
+      y:(row/(Math.ceil(chips.length/cols)-1)-.5)*H*(mobile?.33:.6)+(mobile?H*.09:0)+(hash(i+9)-.5)*14,
+      r:(hash(i+3)-.5)*14
     };
   });
 });
 
 updaters['s-inspect']=p=>{
   const a=eOut(seg(p,0,.22)),b=eIO(seg(p,.28,.6)),c=seg(p,.66,.97);
-  const shift=mobile?0:W*.14,shiftY=mobile?18:0;
-  const rx=lerp(lerp(64,0,a),56,b),rz=lerp(0,-36,b),sc=lerp(lerp(.7,1,a),.8,b),ty=lerp(mobile?H*.24:H*.4,0,a)+shiftY;
+  const shift=mobile?0:W*.14,shiftY=mobile?14:0;
+  const rx=lerp(lerp(64,0,a),56,b),rz=lerp(0,-36,b),sc=lerp(lerp(.72,1,a),.8,b),ty=lerp(mobile?H*.22:H*.38,0,a)+shiftY;
   b3d.style.transform=`translate3d(${shift}px,${ty}px,0) rotateX(${rx}deg) rotateZ(${rz}deg) scale(${sc})`;
   b3d.style.opacity=a*(1-c*.65);
-  const gap=b*(mobile?55:95);
+  const gap=b*(mobile?52:92);
   layers.forEach((l,i)=>l.style.transform=`translateZ(${i*gap}px)`);
   lbls.forEach((l,i)=>{
     const k=3-i;
@@ -1361,11 +1764,11 @@ updaters['s-inspect']=p=>{
   caps[0].style.opacity=seg(p,.03,.12)*(1-seg(p,.22,.29));
   caps[1].style.opacity=seg(p,.31,.38)*(1-seg(p,.62,.69));
   caps[2].style.opacity=seg(p,.7,.78);
-  caps.forEach(cp=>cp.style.transform=`translateY(${(1-+cp.style.opacity)*20}px)`);
+  caps.forEach(cp=>cp.style.transform=`translateY(${(1-+cp.style.opacity)*18}px)`);
   chips.forEach((ch,i)=>{
     const t=eOut(seg(c,i*.045,i*.045+.4)),T=chipT[i]||{x:0,y:0,r:0};
     ch.style.opacity=t;
-    ch.style.transform=`translate(-50%,-50%) translate3d(${lerp(shift,T.x,t)}px,${lerp(shiftY+(mobile?H*.08:H*.05),T.y,t)}px,${lerp(-500,0,t)}px) rotate(${lerp(0,T.r,t)*.3}deg) scale(${lerp(.3,1,t)})`;
+    ch.style.transform=`translate(-50%,-50%) translate3d(${lerp(shift,T.x,t)}px,${lerp(shiftY+(mobile?H*.08:H*.05),T.y,t)}px,${lerp(-460,0,t)}px) rotate(${lerp(0,T.r,t)*.28}deg) scale(${lerp(.35,1,t)})`;
   });
 };
 
@@ -1382,13 +1785,13 @@ const words=$$('#bigtext .w'),stats=$$('#s-build .stat');
 
 updaters['s-build']=p=>{
   const lit=seg(p,.03,.5)*words.length;
-  words.forEach((w,i)=>w.style.opacity=.14+.86*clamp(lit-i));
+  words.forEach((w,i)=>w.style.opacity=.15+.85*clamp(lit-i));
   const m=eIO(seg(p,.5,.64));
-  bigtext.style.transform=`translateY(${lerp(9,0,m)}vh) scale(${lerp(1,.9,m)})`;
+  bigtext.style.transform=`translateY(${lerp(8,0,m)}vh) scale(${lerp(1,.92,m)})`;
   stats.forEach((s,i)=>{
     const t=eOut(seg(p,.55+i*.05,.72+i*.05));
     s.style.opacity=t;
-    s.style.transform=`rotateX(${lerp(-90,0,t)+mys*-4}deg) rotateY(${mxs*5}deg) translateY(${lerp(50,0,t)}px)`;
+    s.style.transform=`rotateX(${lerp(-85,0,t)+mys*-4}deg) rotateY(${mxs*5}deg) translateY(${lerp(46,0,t)}px)`;
     const n=s.querySelector('.n');
     n.textContent=Math.round(+n.dataset.count*eOut(seg(p,.6+i*.05,.88+i*.05))).toLocaleString('es')+(n.dataset.suf||'');
   });
@@ -1403,12 +1806,12 @@ const angOf=j=>(-90+j*72)*Math.PI/180;
 const snodes=phases.map((ph,j)=>{
   const n=document.createElement('div');n.className='snode';
   board.appendChild(n);n._lift=0;
-  n.innerHTML=`<div class="disc"></div><div class="up"><span class="e">${ph.e}</span><code>${ph.c}</code></div>`;
+  n.innerHTML=`<div class="disc"></div><div class="up"><div class="snode-ico">${ph.svg}</div><code>${ph.c}</code></div>`;
   return n;
 });
 
 function updateBoardLayout(){
-  const bw = mobile ? Math.min(290, W * 0.76) : 440;
+  const bw = mobile ? Math.min(280, W * 0.74) : 440;
   board.style.width = bw + 'px';
   board.style.height = bw + 'px';
   BC = bw / 2;
@@ -1424,15 +1827,15 @@ let lastSrv=-1;
 updaters['s-server']=p=>{
   const k=clamp((p-.08)/.84)*4,i=Math.floor(Math.min(k,3.9999)),f=k-i,sn=i+eIO(clamp((f-.25)/.5));
   const intro=eOut(seg(p,0,.16));
-  boardTilt.style.transform=`rotateY(${mxs*14}deg) rotateX(${-mys*5}deg) translateY(${lerp(80,0,intro)}px)`;
-  board.style.transform=`rotateX(${BOARD_RX}deg) scale(${lerp(.7,1,intro)})`;
+  boardTilt.style.transform=`rotateY(${mxs*13}deg) rotateX(${-mys*5}deg) translateY(${lerp(75,0,intro)}px)`;
+  board.style.transform=`rotateX(${BOARD_RX}deg) scale(${lerp(.72,1,intro)})`;
   board.style.opacity=intro;
   const a=(-90+sn*72)*Math.PI/180;
   token.style.transform=`translate(${BC+Math.cos(a)*BR}px,${BC+Math.sin(a)*BR}px) translateZ(14px)`;
   const act=Math.round(sn);
   snodes.forEach((n,j)=>{
-    const on=j===act;n.classList.toggle('on',on);n._lift+=((on?34:0)-n._lift)*.15;
-    n.querySelector('.up').style.transform=`rotateX(${-BOARD_RX}deg) translate(-50%,-100%) translateY(${-20-n._lift}px)`;
+    const on=j===act;n.classList.toggle('on',on);n._lift+=((on?32:0)-n._lift)*.16;
+    n.querySelector('.up').style.transform=`rotateX(${-BOARD_RX}deg) translate(-50%,-100%) translateY(${-18-n._lift}px)`;
   });
   if(act!==lastSrv){lastSrv=act;boardCap.textContent=phases[act].l}
   feats.forEach((li,j)=>li.classList.toggle('on',p>.06+j*.15));
@@ -1450,13 +1853,13 @@ archPaths.forEach(pa=>{
 });
 updaters['s-arch']=p=>{
   const a=eOut(seg(p,0,.3));
-  const archSc=mobile?Math.min(1,W/480):1;
-  arch.style.transform=`rotateX(${lerp(55,8,a)-mys*5}deg) rotateY(${mxs*8}deg) scale(${lerp(.8,1,a)*archSc})`;
+  const archSc=mobile?Math.min(1,W/470):1;
+  arch.style.transform=`rotateX(${lerp(52,8,a)-mys*5}deg) rotateY(${mxs*8}deg) scale(${lerp(.8,1,a)*archSc})`;
   arch.style.opacity=seg(p,0,.08);
   archNodes.forEach((n,i)=>{
     const t=eOut(seg(p,.1+i*.055,.22+i*.055));
     n.style.opacity=t;
-    n.style.transform=`translate(-50%,-50%) translateZ(${lerp(-600,40,t)}px) scale(${lerp(.5,1,t)})`;
+    n.style.transform=`translate(-50%,-50%) translateZ(${lerp(-580,38,t)}px) scale(${lerp(.55,1,t)})`;
   });
   archPaths.forEach((pa,j)=>{
     const t=eIO(seg(p,.45+j*.045,.58+j*.045));
@@ -1468,10 +1871,10 @@ updaters['s-arch']=p=>{
 };
 
 /* ============================================================
-   7 & 8 · SIMULATORS UP-DATE & LOGIC
+   7 & 8 · INTERACTIVE SIMULATORS (WhatsApp UK + 0/2 Drill)
    ============================================================ */
-updaters['s-sim-wa']=p=>{};
-updaters['s-sim-rep']=p=>{};
+updaters['s-sim-wa']=()=>{};
+updaters['s-sim-rep']=()=>{};
 
 function speakText(txt){
   if(!window.speechSynthesis)return;
@@ -1483,32 +1886,30 @@ function speakText(txt){
   window.speechSynthesis.speak(u);
 }
 
-function speakCurrentWa(){
-  const msg=$('#waIncomingMsg').innerText;
-  speakText(msg);
-}
-
 const waScenarios={
   dave:{
+    initial:'D',avatarBg:'#12397a',avatarBorder:'#6498ff',
     name:'Dave (Londres)',
     incoming:'mate, that gig ticket was forty quid!! are they proper taking the piss?!',
     correct:'madness innit! forty quid is daylight robbery tbh, proper taking the piss',
     robot:'I consider 40 pounds to be a reasonable investment in musical culture.',
-    expl:'🎉 <b>¡Exacto! Hablas como un local.</b><br>• <b>Quid</b> = Libra (£).<br>• <b>Taking the piss</b> = Tomar el pelo o pasarse de la raya.<br>• <b>Innit</b> = ¿Verdad? / ¿A que sí?<br>• <b>Daylight robbery</b> = Un robo descarado.'
+    expl:'<b>Exacto, hablas como un local:</b><br>· <b>Quid</b> = Libra (£).<br>· <b>Taking the piss</b> = Tomar el pelo o pasarse de la raya.<br>· <b>Innit</b> = ¿Verdad? / ¿A que sí?<br>· <b>Daylight robbery</b> = Un robo descarado.'
   },
   chloe:{
+    initial:'C',avatarBg:'#0e6b47',avatarBorder:'#34d092',
     name:'Chloe (Camden)',
     incoming:'reckon we should grab a quick pint before the queue at Camden gets mental?',
     correct:'proper sound plan! I\'m parched anyway, meet you outside in ten?',
     robot:'I believe purchasing an alcoholic beverage prior to queuing is logically optimal.',
-    expl:'🎉 <b>¡Clavado!</b><br>• <b>Reckon</b> = Creo / Pienso.<br>• <b>Sound</b> = Perfecto / Buena idea.<br>• <b>Parched</b> = Seco de sed.<br>• <b>Mental</b> = Una locura.'
+    expl:'<b>Clavado:</b><br>· <b>Reckon</b> = Creo / Pienso.<br>· <b>Sound</b> = Perfecto / Buena idea.<br>· <b>Parched</b> = Seco de sed.<br>· <b>Mental</b> = Una locura.'
   },
   liam:{
+    initial:'L',avatarBg:'#9a5d07',avatarBorder:'#eeb446',
     name:'Liam (Soho)',
     incoming:'blimey mate, that bloke was proper dodgy, thought he was gonna nick my coat!',
     correct:'swear down! looked dodgy as hell, glad we bounced out of there.',
     robot:'Indeed, that male exhibited suspicious behaviors according to local jurisdiction.',
-    expl:'🎉 <b>¡Genial!</b><br>• <b>Blimey</b> = ¡Ostras! / ¡Madre mía!<br>• <b>Dodgy</b> = Sospechoso / Peligroso.<br>• <b>Nick</b> = Robar.<br>• <b>Bounced</b> = Nos piramos.'
+    expl:'<b>Genial:</b><br>· <b>Blimey</b> = ¡Ostras! / ¡Madre mía!<br>· <b>Dodgy</b> = Sospechoso / Peligroso.<br>· <b>Nick</b> = Robar.<br>· <b>Bounced</b> = Nos piramos.'
   }
 };
 
@@ -1516,6 +1917,10 @@ let currentWaKey='dave';
 function setWaScenario(key){
   currentWaKey=key;
   const s=waScenarios[key];
+  const av=$('#waAvatar');
+  av.textContent=s.initial;
+  av.style.backgroundColor=s.avatarBg;
+  av.style.borderColor=s.avatarBorder;
   $('#waName').innerText=s.name;
   $('#waIncomingMsg').innerText=s.incoming;
   const chatLog=$('#waChatLog');
@@ -1525,6 +1930,7 @@ function setWaScenario(key){
   btns[1].classList.remove('correct','wrong');
   btns[0].querySelector('span').innerText=`"${s.correct}"`;
   btns[1].querySelector('span').innerText=`"${s.robot}"`;
+  $$('[data-wa-scene]').forEach(t=>t.classList.toggle('is-active',t.dataset.waScene===key));
   const expl=$('#waExpl');
   expl.classList.remove('warn');
   expl.style.display='none';
@@ -1533,11 +1939,7 @@ function setWaScenario(key){
 }
 
 function handleWaChoice(isCorrect){
-  const expl=$('#waExpl');
-  const chatLog=$('#waChatLog');
-  const s=waScenarios[currentWaKey];
-  const btns=$$('#waChoices .slang-btn');
-
+  const expl=$('#waExpl'),chatLog=$('#waChatLog'),s=waScenarios[currentWaKey],btns=$$('#waChoices .slang-btn');
   if(isCorrect){
     btns[0].classList.add('correct');
     btns[1].classList.remove('wrong');
@@ -1545,68 +1947,82 @@ function handleWaChoice(isCorrect){
     expl.innerHTML=s.expl;
     expl.style.display='block';
     if(!chatLog.querySelector('.chat-outgoing')){
-      const bubble=document.createElement('div');
-      bubble.className='chat-bubble chat-outgoing';
-      bubble.innerText=s.correct;
-      chatLog.appendChild(bubble);
+      const b=document.createElement('div');
+      b.className='chat-bubble chat-outgoing';
+      b.setAttribute('lang','en-GB');
+      b.innerText=s.correct;
+      chatLog.appendChild(b);
     }
     speakText(s.correct);
   } else {
     btns[1].classList.add('wrong');
     expl.classList.add('warn');
-    expl.innerHTML='🤖 <b>¡Demasiado formal para un colega!</b> En Reino Unido te mirarían raro si contestas así por WhatsApp. Prueba la opción callejera arriba.';
+    expl.innerHTML='<b>Demasiado formal para un colega:</b> en Reino Unido sonarías muy artificial por WhatsApp. Prueba la opción callejera arriba.';
     expl.style.display='block';
   }
 }
 
-$('#waSpeakerBtn')?.addEventListener('click',speakCurrentWa);
-$$('#waChoices .slang-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>handleWaChoice(btn.dataset.waChoice==='correct'));
-});
-$$('#waScenarioBtns [data-wa-scene]').forEach(btn=>{
-  btn.addEventListener('click',()=>setWaScenario(btn.dataset.waScene));
-});
+$('#waSpeakerBtn')?.addEventListener('click',()=>speakText($('#waIncomingMsg').innerText));
+$$('#waChoices .slang-btn').forEach(btn=>btn.addEventListener('click',()=>handleWaChoice(btn.dataset.waChoice==='correct')));
+$$('[data-wa-scene]').forEach(btn=>btn.addEventListener('click',()=>setWaScenario(btn.dataset.waScene)));
+
 $('#drillSpeakerBtn')?.addEventListener('click',()=>{
   const target=$('#drillTargetText');
   if(target) speakText(target.innerText);
 });
-$('#drillForm')?.addEventListener('submit',handleDrillSubmit);
-$('#backToTopBtn')?.addEventListener('click',()=>{
-  scrollTo({top:0,behavior:reduce?'auto':'smooth'});
-});
 
-// Active recall repetition simulation
 let drillCount=0;
-const targetSentence="He was focused on looking for his charger";
-function handleDrillSubmit(e){
-  e.preventDefault();
-  const inp=$('#drillInput');
-  const val=inp.value.trim();
-  const feedback=$('#drillFeedback');
-  const badge=$('#drillCounterBadge');
+const targetSentence='He was focused on looking for his charger';
+const drillResetBtn=$('#drillResetBtn'),drillSubmitBtn=$('#drillSubmitBtn');
 
-  if(val.toLowerCase() === targetSentence.toLowerCase()){
+$('#drillForm')?.addEventListener('submit',e=>{
+  e.preventDefault();
+  const inp=$('#drillInput'),val=inp.value.trim(),feedback=$('#drillFeedback'),badge=$('#drillCounterBadge');
+  if(val.toLowerCase()===targetSentence.toLowerCase()){
     drillCount++;
-    if(drillCount >= 2){
-      badge.innerText="COMPLETADO (2 / 2) ✓";
-      badge.style.color="#4ade80";
-      feedback.innerHTML="🎉 <b>¡Fijado en tu memoria!</b> Has reproducido la estructura dos veces seguidas sin fallos.";
-      feedback.style.color="#4ade80";
-      inp.value="";
+    if(drillCount>=2){
+      badge.innerText='COMPLETADO (2 / 2) ✓';
+      badge.style.color='var(--pine)';
+      badge.style.borderColor='var(--pine-border)';
+      feedback.innerHTML='<b>Fijado en tu memoria:</b> has reproducido la estructura dos veces seguidas sin fallos.';
+      feedback.style.color='var(--pine)';
+      inp.value='';
       inp.disabled=true;
+      drillSubmitBtn.style.display='none';
+      drillResetBtn.style.display='inline-flex';
     } else {
-      badge.innerText="REPETICIÓN 1 / 2";
-      badge.style.color="#fbbf24";
-      feedback.innerHTML="✓ ¡Bien! Ahora escríbela <b>una vez más</b> para completar la segunda repetición:";
-      feedback.style.color="#fbbf24";
-      inp.value="";
+      badge.innerText='REPETICIÓN 1 / 2';
+      badge.style.color='var(--brass)';
+      badge.style.borderColor='var(--brass-border)';
+      feedback.innerHTML='Bien. Ahora escríbela <b>una vez más</b> para completar la segunda repetición.';
+      feedback.style.color='var(--brass)';
+      inp.value='';
       inp.focus();
     }
   } else {
-    feedback.innerHTML="❌ Errata detectada. Fíjate bien y escribe exactamente: <i>"+targetSentence+"</i>";
-    feedback.style.color="#f43f5e";
+    feedback.innerHTML='Errata detectada. Escribe exactamente: <i>'+targetSentence+'</i>';
+    feedback.style.color='var(--crimson)';
   }
-}
+});
+
+drillResetBtn?.addEventListener('click',()=>{
+  drillCount=0;
+  const inp=$('#drillInput'),feedback=$('#drillFeedback'),badge=$('#drillCounterBadge');
+  badge.innerText='REPETICIÓN 0 / 2';
+  badge.style.color='var(--cobalt)';
+  badge.style.borderColor='var(--border)';
+  feedback.innerText='Escribe exactamente la frase y pulsa Comprobar';
+  feedback.style.color='var(--ink-muted)';
+  inp.disabled=false;
+  inp.value='';
+  drillResetBtn.style.display='none';
+  drillSubmitBtn.style.display='inline-flex';
+  inp.focus();
+});
+
+$('#backToTopBtn')?.addEventListener('click',()=>{
+  scrollTo({top:0,behavior:reduce?'auto':'smooth'});
+});
 
 /* ============================================================
    9 · 3D FLIP CARDS (Robustez)
@@ -1615,12 +2031,12 @@ const flips=$$('#flipgrid .flip'),meters=$$('#flipgrid .meter i'),shield=$('#shi
 updaters['s-robust']=p=>{
   flips.forEach((f,i)=>{
     const t=eIO(seg(p,.06+i*.11,.3+i*.11));
-    f.style.transform=`translateY(${lerp(60,0,eOut(seg(p,0,.1)))}px) rotateX(${-mys*6}deg) rotateY(${lerp(180,0,t)+mxs*8}deg)`;
+    f.style.transform=`translateY(${lerp(56,0,eOut(seg(p,0,.1)))}px) rotateX(${-mys*6}deg) rotateY(${lerp(180,0,t)+mxs*8}deg)`;
     meters[i].style.transform=`scaleX(${seg(p,.3+i*.11,.45+i*.11)})`;
   });
   const s=eOut(seg(p,.78,.9));
   shield.style.opacity=s;
-  shield.style.transform=`translateY(${lerp(30,0,s)}px)`;
+  shield.style.transform=`translateY(${lerp(28,0,s)}px)`;
 };
 
 /* ============================================================
@@ -1637,13 +2053,13 @@ updaters['s-bugs']=p=>{
     if(t<-.5||t>1.25){b.style.opacity=0;b.style.visibility='hidden';return}
     b.style.visibility='visible';
     let z,op,rx;
-    if(t<0){const a=eOut(clamp((t+.5)/.5));z=lerp(-1800,0,a);op=a;rx=lerp(25,0,a)}
+    if(t<0){const a=eOut(clamp((t+.5)/.5));z=lerp(-1800,0,a);op=a;rx=lerp(24,0,a)}
     else if(t<.7){z=0;op=1;rx=0}
     else{const l=eIn(seg(t,.7,1.2));z=lerp(0,650,l);op=1-l;rx=lerp(0,-12,l)}
     b.style.opacity=op;b.style.transform=`translate3d(0,0,${z}px) rotateX(${rx-mys*5}deg) rotateY(${mxs*7}deg)`;
     const s=seg(t,.08,.28),st=b.querySelector('.stamp'),fx=b.querySelector('.fixl');
     st.style.opacity=s;
-    st.style.transform=`rotate(-8deg) scale(${lerp(2.6,1,eOut(s))})`;
+    st.style.transform=`rotate(-7deg) scale(${lerp(2.4,1,eOut(s))})`;
     const fo=seg(t,.15,.35);
     fx.style.opacity=fo;
     fx.style.transform=`translateY(${lerp(12,0,fo)}px)`;
@@ -1668,14 +2084,14 @@ const tLines=[
   ['',''],
   ['c','# 3. Publicar Web + /presentacion/ en GitHub Pages'],
   ['g','PS> npx gh-pages -d dist'],
-  ['y','🚀 Published to https://adriansg25.github.io/aprende-en/']
+  ['y','-> Published to https://adriansg25.github.io/aprende-en/']
 ];
 const tTotal=tLines.reduce((s,l)=>s+l[1].length+1,0);
 let lastN=-1;
 
 updaters['s-term']=p=>{
   const a=eOut(seg(p,0,.2));
-  term.style.transform=`rotateX(${lerp(35,0,a)-mys*4}deg) rotateY(${lerp(-25,0,a)+mxs*6}deg) translateY(${lerp(90,0,a)}px)`;
+  term.style.transform=`rotateX(${lerp(32,0,a)-mys*4}deg) rotateY(${lerp(-22,0,a)+mxs*6}deg) translateY(${lerp(80,0,a)}px)`;
   term.style.opacity=a;
   const n=Math.floor(seg(p,.14,.8)*tTotal);
   if(n!==lastN){
@@ -1687,24 +2103,24 @@ updaters['s-term']=p=>{
       left-=txt.length+1;
       if(left>=0)html+='\n';
     }
-    typed.innerHTML=html+'<span class="caret"></span>';
+    typed.innerHTML=html+'<span class="caret" aria-hidden="true"></span>';
   }
   sideCards.forEach((c,i)=>{
     const t=eOut(seg(p,.3+i*.15,.45+i*.15));
     c.style.opacity=t;
-    c.style.transform=`perspective(900px) rotateY(${lerp(-60,0,t)}deg) translateX(${lerp(80,0,t)}px)`;
+    c.style.transform=`perspective(900px) rotateY(${lerp(-52,0,t)}deg) translateX(${lerp(72,0,t)}px)`;
   });
 };
 
 /* ============================================================
    12 · FINAL & LAUNCH
    ============================================================ */
-const endEl=$('#end'),endEmoji=$('#endEmoji');
+const endEl=$('#end'),endMark=$('#endMark');
 updaters['s-end']=(p,t,enter)=>{
   const e=eOut(enter);
   endEl.style.opacity=e;
-  endEl.style.transform=`scale(${lerp(.88,1,e)})`;
-  endEmoji.style.transform=`perspective(600px) rotateY(${t*.06}deg) rotateX(${mys*-15}deg)`;
+  endEl.style.transform=`scale(${lerp(.9,1,e)})`;
+  endMark.style.transform=`perspective(600px) rotateY(${t*.045}deg) rotateX(${mys*-12}deg)`;
 };
 
 /* ============================================================
@@ -1716,16 +2132,22 @@ function measure(){
   onResize.forEach(f=>f());
   layout=sceneEls.map(el=>({el,top:el.offsetTop,h:el.offsetHeight,fn:updaters[el.id]}));
 }
+
 const bar=$('#bar');
+const nativeScrollTimeline=CSS.supports('animation-timeline','scroll()');
 
 function frame(t){
-  now=t;
+  const dt=lastFrameT?Math.min(50,t-lastFrameT):16.7;
+  lastFrameT=t;
+  if(!isMotionPaused()) ambientT+=dt;
+
   const target=scrollY;
   sy=reduce?target:sy+(target-sy)*.11;
   if(Math.abs(target-sy)<.05) sy=target;
-  if(mobile && Math.abs(mx)<0.05 && Math.abs(my)<0.05){
-    mxs += (Math.sin(t*0.001)*0.2 - mxs)*0.03;
-    mys += (Math.cos(t*0.0014)*0.12 - mys)*0.03;
+
+  if(mobile && Math.abs(mx)<0.05 && Math.abs(my)<0.05 && !isMotionPaused()){
+    mxs += (Math.sin(ambientT*0.001)*0.2 - mxs)*0.03;
+    mys += (Math.cos(ambientT*0.0014)*0.12 - mys)*0.03;
   } else {
     mxs+=(mx-mxs)*.06;
     mys+=(my-mys)*.06;
@@ -1736,16 +2158,20 @@ function frame(t){
     if(s.top<=sy+H*.5) active=i;
     if(sy+H<s.top-H*.25||sy>s.top+s.h+H*.25) return;
     const p=clamp((sy-s.top)/Math.max(1,s.h-H)), enter=clamp((sy+H-s.top)/H);
-    s.fn&&s.fn(p,t,enter);
+    s.fn&&s.fn(p,ambientT,enter);
   });
 
   dots.forEach((d,i)=>d.classList.toggle('on',i===active));
-  bar.style.width=(sy/Math.max(1,document.documentElement.scrollHeight-H)*100)+'%';
+  if(!nativeScrollTimeline && !reduce){
+    const prog=sy/Math.max(1,document.documentElement.scrollHeight-H);
+    bar.style.transform=`scaleX(${clamp(prog)})`;
+  }
   requestAnimationFrame(frame);
 }
 
 addEventListener('resize',measure);
 measure();
+syncAmbientMotion();
 addEventListener('load',measure);
 requestAnimationFrame(frame);
 </script>
