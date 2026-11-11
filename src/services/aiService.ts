@@ -927,11 +927,18 @@ export async function generateMediaAnalysisWithAI(
     }
   }
 
+  const mediaLabel =
+    mediaType === 'series'
+      ? 'TV series episode'
+      : mediaType === 'movie'
+      ? 'movie / film'
+      : 'book / novel';
+
   const sys = `You are a native British English linguist and pop culture tutor.
 The student is watching or reading:
 - Title: "${mediaTitle}"
-- Media Type: ${mediaType}
-- Episode / Season / Chapter: "${episodeOrPart}"
+- Media Type: ${mediaType} (${mediaLabel})
+${mediaType === 'series' ? `- Episode / Season / Chapter: "${episodeOrPart}"` : `- Scope: Full ${mediaLabel} ("${episodeOrPart || 'Complete work'}")`}
 ${userNotes ? `- Additional user notes / real plot details: "${userNotes}"` : ''}
 ${
   onlineEpisode
@@ -952,7 +959,7 @@ CRITICAL RULES AGAINST REFUSALS & HALLUCINATIONS:
    - The user is using this app to study English. A refusal is a fatal bug in the user experience.
    - If the season or episode is brand new, very recent, or not in your pre-training memory:
      * If VERIFIED OFFICIAL EPISODE DATA is provided above, USE IT 100%.
-     * If NO verified data was found and the user provided no notes, DO NOT REFUSE. Instead, use the authentic universe, core characters, themes, and conflicts of "${mediaTitle}" to generate a realistic, immersive episode scenario in Spanish, and extract authentic colloquial/street English words and questions fitting that world.
+     * If NO verified data was found and the user provided no notes, DO NOT REFUSE. Instead, use the authentic universe, core characters, themes, and conflicts of "${mediaTitle}" to generate a realistic, immersive scenario in Spanish, and extract authentic colloquial/street English words and questions fitting that world.
 
 2. DISTINGUISH ADAPTATIONS CAREFULLY:
    - "The Gentlemen" Netflix TV series (Guy Ritchie): Stars Eddie Horniman (Duke of Halstead / Theo James), Susie Glass (Kaya Scodelario), Bobby Glass (Ray Winstone), Freddy Horniman (Daniel Ings), Geoff Seacombe (Vinnie Jones).
@@ -968,10 +975,10 @@ CRITICAL RULES AGAINST REFUSALS & HALLUCINATIONS:
 4. AUTHENTIC UK / GENRE VOCABULARY:
    - Pick genuine slang, idioms or expressions from the real dialogue of that universe.
 
-Generate a rich, authentic study session for this specific episode/work.
+Generate a rich, authentic study session for this specific work.
 You must provide:
-1. "synopsisEs": A concise 2-sentence summary in Spanish of what happens in this episode/chapter.
-2. "words": 6 to 8 UNCOMMON, colloquial, slang, idiomatic or distinctive English words/phrases actually used or strongly associated with this episode. (Do NOT include basic A1/A2 words like "house", "car", "eat").
+1. "synopsisEs": A concise 2-sentence summary in Spanish of what happens in this work/episode/chapter.
+2. "words": 6 to 8 UNCOMMON, colloquial, slang, idiomatic or distinctive English words/phrases actually used or strongly associated with this work. (Do NOT include basic A1/A2 words like "house", "car", "eat").
    For each word:
    - "id": "mw-1", "mw-2", etc.
    - "wordEn": English word, phrasal verb or idiom (e.g. "collateral", "proper dodgy", "leverage", "extortion", "take the piss", "geezer")
@@ -979,10 +986,10 @@ You must provide:
    - "partOfSpeech": "noun" | "verb" | "adjective" | "expression" | "slang"
    - "acceptedMeaningsEs": array of accepted short Spanish meanings/translations the student might type (e.g. ["garantía", "aval", "fianza", "prenda"])
    - "primaryMeaningEs": clear definition in Spanish
-   - "sceneContextEn": sample sentence showing how it is used in the episode
+   - "sceneContextEn": sample sentence showing how it is used in the context
    - "sceneContextEs": natural Spanish translation of that sentence
    - "explanationWhyEs": why it is used here, nuance or street usage
-3. "questions": 3 open comprehension questions in English about specific plot events, character motivations or decisions in this episode.
+3. "questions": 3 open comprehension questions in English about specific plot events, character motivations or decisions in this work.
    For each question:
    - "id": "mq-1", "mq-2", "mq-3"
    - "questionEn": Question in English
@@ -993,7 +1000,12 @@ You must provide:
 
 Return ONLY valid JSON matching this structure.`;
 
-  const usr = `Generate episode analysis for "${mediaTitle}" - "${episodeOrPart}". Make sure vocabulary has words that are not common and require thinking to translate to Spanish.`;
+  const usr =
+    mediaType === 'series'
+      ? `Generate episode analysis for "${mediaTitle}" - "${episodeOrPart}". Make sure vocabulary has words that are not common and require thinking to translate to Spanish.`
+      : mediaType === 'movie'
+      ? `Generate movie analysis for the film "${mediaTitle}". Make sure vocabulary has words that are not common, idiomatic or slang and require thinking to translate to Spanish.`
+      : `Generate book analysis for the book/novel "${mediaTitle}". Make sure vocabulary has words that are not common, literary or British expressions and require thinking to translate to Spanish.`;
   const jsonStr = await callLLMJson(sys, usr, config);
   const parsed = JSON.parse(jsonStr);
 
@@ -1004,7 +1016,8 @@ Return ONLY valid JSON matching this structure.`;
     if (onlineEpisode?.summary) {
       cleanSynopsis = `En "${onlineEpisode.episodeName}" (${onlineEpisode.showName} T${onlineEpisode.season}E${onlineEpisode.number}): ${onlineEpisode.summary}`;
     } else {
-      cleanSynopsis = `Episodio ambientado en el universo de ${mediaTitle} (${episodeOrPart}), donde los protagonistas se enfrentan a intensas situaciones características de la trama.`;
+      const typeLabel = mediaType === 'series' ? 'Episodio ambientado' : mediaType === 'movie' ? 'Película ambientada' : 'Libro ambientado';
+      cleanSynopsis = `${typeLabel} en el universo de ${mediaTitle}, donde los personajes se enfrentan a intensas situaciones características de la trama.`;
     }
   }
 

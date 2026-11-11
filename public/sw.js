@@ -18,15 +18,17 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  const networkFetch =
+    event.request.mode === 'navigate'
+      ? fetch(event.request.url, { cache: 'no-cache', credentials: 'same-origin' })
+      : fetch(event.request);
   event.respondWith(
-    fetch(event.request)
+    networkFetch
       .then((response) => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          if (event.request.url.startsWith('http')) {
-            cache.put(event.request, clone);
-          }
-        });
+        if (response && response.ok && event.request.url.startsWith('http')) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
         return response;
       })
       .catch(() => caches.match(event.request))
