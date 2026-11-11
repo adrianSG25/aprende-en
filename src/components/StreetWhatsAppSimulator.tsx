@@ -8,12 +8,30 @@ import {
   CheckCheck,
   RotateCcw,
   Lightbulb,
-  ChevronRight
+  ChevronRight,
+  MessageSquare,
+  CheckCircle2,
+  Coins
 } from 'lucide-react';
 
 interface StreetWhatsAppSimulatorProps {
   progress: GameProgress;
   onUpdateProgress: (updated: GameProgress) => void;
+}
+
+const AVATAR_TONES = [
+  'bg-[#E6EFEA] text-[#0E6B47] border-[#B3DFC8]',
+  'bg-[#EDF3FC] text-[#12397A] border-[#BFD0EC]',
+  'bg-[#FEF8E7] text-[#9A5D07] border-[#EEDAA1]',
+  'bg-[#ECEEE9] text-[#12151C] border-[#C2C7BD]'
+];
+
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('');
 }
 
 export const StreetWhatsAppSimulator: React.FC<StreetWhatsAppSimulatorProps> = ({
@@ -30,12 +48,11 @@ export const StreetWhatsAppSimulator: React.FC<StreetWhatsAppSimulatorProps> = (
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   useEffect(() => {
-    scrollToBottom();
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    messagesEndRef.current?.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth' });
   }, [messages, isTyping]);
 
   const handleOpenScenario = (scenario: MultiTurnChatScenario) => {
@@ -45,11 +62,10 @@ export const StreetWhatsAppSimulator: React.FC<StreetWhatsAppSimulatorProps> = (
     setShowHint(false);
     setInputText('');
 
-    // Load initial message from contact
     const firstStep = scenario.steps[0];
     setMessages([
       {
-        id: `msg-0`,
+        id: 'msg-0',
         sender: 'contact',
         text: firstStep.contactSays,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -67,11 +83,8 @@ export const StreetWhatsAppSimulator: React.FC<StreetWhatsAppSimulatorProps> = (
     setShowHint(false);
 
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    // Validate user reply with smart matching
     const isGoodReply = checkAnswer(userText, currentStep.acceptableReplies);
 
-    // Add User Message to thread
     const newMsgList: ChatMessage[] = [
       ...messages,
       {
@@ -87,17 +100,14 @@ export const StreetWhatsAppSimulator: React.FC<StreetWhatsAppSimulatorProps> = (
     ];
     setMessages(newMsgList);
 
-    // Reward XP
     if (isGoodReply) {
-      const updated: GameProgress = {
+      onUpdateProgress({
         ...progress,
         xp: progress.xp + 15,
         quids: progress.quids + 1
-      };
-      onUpdateProgress(updated);
+      });
     }
 
-    // Advance to next turn or finish
     const nextIdx = currentStepIndex + 1;
     if (nextIdx < selectedScenario.steps.length) {
       setIsTyping(true);
@@ -114,86 +124,94 @@ export const StreetWhatsAppSimulator: React.FC<StreetWhatsAppSimulatorProps> = (
           }
         ]);
         setCurrentStepIndex(nextIdx);
-      }, 1200);
+      }, 1100);
     } else {
-      // Conversation completed
       setTimeout(() => {
         setIsFinished(true);
-        const updated: GameProgress = {
+        onUpdateProgress({
           ...progress,
           xp: progress.xp + 35,
           quids: progress.quids + 2
-        };
-        onUpdateProgress(updated);
-      }, 800);
+        });
+      }, 750);
     }
   };
 
-  // If no scenario selected, show the Contact List
   if (!selectedScenario) {
     return (
-      <div className="max-w-md mx-auto space-y-4 animate-in fade-in duration-200">
-        {/* Header */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-xs flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-300 flex items-center justify-center text-xl">
-              💬
+      <div className="max-w-lg mx-auto space-y-4">
+        {/* Cabecera */}
+        <section className="card p-4 sm:p-5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-[var(--pine-soft)] border border-[var(--pine-border)] text-[var(--pine)] flex items-center justify-center shrink-0">
+              <MessageSquare className="w-5 h-5" aria-hidden="true" />
             </div>
-            <div>
-              <h2 className="font-extrabold text-slate-900 text-sm">
-                Tus Chats de WhatsApp en UK
+            <div className="min-w-0">
+              <h2 className="font-display font-bold text-base sm:text-lg text-[var(--ink)] truncate">
+                Simulador de WhatsApp UK
               </h2>
-              <p className="text-[11px] text-slate-500">
-                Elige un contacto y mantén una conversación real
+              <p className="text-xs text-[var(--ink-muted)] truncate">
+                Chats cotidianos por turnos con corrección al instante
               </p>
             </div>
           </div>
-          <span className="text-xs font-black px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
-            {progress.quids} Quids 💷
+
+          <span className="px-2.5 py-1 rounded-lg bg-[var(--pine-soft)] border border-[var(--pine-border)] text-[var(--pine)] text-xs font-semibold flex items-center gap-1 tabular-nums shrink-0">
+            <Coins className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>{progress.quids}</span>
           </span>
-        </div>
+        </section>
 
-        {/* WhatsApp Shell Container */}
-        <div className="bg-slate-900 rounded-3xl p-2.5 shadow-xl border-4 border-slate-800">
-          <div className="bg-white rounded-2xl overflow-hidden min-h-[480px]">
-            {/* Top WhatsApp App Bar */}
-            <div className="bg-[#075e54] text-white p-3.5 flex items-center justify-between shadow-xs">
-              <span className="font-extrabold text-base tracking-wide">WhatsApp</span>
-              <span className="text-xs text-emerald-200 font-bold">4 conversaciones</span>
-            </div>
-
-            {/* Chats List */}
-            <div className="divide-y divide-slate-100">
-              {WHATSAPP_SCENARIOS.map((scen) => (
-                <button
-                  key={scen.id}
-                  type="button"
-                  onClick={() => handleOpenScenario(scen)}
-                  className="w-full text-left p-3.5 hover:bg-slate-50 flex items-center gap-3 transition-colors cursor-pointer group"
-                >
-                  <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-2xl shrink-0 group-hover:scale-105 transition-transform">
-                    {scen.avatar}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-baseline mb-0.5">
-                      <h4 className="font-bold text-xs sm:text-sm text-slate-900 truncate">
-                        {scen.name}
-                      </h4>
-                      <span className="text-[10px] text-slate-400">18:42</span>
-                    </div>
-                    <p className="text-xs text-indigo-700 font-semibold truncate">
-                      {scen.topicTitle}
-                    </p>
-                    <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                      {scen.steps[0].contactSays}
-                    </p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-emerald-600 transition-colors shrink-0" />
-                </button>
-              ))}
-            </div>
+        {/* Lista de chats estilo WhatsApp limpia sin marco falso grueso */}
+        <section className="card overflow-hidden border-[var(--border-strong)]">
+          <div className="bg-[#075E54] text-white px-4 py-3.5 flex items-center justify-between">
+            <span className="font-display font-bold text-base tracking-tight">WhatsApp</span>
+            <span className="text-xs text-emerald-100 font-medium tabular-nums">
+              {WHATSAPP_SCENARIOS.length} chats activos
+            </span>
           </div>
-        </div>
+
+          <div className="divide-y divide-[var(--border)] bg-[var(--surface)]">
+            {WHATSAPP_SCENARIOS.map((scen, idx) => (
+              <button
+                key={scen.id}
+                type="button"
+                onClick={() => handleOpenScenario(scen)}
+                className="w-full text-left p-4 hover:bg-[var(--surface-2)]/70 flex items-center gap-3.5 transition-colors group"
+              >
+                <div
+                  className={`w-11 h-11 rounded-full border flex items-center justify-center font-display font-bold text-sm shrink-0 ${
+                    AVATAR_TONES[idx % AVATAR_TONES.length]
+                  }`}
+                >
+                  {getInitials(scen.name)}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-baseline gap-2 mb-0.5">
+                    <h3 className="font-semibold text-sm text-[var(--ink)] truncate">
+                      {scen.name}
+                    </h3>
+                    <span className="text-[11px] text-[var(--ink-subtle)] font-mono tabular-nums shrink-0">
+                      18:42
+                    </span>
+                  </div>
+                  <p className="text-xs text-[var(--accent)] font-semibold truncate">
+                    {scen.topicTitle}
+                  </p>
+                  <p className="text-xs text-[var(--ink-muted)] truncate mt-0.5">
+                    {scen.steps[0].contactSays}
+                  </p>
+                </div>
+
+                <ChevronRight
+                  className="w-4 h-4 text-[var(--ink-subtle)] group-hover:text-[var(--pine)] transition-colors shrink-0"
+                  aria-hidden="true"
+                />
+              </button>
+            ))}
+          </div>
+        </section>
       </div>
     );
   }
@@ -201,187 +219,180 @@ export const StreetWhatsAppSimulator: React.FC<StreetWhatsAppSimulatorProps> = (
   const currentStep = selectedScenario.steps[currentStepIndex];
 
   return (
-    <div className="max-w-md mx-auto space-y-3 animate-in fade-in duration-200">
-      {/* Device Wrapper */}
-      <div className="bg-slate-900 rounded-3xl p-2 sm:p-2.5 shadow-2xl border-4 border-slate-800">
-        <div className="bg-[#efeae2] rounded-2xl overflow-hidden flex flex-col h-[560px]">
-          {/* Header */}
-          <div className="bg-[#075e54] text-white p-2.5 sm:p-3 flex items-center justify-between shadow-xs shrink-0">
-            <div className="flex items-center gap-2 min-w-0">
+    <div className="max-w-lg mx-auto">
+      <div className="rounded-2xl overflow-hidden border border-[var(--border-strong)] bg-[#EFEAE2] flex flex-col h-[min(580px,calc(100dvh-215px))] min-h-[420px]">
+        {/* Cabecera del chat */}
+        <div className="bg-[#075E54] text-white px-3 py-2.5 flex items-center justify-between gap-2 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={() => setSelectedScenario(null)}
+              className="min-w-[40px] min-h-[40px] -ml-1 rounded-xl text-white/90 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors shrink-0"
+              aria-label="Volver a la lista de chats"
+            >
+              <ArrowLeft className="w-5 h-5" aria-hidden="true" />
+            </button>
+
+            <div className="w-9 h-9 rounded-full bg-white/15 border border-white/25 flex items-center justify-center font-display font-bold text-xs text-white shrink-0">
+              {getInitials(selectedScenario.name)}
+            </div>
+
+            <div className="min-w-0">
+              <h2 className="font-semibold text-sm text-white truncate">
+                {selectedScenario.name}
+              </h2>
+              <p className="text-[11px] text-emerald-100 truncate">
+                {isTyping ? 'escribiendo…' : `${selectedScenario.role} · en línea`}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleOpenScenario(selectedScenario)}
+            className="min-w-[40px] min-h-[40px] rounded-xl text-white/85 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors shrink-0"
+            aria-label="Reiniciar conversación"
+          >
+            <RotateCcw className="w-4 h-4" aria-hidden="true" />
+          </button>
+        </div>
+
+        {/* Hilo de mensajes */}
+        <div className="p-3.5 space-y-3 flex-1 overflow-y-auto overscroll-contain">
+          <div className="text-center">
+            <span className="text-[11px] bg-white/90 px-3 py-1 rounded-lg text-[var(--ink-muted)] font-medium inline-block">
+              Londres · {selectedScenario.topicTitle}
+            </span>
+          </div>
+
+          {messages.map((m) => {
+            const isContact = m.sender === 'contact';
+            return (
+              <div
+                key={m.id}
+                className={`flex items-end ${isContact ? 'justify-start' : 'justify-end'}`}
+              >
+                <div
+                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed border ${
+                    isContact
+                      ? 'bg-white text-[var(--ink)] border-black/5 rounded-bl-sm'
+                      : 'bg-[#DCF8C6] text-[var(--ink)] border-emerald-900/10 rounded-br-sm'
+                  }`}
+                >
+                  <p className="whitespace-pre-wrap">{m.text}</p>
+                  <div className="flex justify-end items-center gap-1 mt-1 text-[10px] text-[var(--ink-subtle)] tabular-nums">
+                    <span>{m.timestamp}</span>
+                    {!isContact && <CheckCheck className="w-3.5 h-3.5 text-sky-600" aria-hidden="true" />}
+                  </div>
+
+                  {m.feedback && (
+                    <div className="mt-2 pt-2 border-t border-emerald-800/15 text-xs text-[var(--pine)] flex items-start gap-1.5 font-medium">
+                      <Lightbulb className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
+                      <span>{m.feedback.tip}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {isTyping && (
+            <div
+              className="inline-flex items-center gap-1.5 bg-white px-3.5 py-2.5 rounded-2xl rounded-bl-sm border border-black/5"
+              aria-label="El contacto está escribiendo"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--ink-subtle)] typing-dot" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--ink-subtle)] typing-dot" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--ink-subtle)] typing-dot" />
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Objetivo y pista */}
+        {!isFinished && currentStep && (
+          <div className="bg-[var(--surface)] border-t border-[var(--border)] px-3.5 py-2.5 space-y-2 shrink-0">
+            <div className="flex items-start justify-between gap-3 text-xs">
+              <div className="min-w-0 space-y-0.5">
+                <span className="font-semibold text-[var(--accent)] block">Tu turno</span>
+                <p className="text-[var(--ink)] leading-snug">{currentStep.userGoalEs}</p>
+              </div>
+
+              {!showHint && (
+                <button
+                  type="button"
+                  onClick={() => setShowHint(true)}
+                  className="text-xs font-semibold text-[var(--brass)] hover:underline flex items-center gap-1 shrink-0 py-1"
+                >
+                  <Lightbulb className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>Pista</span>
+                </button>
+              )}
+            </div>
+
+            {showHint && (
+              <div className="px-3 py-2 rounded-lg bg-[var(--brass-soft)] border border-[var(--brass-border)] text-xs text-[var(--ink)]">
+                {currentStep.hint}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Entrada de texto o resumen final */}
+        {!isFinished ? (
+          <form
+            onSubmit={handleSendMessage}
+            className="bg-[#F0F2F5] p-2.5 flex items-center gap-2 border-t border-[var(--border)] shrink-0"
+          >
+            <label htmlFor="whatsapp-message-input" className="sr-only">
+              Mensaje en inglés
+            </label>
+            <input
+              id="whatsapp-message-input"
+              name="whatsappMessage"
+              type="text"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder="Escribe tu mensaje en inglés…"
+              className="flex-1 px-4 py-2.5 bg-white rounded-full text-sm text-[var(--ink)] border border-[var(--border-strong)] focus:outline-none focus:border-[#075E54] min-h-[44px]"
+              autoComplete="off"
+              disabled={isTyping}
+            />
+
+            <button
+              type="submit"
+              disabled={!inputText.trim() || isTyping}
+              aria-label="Enviar mensaje"
+              className="w-11 h-11 rounded-full bg-[#075E54] hover:bg-[#064e46] disabled:opacity-45 text-white flex items-center justify-center transition-colors shrink-0"
+            >
+              <Send className="w-4 h-4" aria-hidden="true" />
+            </button>
+          </form>
+        ) : (
+          <div className="p-4 bg-[var(--pine-soft)] border-t border-[var(--pine-border)] text-center space-y-2.5 shrink-0">
+            <div className="inline-flex items-center gap-1.5 font-bold text-sm text-[var(--pine)]">
+              <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+              <span>Conversación completada (+35 XP y +2 Quids)</span>
+            </div>
+            <div className="flex gap-2 justify-center">
+              <button
+                type="button"
+                onClick={() => handleOpenScenario(selectedScenario)}
+                className="btn btn-secondary btn-sm"
+              >
+                Repetir chat
+              </button>
               <button
                 type="button"
                 onClick={() => setSelectedScenario(null)}
-                className="p-1 -ml-1 text-white/90 hover:text-white cursor-pointer"
-                title="Volver a los chats"
+                className="btn btn-pine btn-sm"
               >
-                <ArrowLeft className="w-5 h-5" />
+                Volver a chats
               </button>
-
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-xl shrink-0">
-                {selectedScenario.avatar}
-              </div>
-
-              <div className="min-w-0">
-                <h4 className="font-bold text-xs sm:text-sm text-white truncate">
-                  {selectedScenario.name}
-                </h4>
-                <p className="text-[10px] text-emerald-200 truncate">
-                  {isTyping ? 'escribiendo...' : `${selectedScenario.role} • en línea`}
-                </p>
-              </div>
             </div>
-
-            <button
-              type="button"
-              onClick={() => handleOpenScenario(selectedScenario)}
-              className="text-white/80 hover:text-white p-1 text-xs cursor-pointer"
-              title="Reiniciar conversación"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
           </div>
-
-          {/* Messages Feed */}
-          <div className="p-3 space-y-3 flex-1 overflow-y-auto">
-            {/* Context Pill */}
-            <div className="text-center">
-              <span className="text-[10px] bg-white/80 px-2.5 py-0.5 rounded-full text-slate-600 shadow-2xs font-semibold">
-                Londres • {selectedScenario.topicTitle}
-              </span>
-            </div>
-
-            {/* Chat History */}
-            {messages.map((m) => {
-              const isContact = m.sender === 'contact';
-              return (
-                <div
-                  key={m.id}
-                  className={`flex items-end gap-1.5 ${
-                    isContact ? 'justify-start' : 'justify-end'
-                  }`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-2xl p-2.5 sm:p-3 shadow-xs text-xs sm:text-sm leading-relaxed ${
-                      isContact
-                        ? 'bg-white text-slate-800 rounded-bl-xs'
-                        : 'bg-[#dcf8c6] text-slate-900 rounded-br-xs'
-                    }`}
-                  >
-                    <p className="font-medium whitespace-pre-wrap">{m.text}</p>
-                    <div className="flex justify-end items-center gap-1 mt-1 text-[9px] text-slate-400">
-                      <span>{m.timestamp}</span>
-                      {!isContact && <CheckCheck className="w-3.5 h-3.5 text-sky-600" />}
-                    </div>
-
-                    {/* Inline Pedagogical Feedback on User's Message */}
-                    {m.feedback && (
-                      <div className="mt-1.5 pt-1.5 border-t border-emerald-300 text-[10px] text-emerald-950 font-semibold bg-emerald-50/70 p-1.5 rounded-lg">
-                        💡 {m.feedback.tip}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Typing Indicator */}
-            {isTyping && (
-              <div className="flex items-center gap-1 bg-white px-3 py-2 rounded-2xl rounded-bl-xs shadow-xs w-20">
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" />
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:0.2s]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:0.4s]" />
-              </div>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Goal & Hint Pill Bar */}
-          {!isFinished && currentStep && (
-            <div className="bg-white/95 border-t border-slate-200 p-2.5 space-y-1.5 shrink-0">
-              <div className="flex items-start justify-between gap-2 text-xs">
-                <div className="flex items-start gap-1.5 text-slate-700">
-                  <span className="font-black text-indigo-700 uppercase text-[10px] shrink-0 mt-0.5">
-                    Tu turno:
-                  </span>
-                  <p className="text-[11px] font-semibold leading-tight text-slate-800">
-                    {currentStep.userGoalEs}
-                  </p>
-                </div>
-
-                {!showHint ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowHint(true)}
-                    className="text-[10px] font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1 shrink-0 cursor-pointer"
-                  >
-                    <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Pista</span>
-                  </button>
-                ) : null}
-              </div>
-
-              {showHint && (
-                <div className="p-2 bg-amber-50 border border-amber-200 rounded-xl text-[10px] text-amber-900 animate-in fade-in">
-                  💡 {currentStep.hint}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Typing Form Bar */}
-          {!isFinished ? (
-            <form
-              onSubmit={handleSendMessage}
-              className="bg-[#f0f2f5] p-2 flex items-center gap-2 border-t border-slate-200 shrink-0"
-            >
-              <input
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                placeholder="Escribe tu mensaje en inglés..."
-                className="flex-1 px-3 py-2.5 bg-white rounded-full text-xs sm:text-sm text-slate-900 outline-none border border-slate-300 focus:border-emerald-600 transition-colors"
-                autoComplete="off"
-                disabled={isTyping}
-              />
-
-              <button
-                type="submit"
-                disabled={!inputText.trim() || isTyping}
-                className="w-9 h-9 rounded-full bg-[#075e54] hover:bg-emerald-700 disabled:opacity-40 text-white flex items-center justify-center cursor-pointer transition-transform active:scale-95 shrink-0"
-              >
-                <Send className="w-4 h-4 ml-0.5" />
-              </button>
-            </form>
-          ) : (
-            /* Finished Conversation Card */
-            <div className="p-4 bg-emerald-50 border-t border-emerald-300 text-center space-y-2 shrink-0 animate-in fade-in">
-              <span className="text-xl">🎉</span>
-              <h5 className="font-extrabold text-xs sm:text-sm text-emerald-950">
-                ¡Conversación completada con éxito!
-              </h5>
-              <p className="text-[11px] text-emerald-800">
-                Has mantenido una charla natural y fluida en inglés cotidiano (+35 XP y +2 Quids 💷).
-              </p>
-              <div className="flex gap-2 justify-center pt-1">
-                <button
-                  type="button"
-                  onClick={() => handleOpenScenario(selectedScenario)}
-                  className="px-3 py-1.5 rounded-xl bg-white border border-emerald-300 text-emerald-900 font-bold text-xs cursor-pointer shadow-2xs"
-                >
-                  Repetir Charla
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedScenario(null)}
-                  className="px-3 py-1.5 rounded-xl bg-[#075e54] text-white font-bold text-xs cursor-pointer shadow-2xs"
-                >
-                  Volver a Chats
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

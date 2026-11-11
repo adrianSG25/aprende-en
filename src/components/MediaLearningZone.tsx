@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useId } from 'react';
 import {
   generateMediaAnalysisWithAI,
   evaluateMediaQuestionAnswerWithAI,
@@ -21,6 +21,8 @@ import { GameProgress } from '../types/streetGame';
 import { fetchOnlineEpisodeData, TVEpisodeInfo } from '../services/tvEpisodeService';
 import {
   Tv,
+  Film,
+  BookOpen,
   Sparkles,
   CheckCircle2,
   XCircle,
@@ -36,7 +38,10 @@ import {
   Edit3,
   AlertCircle,
   X,
-  Search
+  Search,
+  Settings,
+  Lightbulb,
+  Clapperboard
 } from 'lucide-react';
 
 interface MediaLearningZoneProps {
@@ -89,56 +94,58 @@ const PRESET_SUGGESTIONS = [
     type: 'series' as const,
     title: 'The Gentlemen',
     episode: 'Temporada 2, Episodio 2',
-    label: '🎩 The Gentlemen (T2 E2: Milán)',
-    notes: 'Eddie Horniman y Susie Glass viajan a Milán para cerrar el acuerdo con el capo de la mafia italiana Marco Moretti'
+    label: 'The Gentlemen (T2 E2: Milán)',
+    notes:
+      'Eddie Horniman y Susie Glass viajan a Milán para cerrar el acuerdo con el capo de la mafia italiana Marco Moretti'
   },
   {
     type: 'series' as const,
     title: 'The Gentlemen',
     episode: 'Temporada 2, Episodio 1',
-    label: '🎩 The Gentlemen (T2 E1: Cacería)',
-    notes: 'Eddie organiza una cacería de alto riesgo en la mansión Halstead con mafiosos italianos y un jeque para expandir el negocio'
+    label: 'The Gentlemen (T2 E1: Cacería)',
+    notes:
+      'Eddie organiza una cacería de alto riesgo en la mansión Halstead con mafiosos italianos y un jeque para expandir el negocio'
   },
   {
     type: 'series' as const,
     title: 'The Gentlemen',
     episode: 'Temporada 1, Episodio 2',
-    label: '🎩 The Gentlemen (T1 E2)',
+    label: 'The Gentlemen (T1 E2)',
     notes: 'Eddie negocia la deuda de Freddy con Tommy Dixon y descubre la granja oculta'
   },
   {
     type: 'series' as const,
     title: 'Peaky Blinders',
     episode: 'Temporada 1, Episodio 1',
-    label: '🥃 Peaky Blinders (T1 E1)',
+    label: 'Peaky Blinders (T1 E1)',
     notes: 'Thomas Shelby roba el cargamento de armas del gobierno en Birmingham'
   },
   {
     type: 'series' as const,
     title: 'Top Boy',
     episode: 'Temporada 1, Episodio 1',
-    label: '🏙️ Top Boy (T1 E1)',
+    label: 'Top Boy (T1 E1)',
     notes: 'Dushane y Sully controlan el barrio de Summerhouse en Londres'
   },
   {
     type: 'series' as const,
     title: 'Ted Lasso',
     episode: 'Temporada 1, Episodio 2',
-    label: '⚽ Ted Lasso (T1 E2)',
+    label: 'Ted Lasso (T1 E2)',
     notes: 'Ted intenta ganarse al vestuario y a Jamie Tartt con galletas'
   },
   {
     type: 'movie' as const,
     title: 'Snatch: Cerdos y Diamantes',
     episode: 'Película completa',
-    label: '🥊 Snatch (Película)',
+    label: 'Snatch (Película)',
     notes: 'Turco y Tommy en el mundo del boxeo ilegal y gánsteres de Londres'
   },
   {
     type: 'movie' as const,
     title: 'Harry Potter y la Piedra Filosofal',
     episode: 'Película completa',
-    label: '⚡ Harry Potter (Película)',
+    label: 'Harry Potter (Película)',
     notes: 'Harry llega a Hogwarts, la selección de casas y el espejo de Oesed'
   }
 ];
@@ -148,11 +155,19 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
   onUpdateProgress,
   onOpenSettings
 }) => {
+  const formTitleId = useId();
+  const formEpisodeId = useId();
+  const formNotesId = useId();
+  const editSynopsisId = useId();
+  const correctionNotesId = useId();
+
   // Formulario
   const [mediaType, setMediaType] = useState<'series' | 'movie' | 'book'>('series');
   const [mediaTitle, setMediaTitle] = useState('The Gentlemen');
   const [episodeOrPart, setEpisodeOrPart] = useState('Temporada 2, Episodio 2');
-  const [userNotes, setUserNotes] = useState('Eddie Horniman y Susie Glass viajan a Milán para cerrar el acuerdo con Marco Moretti');
+  const [userNotes, setUserNotes] = useState(
+    'Eddie Horniman y Susie Glass viajan a Milán para cerrar el acuerdo con Marco Moretti'
+  );
 
   // Estados para búsqueda de datos oficiales en tiempo real
   const [detectedOnlineInfo, setDetectedOnlineInfo] = useState<TVEpisodeInfo | null>(null);
@@ -163,8 +178,13 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
   const [generationError, setGenerationError] = useState<string | null>(null);
 
   // Sesión activa e historial
-  const [activeSession, setActiveSession] = useState<MediaAnalysisSession | null>(null);
-  const [savedSessions, setSavedSessions] = useState<MediaAnalysisSession[]>([]);
+  const [savedSessions, setSavedSessions] = useState<MediaAnalysisSession[]>(() =>
+    loadMediaSessions()
+  );
+  const [activeSession, setActiveSession] = useState<MediaAnalysisSession | null>(() => {
+    const list = loadMediaSessions();
+    return list.length > 0 ? list[0] : null;
+  });
 
   // Estados de palabras (Parte 1: el usuario escribe el significado en español)
   const [wordAttempts, setWordAttempts] = useState<Record<string, WordAttemptState>>({});
@@ -174,6 +194,7 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
   const [questionAnswers, setQuestionAnswers] = useState<Record<string, string>>({});
   const [evaluatingQId, setEvaluatingQId] = useState<string | null>(null);
   const [questionFeedbacks, setQuestionFeedbacks] = useState<Record<string, OpenAnswerFeedback>>({});
+  const [questionErrors, setQuestionErrors] = useState<Record<string, string>>({});
   const [questionShowTrans, setQuestionShowTrans] = useState<Record<string, boolean>>({});
   const [repetitionMap, setRepetitionMap] = useState<Record<string, QuestionRepetitionState>>({});
 
@@ -184,17 +205,7 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
   const [isEditingSynopsis, setIsEditingSynopsis] = useState(false);
   const [editedSynopsis, setEditedSynopsis] = useState('');
 
-  // Cargar historial al iniciar
-  useEffect(() => {
-    const list = loadMediaSessions();
-    setSavedSessions(list);
-    if (list.length > 0 && !activeSession) {
-      setActiveSession(list[0]);
-    }
-  }, []);
-
-  // Manejar preset rápido
-  const handleSelectPreset = (preset: typeof PRESET_SUGGESTIONS[0]) => {
+  const handleSelectPreset = (preset: (typeof PRESET_SUGGESTIONS)[0]) => {
     setMediaType(preset.type);
     setMediaTitle(preset.title);
     setEpisodeOrPart(preset.episode);
@@ -239,10 +250,10 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
       const updatedList = saveMediaSession(session);
       setSavedSessions(updatedList);
       setActiveSession(session);
-      // Reset estados de inputs
       setWordAttempts({});
       setQuestionAnswers({});
       setQuestionFeedbacks({});
+      setQuestionErrors({});
       setRepetitionMap({});
     } catch (err: unknown) {
       setGenerationError(
@@ -272,6 +283,7 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
       setWordAttempts({});
       setQuestionAnswers({});
       setQuestionFeedbacks({});
+      setQuestionErrors({});
       setRepetitionMap({});
     } catch (err: unknown) {
       setGenerationError(
@@ -283,8 +295,7 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
   };
 
   // Eliminar sesión
-  const handleDeleteSession = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDeleteSession = (id: string) => {
     const updated = deleteMediaSession(id);
     setSavedSessions(updated);
     if (activeSession?.id === id) {
@@ -307,7 +318,6 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
         activeSession.episodeOrPart,
         fullCorrectionInstruction
       );
-      // Mantener id de la sesión para sobrescribirla limpiamente
       const correctedSession = { ...session, id: activeSession.id };
       const updatedList = saveMediaSession(correctedSession);
       setSavedSessions(updatedList);
@@ -317,6 +327,7 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
       setWordAttempts({});
       setQuestionAnswers({});
       setQuestionFeedbacks({});
+      setQuestionErrors({});
       setRepetitionMap({});
     } catch (err: unknown) {
       setGenerationError(
@@ -355,7 +366,6 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
       }
     }));
 
-    // Si acertó y hay sistema de progreso, dar XP
     if (isMatch && onUpdateProgress && progress) {
       onUpdateProgress({
         ...progress,
@@ -389,6 +399,12 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
     if (!userText || !activeSession) return;
 
     setEvaluatingQId(q.id);
+    setQuestionErrors((prev) => {
+      const next = { ...prev };
+      delete next[q.id];
+      return next;
+    });
+
     try {
       const fb = await evaluateMediaQuestionAnswerWithAI(
         activeSession.mediaTitle,
@@ -416,11 +432,13 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
         });
       }
     } catch (err: unknown) {
-      alert(
-        err instanceof Error
-          ? err.message
-          : 'Error al evaluar la respuesta. Comprueba tu conexión y clave de IA.'
-      );
+      setQuestionErrors((prev) => ({
+        ...prev,
+        [q.id]:
+          err instanceof Error
+            ? err.message
+            : 'Error al evaluar la respuesta. Comprueba tu conexión y clave de IA.'
+      }));
     } finally {
       setEvaluatingQId(null);
     }
@@ -428,7 +446,11 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
 
   // Repetición activa de errores de memoria (0/2 repeticiones)
   const handleCheckRepetition = (qId: string, targetSentence: string) => {
-    const current = repetitionMap[qId] || { currentInput: '', repsCompleted: 0, isCompleted: false };
+    const current = repetitionMap[qId] || {
+      currentInput: '',
+      repsCompleted: 0,
+      isCompleted: false
+    };
     const inputClean = normalizeSentence(current.currentInput);
     const targetClean = normalizeSentence(targetSentence);
 
@@ -451,136 +473,150 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
         ...prev,
         [qId]: {
           ...current,
-          errorNotice: 'No coincide exactamente. Recuerda la corrección de arriba y vuelve a escribirla de memoria.'
+          errorNotice:
+            'No coincide exactamente. Recuerda la corrección de arriba y vuelve a escribirla de memoria.'
         }
       }));
     }
   };
 
+  const renderMediaTypeIcon = (type: 'series' | 'movie' | 'book') => {
+    if (type === 'series') return <Tv className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />;
+    if (type === 'movie') return <Film className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />;
+    return <BookOpen className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />;
+  };
+
+  const hasStaleAiNotice = activeSession
+    ? /no dispongo|no tengo informaci[oó]n|lo siento|i do not have|cannot provide/i.test(
+        activeSession.synopsisEs
+      )
+    : false;
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-5 sm:p-7 shadow-md border border-indigo-900/50">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <span className="p-2 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
-                <Tv className="w-5 h-5 text-indigo-400" />
-              </span>
-              <span className="text-xs font-black uppercase tracking-wider text-indigo-300">
-                Aprende con tus Series, Pelis y Libros
-              </span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight">
-              Inglés de Series & Cine con IA
+      {/* Cabecera editorial */}
+      <section className="card p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-3.5 min-w-0">
+          <div className="w-11 h-11 rounded-xl bg-[var(--accent-soft)] border border-[var(--accent-border)] text-[var(--accent)] flex items-center justify-center shrink-0">
+            <Clapperboard className="w-5 h-5" aria-hidden="true" />
+          </div>
+          <div className="space-y-1 min-w-0">
+            <h2 className="font-display text-xl sm:text-2xl font-bold text-[var(--ink)] tracking-[-0.02em]">
+              Inglés de series, cine y libros
             </h2>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              Dile a la IA qué episodio o película acabas de ver. Te dará primero las palabras y jerga
-              poco comunes que tienes que traducir al español, y después preguntas sobre la trama
-              con corrección gramatical y repetición de fallos.
+            <p className="text-sm text-[var(--ink-muted)] max-w-2xl leading-relaxed">
+              Elige un episodio o película real. Extrae primero la jerga y las palabras poco comunes para traducirlas al español, y responde después sobre la trama con corrección gramatical.
             </p>
           </div>
-
-          {onOpenSettings && (
-            <button
-              type="button"
-              onClick={onOpenSettings}
-              className="self-start sm:self-center px-4 py-2.5 rounded-2xl bg-indigo-600/80 hover:bg-indigo-600 text-white font-bold text-xs flex items-center gap-2 border border-indigo-400/40 cursor-pointer shrink-0 transition-all"
-            >
-              <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>Ajustes IA</span>
-            </button>
-          )}
         </div>
-      </div>
 
-      {/* Formulario de Análisis con IA */}
-      <form
-        onSubmit={handleGenerateSession}
-        className="bg-white border-2 border-slate-200 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4"
-      >
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-indigo-600" />
-            ¿Qué has visto o leído hoy?
+        {onOpenSettings && (
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="btn btn-secondary btn-sm self-start sm:self-center shrink-0"
+          >
+            <Settings className="w-4 h-4" aria-hidden="true" />
+            <span>Ajustes IA</span>
+          </button>
+        )}
+      </section>
+
+      {/* Formulario de Análisis */}
+      <form onSubmit={handleGenerateSession} className="card p-5 sm:p-6 space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[var(--border)]">
+          <h3 className="font-display text-base sm:text-lg font-bold text-[var(--ink)] flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[var(--accent)] shrink-0" aria-hidden="true" />
+            <span>¿Qué has visto o leído hoy?</span>
           </h3>
-          <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-            100% IA
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)]">
+            Generado con IA
           </span>
         </div>
 
-        {/* Tipo de obra */}
-        <div>
-          <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
-            Tipo de contenido:
-          </label>
-          <div className="grid grid-cols-3 gap-2">
+        {/* Selector segmentado de tipo de obra */}
+        <div className="space-y-1.5">
+          <span className="text-xs font-semibold text-[var(--ink-muted)] block">
+            Tipo de contenido
+          </span>
+          <div className="segmented" role="group" aria-label="Tipo de contenido">
             {(
               [
-                { id: 'series', label: '📺 Serie de TV' },
-                { id: 'movie', label: '🎬 Película' },
-                { id: 'book', label: '📖 Libro' }
+                { id: 'series', label: 'Serie', icon: Tv },
+                { id: 'movie', label: 'Película', icon: Film },
+                { id: 'book', label: 'Libro', icon: BookOpen }
               ] as const
-            ).map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setMediaType(t.id)}
-                className={`py-2.5 px-3 rounded-2xl font-bold text-xs sm:text-sm border transition-all cursor-pointer ${
-                  mediaType === t.id
-                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
+            ).map((t) => {
+              const Icon = t.icon;
+              const active = mediaType === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setMediaType(t.id)}
+                  aria-pressed={active}
+                  className={`segmented-item whitespace-nowrap ${active ? 'segmented-item-active' : ''}`}
+                >
+                  <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  <span>{t.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Sugerencias Rápidas */}
-        <div className="space-y-1.5">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-            Ejemplos en 1 clic:
+        {/* Sugerencias rápidas en 1 clic */}
+        <div className="space-y-2">
+          <span className="text-xs font-semibold text-[var(--ink-muted)] block">
+            Ejemplos en 1 clic
           </span>
-          <div className="flex flex-wrap gap-1.5 text-xs">
+          <div className="flex flex-wrap gap-1.5">
             {PRESET_SUGGESTIONS.map((preset, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => handleSelectPreset(preset)}
-                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 text-slate-700 border border-slate-200 font-bold transition-all cursor-pointer"
+                className="btn btn-secondary btn-sm text-xs font-semibold"
               >
-                {preset.label}
+                {renderMediaTypeIcon(preset.type)}
+                <span>{preset.label}</span>
               </button>
             ))}
           </div>
         </div>
 
         {/* Inputs de Título y Episodio */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          <div>
-            <label className="text-xs font-bold text-slate-700 block mb-1">
-              Título de la Serie, Peli o Libro:
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label
+              htmlFor={formTitleId}
+              className="text-xs font-semibold text-[var(--ink)] block"
+            >
+              Título de la serie, peli o libro
             </label>
             <input
+              id={formTitleId}
               type="text"
               value={mediaTitle}
               onChange={(e) => {
                 setMediaTitle(e.target.value);
                 setDetectedOnlineInfo(null);
               }}
-              placeholder="Ej: The Gentlemen, Peaky Blinders, Reacher, Ted Lasso..."
-              className="w-full bg-white border-2 border-slate-300 focus:border-indigo-600 rounded-2xl p-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none"
+              placeholder="Ej: The Gentlemen, Peaky Blinders, Reacher…"
+              className="input-field"
               required
             />
           </div>
 
-          <div>
-            <label className="text-xs font-bold text-slate-700 block mb-1">
-              Temporada y Episodio / Capítulo:
+          <div className="space-y-1.5">
+            <label
+              htmlFor={formEpisodeId}
+              className="text-xs font-semibold text-[var(--ink)] block"
+            >
+              Temporada y episodio o capítulo
             </label>
             <input
+              id={formEpisodeId}
               type="text"
               value={episodeOrPart}
               onChange={(e) => {
@@ -588,37 +624,35 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                 setDetectedOnlineInfo(null);
               }}
               placeholder="Ej: Temporada 4, Episodio 2 (o Película completa)"
-              className="w-full bg-white border-2 border-slate-300 focus:border-indigo-600 rounded-2xl p-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none"
+              className="input-field"
               required
             />
           </div>
         </div>
 
-        {/* Barra de Búsqueda Oficial en Tiempo Real para Series */}
+        {/* Búsqueda oficial en tiempo real para series */}
         {mediaType === 'series' && (
-          <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-2xl bg-slate-50 border border-slate-200">
-            <div className="flex items-center gap-2">
-              <span className="p-1.5 rounded-xl bg-indigo-100 text-indigo-700">
-                <Search className="w-3.5 h-3.5" />
-              </span>
-              <span className="text-[11px] sm:text-xs text-slate-700 font-bold">
-                ¿Temporada reciente o estreno? Conexión directa a base de datos de TV en tiempo real.
-              </span>
+          <div className="inset-well p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start sm:items-center gap-2.5 min-w-0">
+              <Search className="w-4 h-4 text-[var(--accent)] shrink-0 mt-0.5 sm:mt-0" aria-hidden="true" />
+              <p className="text-xs text-[var(--ink-muted)] leading-relaxed">
+                ¿Temporada reciente o estreno? Consulta la ficha oficial de TV en tiempo real antes de generar.
+              </p>
             </div>
             <button
               type="button"
               onClick={handleSearchOnlineSynopsis}
               disabled={isSearchingOnline || !mediaTitle.trim()}
-              className="px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all disabled:opacity-50"
+              className="btn btn-soft btn-sm shrink-0 self-start sm:self-center"
             >
               {isSearchingOnline ? (
                 <>
-                  <RotateCcw className="w-3.5 h-3.5 animate-spin" />
-                  <span>Buscando datos oficiales...</span>
+                  <RotateCcw className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                  <span>Buscando datos oficiales…</span>
                 </>
               ) : (
                 <>
-                  <Search className="w-3.5 h-3.5 text-indigo-600" />
+                  <Search className="w-3.5 h-3.5" aria-hidden="true" />
                   <span>Comprobar sinopsis oficial</span>
                 </>
               )}
@@ -628,163 +662,188 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
 
         {/* Notificación de episodio oficial confirmado */}
         {detectedOnlineInfo && (
-          <div className="p-3.5 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-emerald-950 text-xs space-y-1.5 animate-in fade-in">
-            <div className="flex flex-wrap items-center justify-between gap-1">
-              <span className="font-extrabold flex items-center gap-1.5 text-emerald-800">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                Episodio Oficial Confirmado: {detectedOnlineInfo.showName} S{detectedOnlineInfo.season}E{detectedOnlineInfo.number} — "{detectedOnlineInfo.episodeName}"
+          <div
+            aria-live="polite"
+            className="p-4 rounded-xl bg-[var(--pine-soft)] border border-[var(--pine-border)] text-[var(--ink)] text-xs sm:text-sm space-y-2"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-semibold flex items-center gap-1.5 text-[var(--pine)]">
+                <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span>
+                  Episodio oficial confirmado: {detectedOnlineInfo.showName} S{detectedOnlineInfo.season}E{detectedOnlineInfo.number} — "{detectedOnlineInfo.episodeName}"
+                </span>
               </span>
               {detectedOnlineInfo.airdate && (
-                <span className="text-[11px] text-emerald-700 font-semibold px-2 py-0.5 rounded-md bg-emerald-100">
+                <span className="text-xs font-mono text-[var(--pine)] px-2 py-0.5 rounded bg-[var(--surface)] border border-[var(--pine-border)] tabular-nums">
                   Emisión: {detectedOnlineInfo.airdate}
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-emerald-900 leading-relaxed italic bg-white/70 p-2 rounded-xl border border-emerald-200">
+            <p className="text-xs text-[var(--ink)] leading-relaxed italic bg-[var(--surface)] p-2.5 rounded-lg">
               "{detectedOnlineInfo.summary}"
             </p>
           </div>
         )}
 
+        {/* Nota de desambiguación para The Gentlemen */}
         {mediaTitle.toLowerCase().includes('gentlemen') && (
-          <div className="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-950 space-y-1.5">
-            <p className="font-bold flex items-center gap-1.5">
-              <span>💡 Guía sobre The Gentlemen (Serie de Netflix):</span>
+          <div className="p-4 rounded-xl bg-[var(--accent-soft)] border border-[var(--accent-border)] text-xs text-[var(--ink)] space-y-1.5">
+            <p className="font-semibold text-[var(--accent)] flex items-center gap-1.5">
+              <Lightbulb className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>Referencia rápida: The Gentlemen (serie de Netflix)</span>
             </p>
-            <p>
-              • <strong>Protagonistas reales:</strong> <strong>Eddie Horniman</strong> (Duque de Halstead / Theo James), <strong>Susie Glass</strong> (Kaya Scodelario), <strong>Bobby Glass</strong> (Ray Winstone) y <strong>Freddy Horniman</strong>.
+            <p className="leading-relaxed">
+              <strong>Protagonistas reales:</strong> Eddie Horniman (Theo James), Susie Glass (Kaya Scodelario), Bobby Glass (Ray Winstone) y Freddy Horniman.
             </p>
-            <p>
-              • <strong>Temporada 2:</strong> Eddie y Susie viajan a Italia (Milán) y expanden el imperio con el capo Marco Moretti.
+            <p className="leading-relaxed">
+              <strong>Temporada 2:</strong> Eddie y Susie viajan a Milán para negociar con el capo Marco Moretti.
             </p>
-            <p className="text-[11px] text-slate-500">
-              *(La película de 2019 fue la de Mickey Pearson y Ray; no confundir con la serie de Netflix).*
+            <p className="text-[var(--ink-muted)]">
+              Nota: La película de 2019 protagonizada por Mickey Pearson y Ray es una trama distinta a la serie.
             </p>
           </div>
         )}
 
-        {/* Detalles opcionales que recuerde */}
-        <div>
-          <label className="text-xs font-bold text-slate-700 block mb-1">
-            ¿Quiénes salen o qué pasó? (Pega la sinopsis de Netflix o tus notas para que la IA no invente nada):
+        {/* Detalles opcionales */}
+        <div className="space-y-1.5">
+          <label
+            htmlFor={formNotesId}
+            className="text-xs font-semibold text-[var(--ink)] block"
+          >
+            Personajes o notas de la trama (opcional, evita confusiones de la IA)
           </label>
           <input
+            id={formNotesId}
             type="text"
             value={userNotes}
             onChange={(e) => setUserNotes(e.target.value)}
-            placeholder="Ej: Es la serie de Netflix con Eddie Horniman / Pega aquí la sinopsis de Netflix / Escena del pub..."
-            className="w-full bg-white border-2 border-slate-300 focus:border-indigo-600 rounded-2xl p-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none"
+            placeholder="Ej: Serie de Netflix con Eddie Horniman, escena en el pub…"
+            className="input-field"
           />
         </div>
 
-        {/* Error Message */}
+        {/* Error de generación */}
         {generationError && (
-          <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold">Error de la IA:</p>
-              <p>{generationError}</p>
+          <div
+            role="alert"
+            className="p-3.5 rounded-xl bg-[var(--crimson-soft)] border border-[var(--crimson-border)] text-[var(--crimson)] text-xs sm:text-sm flex items-start gap-2.5"
+          >
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="space-y-0.5">
+              <p className="font-semibold">No se pudo completar el análisis</p>
+              <p className="text-[var(--ink)]">{generationError}</p>
             </div>
           </div>
         )}
 
-        {/* Botón de Enviar */}
+        {/* Botón de envío */}
         <button
           type="submit"
           disabled={isGenerating || !mediaTitle.trim() || !episodeOrPart.trim()}
-          className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] disabled:opacity-40 text-white font-black text-xs sm:text-sm rounded-2xl shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-all min-h-[46px]"
+          className="btn btn-primary w-full"
         >
           {isGenerating ? (
             <>
-              <RotateCcw className="w-4 h-4 animate-spin" />
-              <span>Analizando episodio y extrayendo vocabulario poco común...</span>
+              <RotateCcw className="w-4 h-4 animate-spin" aria-hidden="true" />
+              <span>Analizando episodio y extrayendo vocabulario…</span>
             </>
           ) : (
             <>
-              <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>Analizar este Episodio con IA</span>
+              <Sparkles className="w-4 h-4" aria-hidden="true" />
+              <span>Analizar este episodio con IA</span>
             </>
           )}
         </button>
       </form>
 
-      {/* Historial de Episodios Previos */}
+      {/* Historial de Episodios Previos (grupos semánticos de botones hermanos, nunca botón dentro de botón/div clickable) */}
       {savedSessions.length > 0 && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-2.5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-indigo-600" />
-              Episodios y Pelis que has analizado ({savedSessions.length}):
-            </span>
+        <section className="card p-4 sm:p-5 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-xs font-semibold text-[var(--ink-muted)] flex items-center gap-1.5 tabular-nums">
+              <Clock className="w-3.5 h-3.5 text-[var(--accent)]" aria-hidden="true" />
+              <span>Episodios y películas guardados ({savedSessions.length})</span>
+            </h3>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <ul className="flex flex-wrap gap-2">
             {savedSessions.map((s) => {
               const isSelected = activeSession?.id === s.id;
               return (
-                <div
+                <li
                   key={s.id}
-                  onClick={() => setActiveSession(s)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
+                  className={`inline-flex items-stretch rounded-xl border overflow-hidden transition-colors ${
                     isSelected
-                      ? 'bg-indigo-50 border-indigo-400 text-indigo-900 shadow-2xs'
-                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                      ? 'bg-[var(--accent-soft)] border-[var(--accent-border)] text-[var(--accent)]'
+                      : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--ink)]'
                   }`}
                 >
-                  <span>
-                    {s.mediaType === 'series' ? '📺' : s.mediaType === 'movie' ? '🎬' : '📖'}{' '}
-                    {s.mediaTitle} ({s.episodeOrPart})
-                  </span>
                   <button
                     type="button"
-                    onClick={(e) => handleDeleteSession(s.id, e)}
-                    className="text-slate-400 hover:text-rose-600 p-0.5 rounded cursor-pointer"
-                    title="Eliminar sesión"
+                    onClick={() => setActiveSession(s)}
+                    aria-current={isSelected ? 'true' : undefined}
+                    className="px-3 py-2 text-xs font-semibold flex items-center gap-2 min-h-[40px] text-left hover:bg-black/5 transition-colors"
                   >
-                    <Trash2 className="w-3 h-3" />
+                    {renderMediaTypeIcon(s.mediaType)}
+                    <span>
+                      {s.mediaTitle} ({s.episodeOrPart})
+                    </span>
                   </button>
-                </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteSession(s.id)}
+                    aria-label={`Eliminar sesión ${s.mediaTitle} (${s.episodeOrPart})`}
+                    title="Eliminar sesión"
+                    className="px-2.5 border-l border-[var(--border)] text-[var(--ink-muted)] hover:text-[var(--crimson)] hover:bg-[var(--crimson-soft)] flex items-center justify-center transition-colors min-w-[38px]"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                  </button>
+                </li>
               );
             })}
-          </div>
-        </div>
+          </ul>
+        </section>
       )}
 
       {/* CONTENIDO DE LA SESIÓN ACTIVA */}
       {activeSession && (
-        <div className="space-y-6 animate-in fade-in">
-          {/* Header de la Sesión Activa */}
-          <div className="bg-white border-2 border-indigo-200 rounded-3xl p-5 sm:p-6 shadow-sm space-y-2">
+        <div className="space-y-6">
+          {/* Header y sinopsis de la Sesión Activa */}
+          <section className="card p-5 sm:p-6 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-black uppercase px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                {activeSession.mediaType === 'series'
-                  ? 'Serie de TV'
-                  : activeSession.mediaType === 'movie'
-                  ? 'Película'
-                  : 'Libro'}
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-md bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)]">
+                {renderMediaTypeIcon(activeSession.mediaType)}
+                <span>
+                  {activeSession.mediaType === 'series'
+                    ? 'Serie de TV'
+                    : activeSession.mediaType === 'movie'
+                    ? 'Película'
+                    : 'Libro'}
+                </span>
               </span>
-              <span className="text-xs text-slate-500 font-semibold">
+              <span className="text-xs font-mono text-[var(--ink-muted)] tabular-nums">
                 {new Date(activeSession.createdAt).toLocaleDateString('es-ES')}
               </span>
             </div>
 
-            <h3 className="text-lg sm:text-2xl font-black text-slate-900">
+            <h3 className="font-display text-lg sm:text-2xl font-bold text-[var(--ink)] tracking-[-0.02em]">
               {activeSession.mediaTitle} — {activeSession.episodeOrPart}
             </h3>
 
             {/* Aviso de rescate si el episodio se guardó anteriormente con "no dispongo de información" */}
-            {/no dispongo|no tengo informaci[oó]n|lo siento|i do not have|cannot provide/i.test(
-              activeSession.synopsisEs
-            ) && (
-              <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-950 space-y-2.5 animate-in fade-in">
+            {hasStaleAiNotice && (
+              <div className="p-4 rounded-xl bg-[var(--brass-soft)] border border-[var(--brass-border)] text-[var(--ink)] space-y-3">
                 <div className="flex items-start gap-2.5">
-                  <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="font-extrabold text-xs sm:text-sm text-amber-900">
-                      Este episodio se generó con la base de datos desactualizada de la IA
+                  <AlertTriangle
+                    className="w-5 h-5 text-[var(--brass)] shrink-0 mt-0.5"
+                    aria-hidden="true"
+                  />
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-xs sm:text-sm text-[var(--brass)]">
+                      Este episodio se generó sin acceso a datos actualizados
                     </h4>
-                    <p className="text-xs text-amber-800 leading-relaxed mt-0.5">
-                      Ahora la aplicación está conectada con la base de datos de televisión en tiempo real para evitar que la IA diga que no tiene información. Haz clic en el botón para regenerar este episodio con su trama oficial y vocabulario real:
+                    <p className="text-xs text-[var(--ink)] leading-relaxed">
+                      Ahora la app consulta la base de televisión en tiempo real. Puedes regenerar este episodio para obtener su trama oficial y vocabulario real.
                     </p>
                   </div>
                 </div>
@@ -793,17 +852,17 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                     type="button"
                     disabled={isGenerating}
                     onClick={() => handleRegenerateFailedSession(activeSession)}
-                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 disabled:opacity-50 text-white font-black text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-2 transition-all"
+                    className="btn btn-primary btn-sm"
                   >
                     {isGenerating ? (
                       <>
-                        <RotateCcw className="w-4 h-4 animate-spin" />
-                        <span>Regenerando con datos en vivo...</span>
+                        <RotateCcw className="w-4 h-4 animate-spin" aria-hidden="true" />
+                        <span>Regenerando con datos en vivo…</span>
                       </>
                     ) : (
                       <>
-                        <Sparkles className="w-4 h-4 text-amber-300" />
-                        <span>Regenerar ahora con la base de datos oficial en vivo</span>
+                        <Sparkles className="w-4 h-4" aria-hidden="true" />
+                        <span>Regenerar con base oficial en vivo</span>
                       </>
                     )}
                   </button>
@@ -811,11 +870,13 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
               </div>
             )}
 
+            {/* Resumen de trama / editor inline */}
             {!isEditingSynopsis ? (
-              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs sm:text-sm text-slate-700 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-extrabold text-slate-900 flex items-center gap-1.5">
-                    🎬 Resumen de la trama:
+              <div className="inset-well p-4 text-xs sm:text-sm text-[var(--ink)] space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
+                    <Clapperboard className="w-4 h-4 text-[var(--accent)]" aria-hidden="true" />
+                    <span>Resumen de la trama</span>
                   </span>
                   <button
                     type="button"
@@ -823,37 +884,41 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                       setEditedSynopsis(activeSession.synopsisEs);
                       setIsEditingSynopsis(true);
                     }}
-                    className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
+                    className="text-xs font-semibold text-[var(--accent)] hover:underline flex items-center gap-1 min-h-[32px] px-1.5"
                   >
-                    <Edit3 className="w-3 h-3" />
+                    <Edit3 className="w-3.5 h-3.5" aria-hidden="true" />
                     <span>Editar texto</span>
                   </button>
                 </div>
-                <p className="leading-relaxed">{activeSession.synopsisEs}</p>
+                <p className="leading-relaxed text-[var(--ink-muted)]">{activeSession.synopsisEs}</p>
               </div>
             ) : (
-              <div className="bg-indigo-50/50 p-3.5 rounded-2xl border border-indigo-200 space-y-2">
-                <span className="text-xs font-bold text-indigo-950 block">
-                  Editar resumen de la trama manualmente:
-                </span>
+              <div className="inset-well p-4 space-y-3">
+                <label
+                  htmlFor={editSynopsisId}
+                  className="text-xs font-semibold text-[var(--ink)] block"
+                >
+                  Editar resumen de la trama manualmente
+                </label>
                 <textarea
+                  id={editSynopsisId}
                   rows={3}
                   value={editedSynopsis}
                   onChange={(e) => setEditedSynopsis(e.target.value)}
-                  className="w-full bg-white border border-indigo-300 rounded-xl p-2.5 text-xs sm:text-sm text-slate-900 outline-none"
+                  className="input-field resize-y min-h-[88px]"
                 />
                 <div className="flex gap-2 justify-end">
                   <button
                     type="button"
                     onClick={() => setIsEditingSynopsis(false)}
-                    className="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold cursor-pointer"
+                    className="btn btn-secondary btn-sm"
                   >
                     Cancelar
                   </button>
                   <button
                     type="button"
                     onClick={handleSaveEditedSynopsis}
-                    className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer"
+                    className="btn btn-primary btn-sm"
                   >
                     Guardar resumen
                   </button>
@@ -861,60 +926,57 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
               </div>
             )}
 
-            {/* Botón y Panel de Corrección de Alucinación / Error de IA */}
-            <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+            {/* Acciones de la sesión */}
+            <div className="pt-3 border-t border-[var(--border)] flex flex-wrap items-center justify-between gap-2">
               <button
                 type="button"
                 onClick={() => setShowCorrectionBox(!showCorrectionBox)}
-                className={`text-xs font-bold px-3 py-2 rounded-xl border flex items-center gap-1.5 cursor-pointer transition-all ${
-                  showCorrectionBox
-                    ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
-                    : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300'
-                }`}
+                aria-expanded={showCorrectionBox}
+                className={`btn btn-sm ${showCorrectionBox ? 'btn-brass' : 'btn-secondary'}`}
               >
-                <AlertCircle className="w-4 h-4 text-amber-600" />
-                <span>¿La IA se ha equivocado o inventado la trama? Corregir aquí</span>
+                <AlertCircle className="w-4 h-4" aria-hidden="true" />
+                <span>¿La IA se ha equivocado de trama? Corregir aquí</span>
               </button>
 
               <button
                 type="button"
-                onClick={(e) => handleDeleteSession(activeSession.id, e)}
-                className="text-xs text-rose-600 hover:text-rose-800 font-bold px-2 py-1 flex items-center gap-1 cursor-pointer"
+                onClick={() => handleDeleteSession(activeSession.id)}
+                className="btn btn-danger-outline btn-sm"
               >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Borrar este episodio</span>
+                <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Borrar episodio</span>
               </button>
             </div>
 
-            {/* Apartado Desplegable de Corrección */}
+            {/* Apartado desplegable de corrección */}
             {showCorrectionBox && (
-              <div className="p-4 rounded-2xl bg-amber-50/90 border-2 border-amber-300 space-y-3 animate-in fade-in">
+              <div className="p-4 sm:p-5 rounded-xl bg-[var(--brass-soft)] border border-[var(--brass-border)] space-y-3.5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <Wrench className="w-4 h-4 text-amber-800 shrink-0" />
-                    <h4 className="font-extrabold text-amber-950 text-xs sm:text-sm">
-                      Apartado de Corrección: Dile a la IA lo que pasó realmente
+                    <Wrench className="w-4 h-4 text-[var(--brass)] shrink-0" aria-hidden="true" />
+                    <h4 className="font-display font-bold text-[var(--ink)] text-sm sm:text-base">
+                      Corregir la trama para la IA
                     </h4>
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowCorrectionBox(false)}
-                    className="text-amber-800 hover:text-amber-950 p-1 cursor-pointer"
+                    aria-label="Cerrar panel de corrección"
+                    className="icon-btn min-w-[36px] min-h-[36px]"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-4 h-4" aria-hidden="true" />
                   </button>
                 </div>
 
-                <p className="text-xs text-amber-900 leading-relaxed">
-                  Las IAs a veces mezclan películas y series del mismo nombre (ej: <em>The Gentlemen</em> de Netflix de 2024 con Eddie Horniman vs la peli de 2019 con Mickey Pearson), o inventan historias si una temporada aún no se ha estrenado.
+                <p className="text-xs text-[var(--ink)] leading-relaxed">
+                  Las IAs pueden mezclar películas y series con el mismo título (como <em>The Gentlemen</em> de Netflix de 2024 frente a la película de 2019). Indica los personajes o hechos reales y se regenerará el ejercicio completo.
                 </p>
 
-                {/* Chips rápidos de corrección */}
                 <div className="space-y-1.5">
-                  <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider block">
-                    Aclaraciones rápidas sugeridas:
+                  <span className="text-xs font-semibold text-[var(--brass)] block">
+                    Aclaraciones rápidas sugeridas
                   </span>
-                  <div className="flex flex-wrap gap-1.5 text-xs">
+                  <div className="flex flex-wrap gap-1.5">
                     <button
                       type="button"
                       onClick={() =>
@@ -922,9 +984,9 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                           'The Gentlemen Temporada 2, Episodio 2 ("There\'s a Rat in the Kitchen"): Eddie Horniman viaja a Milán junto a Susie Glass para cerrar un acuerdo arriesgado con el capo de la mafia italiana Marco Moretti, mientras en Inglaterra Freddy lidia con problemas y tensiones.'
                         )
                       }
-                      className="px-2.5 py-1 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-semibold cursor-pointer"
+                      className="btn btn-secondary btn-sm text-xs"
                     >
-                      🇮🇹 The Gentlemen T2 E2: Eddie y Susie en Milán con Marco Moretti
+                      The Gentlemen T2 E2: Milán con Marco Moretti
                     </button>
                     <button
                       type="button"
@@ -933,9 +995,9 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                           'The Gentlemen Temporada 2, Episodio 1 ("The Road to Kingdom"): Eddie Horniman organiza una cacería de alto riesgo en la mansión Halstead con mafiosos italianos y un jeque para expandir el imperio a Europa.'
                         )
                       }
-                      className="px-2.5 py-1 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-semibold cursor-pointer"
+                      className="btn btn-secondary btn-sm text-xs"
                     >
-                      🎩 The Gentlemen T2 E1: Cacería y expansión con Eddie
+                      The Gentlemen T2 E1: Cacería con Eddie
                     </button>
                     <button
                       type="button"
@@ -944,9 +1006,9 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                           'Es la serie de Netflix (Guy Ritchie) protagonizada por Eddie Horniman (Theo James), Susie Glass (Kaya Scodelario) y Freddy Horniman. No es la película de 2019 de Mickey Pearson.'
                         )
                       }
-                      className="px-2.5 py-1 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-semibold cursor-pointer"
+                      className="btn btn-secondary btn-sm text-xs"
                     >
-                      📺 Es la serie de Netflix (Eddie Horniman & Susie Glass)
+                      Serie de Netflix (Eddie y Susie)
                     </button>
                     <button
                       type="button"
@@ -955,23 +1017,27 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                           'Temporada 1 Episodio 2: Eddie intenta saldar la deuda de 8 millones de libras de su hermano Freddy con Tommy Dixon mientras Susie controla la granja de marihuana bajo la mansión.'
                         )
                       }
-                      className="px-2.5 py-1 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 font-semibold cursor-pointer"
+                      className="btn btn-secondary btn-sm text-xs"
                     >
-                      🏰 T1 E2: Deuda de Freddy con Tommy Dixon
+                      T1 E2: Deuda de Freddy con Tommy Dixon
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-amber-950 block">
-                    Escribe o pega aquí la trama real o lo que viste:
+                  <label
+                    htmlFor={correctionNotesId}
+                    className="text-xs font-semibold text-[var(--ink)] block"
+                  >
+                    Escribe o pega la trama real que viste
                   </label>
                   <textarea
+                    id={correctionNotesId}
                     rows={3}
                     value={correctionNotes}
                     onChange={(e) => setCorrectionNotes(e.target.value)}
-                    placeholder="Ej: Salen Eddie Horniman y Susie Glass. Eddie descubre que bajo su mansión hay una granja oculta de marihuana y Tommy Dixon exige 8 millones..."
-                    className="w-full bg-white border-2 border-amber-300 focus:border-amber-600 rounded-xl p-3 text-xs sm:text-sm text-slate-900 outline-none"
+                    placeholder="Ej: Salen Eddie Horniman y Susie Glass. Eddie descubre que bajo su mansión hay una granja oculta…"
+                    className="input-field resize-y min-h-[88px]"
                   />
                 </div>
 
@@ -979,40 +1045,38 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                   type="button"
                   disabled={isRegeneratingCorrection || !correctionNotes.trim()}
                   onClick={handleRegenerateWithCorrection}
-                  className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-40 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs cursor-pointer flex items-center justify-center gap-2 min-h-[42px]"
+                  className="btn btn-brass w-full"
                 >
                   {isRegeneratingCorrection ? (
                     <>
-                      <RotateCcw className="w-4 h-4 animate-spin" />
-                      <span>Regenerando sesión con la trama real...</span>
+                      <RotateCcw className="w-4 h-4 animate-spin" aria-hidden="true" />
+                      <span>Regenerando sesión con la trama real…</span>
                     </>
                   ) : (
                     <>
-                      <RotateCcw className="w-4 h-4" />
+                      <RotateCcw className="w-4 h-4" aria-hidden="true" />
                       <span>Regenerar sesión con esta trama real</span>
                     </>
                   )}
                 </button>
               </div>
             )}
-          </div>
+          </section>
 
-          {/* ======================================================== */}
-          {/* PARTE 1: PALABRAS POCO COMUNES (Escribe en español) */}
-          {/* ======================================================== */}
-          <div className="bg-white border-2 border-amber-200 rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
-            <div className="pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <span className="w-7 h-7 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-black text-sm">
-                  1
-                </span>
-                <h4 className="text-base sm:text-lg font-black text-slate-900">
-                  Palabras y Jerga Poco Comunes del Episodio
+          {/* PARTE 1: PALABRAS POCO COMUNES */}
+          <section className="card p-5 sm:p-6 space-y-5">
+            <div className="pb-3 border-b border-[var(--border)] flex items-start gap-3">
+              <span className="w-7 h-7 rounded-lg bg-[var(--brass-soft)] text-[var(--brass)] border border-[var(--brass-border)] flex items-center justify-center font-mono font-bold text-xs shrink-0 tabular-nums mt-0.5">
+                01
+              </span>
+              <div className="space-y-1">
+                <h4 className="font-display text-base sm:text-lg font-bold text-[var(--ink)]">
+                  Palabras y jerga poco comunes del episodio
                 </h4>
+                <p className="text-xs sm:text-sm text-[var(--ink-muted)]">
+                  Escribe qué significa cada término en español a partir de su uso en la escena.
+                </p>
               </div>
-              <p className="text-xs text-slate-600 mt-1">
-                La IA ha extraído las palabras no habituales de este episodio. <strong>Escribe tú qué significa cada una en español</strong> para entrenar tu cerebro:
-              </p>
             </div>
 
             <div className="space-y-4">
@@ -1023,33 +1087,34 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                   isCorrect: false
                 };
                 const isSaved = savedWordIds.has(w.id);
+                const wordInputId = `media-word-input-${w.id}`;
 
                 return (
-                  <div
+                  <article
                     key={w.id}
-                    className={`p-4 sm:p-5 rounded-2xl border-2 transition-all space-y-3 ${
+                    className={`p-4 sm:p-5 rounded-xl border space-y-3.5 transition-colors ${
                       attempt.isEvaluated
                         ? attempt.isCorrect
-                          ? 'bg-emerald-50/60 border-emerald-300'
-                          : 'bg-rose-50/50 border-rose-300'
-                        : 'bg-slate-50/80 border-slate-200 hover:border-amber-300'
+                          ? 'bg-[var(--pine-soft)]/50 border-[var(--pine-border)]'
+                          : 'bg-[var(--crimson-soft)]/50 border-[var(--crimson-border)]'
+                        : 'bg-[var(--surface)] border-[var(--border)]'
                     }`}
                   >
                     {/* Fila del término en inglés y pronunciación */}
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-xs font-mono font-bold text-slate-400">
+                      <div className="flex flex-wrap items-center gap-2 min-w-0">
+                        <span className="text-xs font-mono font-semibold text-[var(--ink-subtle)] tabular-nums">
                           #{idx + 1}
                         </span>
-                        <h5 className="text-base sm:text-lg font-black text-slate-900">
+                        <h5 className="font-display text-base sm:text-lg font-bold text-[var(--ink)]">
                           {w.wordEn}
                         </h5>
                         {w.pron && (
-                          <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg bg-amber-50 text-amber-900 border border-amber-200">
+                          <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded-md bg-[var(--brass-soft)] text-[var(--brass)] border border-[var(--brass-border)]">
                             [{w.pron}]
                           </span>
                         )}
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 uppercase">
+                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-[var(--surface-2)] text-[var(--ink-muted)]">
                           {w.partOfSpeech}
                         </span>
                       </div>
@@ -1057,37 +1122,44 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                       <button
                         type="button"
                         onClick={() => speakEnglishText(w.wordEn)}
+                        aria-label={`Escuchar pronunciación de ${w.wordEn}`}
                         title="Escuchar pronunciación británica"
-                        className="p-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 cursor-pointer shadow-2xs"
+                        className="icon-btn bg-[var(--surface-2)] border border-[var(--border)]"
                       >
-                        <Volume2 className="w-4 h-4 text-indigo-600" />
+                        <Volume2 className="w-4 h-4 text-[var(--accent)]" aria-hidden="true" />
                       </button>
                     </div>
 
                     {/* Frase de contexto en el episodio */}
-                    <div className="text-xs sm:text-sm bg-white p-3 rounded-xl border border-slate-200 space-y-1">
-                      <span className="text-[10px] font-black uppercase text-slate-400 block">
-                        Cómo se usó en el episodio:
+                    <div className="inset-well p-3.5 text-xs sm:text-sm space-y-1.5">
+                      <span className="text-[11px] font-semibold text-[var(--ink-muted)] block">
+                        Uso en el episodio
                       </span>
-                      <p className="font-semibold text-slate-900">"{w.sceneContextEn}"</p>
+                      <p className="font-medium text-[var(--ink)] leading-relaxed">
+                        "{w.sceneContextEn}"
+                      </p>
                       <button
                         type="button"
                         onClick={() => speakEnglishText(w.sceneContextEn)}
-                        className="text-[11px] text-indigo-600 font-bold hover:underline flex items-center gap-1 cursor-pointer pt-0.5"
+                        className="text-xs text-[var(--accent)] font-semibold hover:underline inline-flex items-center gap-1.5 min-h-[32px]"
                       >
-                        <Volume2 className="w-3 h-3" />
+                        <Volume2 className="w-3.5 h-3.5" aria-hidden="true" />
                         <span>Escuchar frase completa</span>
                       </button>
                     </div>
 
-                    {/* Input para que el usuario escriba en español */}
+                    {/* Input para escribir significado en español */}
                     {!attempt.isEvaluated ? (
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-700 block">
-                          ¿Qué significa en español? (Escribe tu traducción):
+                        <label
+                          htmlFor={wordInputId}
+                          className="text-xs font-semibold text-[var(--ink)] block"
+                        >
+                          ¿Qué significa en español?
                         </label>
                         <div className="flex flex-col sm:flex-row gap-2">
                           <input
+                            id={wordInputId}
                             type="text"
                             value={attempt.userTyped}
                             onChange={(e) => {
@@ -1106,40 +1178,48 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                                 handleCheckWordMeaning(w);
                               }
                             }}
-                            placeholder="Ej: fianza, garantía, tipo sospechoso..."
-                            className="flex-1 bg-white border-2 border-slate-300 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none"
+                            placeholder="Ej: fianza, garantía, tipo sospechoso…"
+                            className="input-field flex-1"
                           />
                           <button
                             type="button"
                             onClick={() => handleCheckWordMeaning(w)}
                             disabled={!attempt.userTyped.trim()}
-                            className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer min-h-[42px] shrink-0"
+                            className="btn btn-brass shrink-0"
                           >
                             Comprobar significado
                           </button>
                         </div>
                       </div>
                     ) : (
-                      /* Resultado de la comprobación */
-                      <div className="space-y-2.5">
+                      <div aria-live="polite" className="space-y-2.5">
                         <div
-                          className={`p-3 rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-between gap-2 ${
+                          className={`p-3.5 rounded-xl border text-xs sm:text-sm font-medium flex flex-wrap items-center justify-between gap-2 ${
                             attempt.isCorrect
-                              ? 'bg-emerald-100/70 border-emerald-300 text-emerald-950'
-                              : 'bg-rose-100/70 border-rose-300 text-rose-950'
+                              ? 'bg-[var(--pine-soft)] border-[var(--pine-border)] text-[var(--ink)]'
+                              : 'bg-[var(--crimson-soft)] border-[var(--crimson-border)] text-[var(--ink)]'
                           }`}
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-start sm:items-center gap-2">
                             {attempt.isCorrect ? (
                               <>
-                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                                <span>¡Exacto! Tu respuesta: "{attempt.userTyped}"</span>
+                                <CheckCircle2
+                                  className="w-4 h-4 text-[var(--pine)] shrink-0 mt-0.5 sm:mt-0"
+                                  aria-hidden="true"
+                                />
+                                <span>
+                                  <strong className="text-[var(--pine)]">Correcto.</strong> Tu respuesta: "{attempt.userTyped}"
+                                </span>
                               </>
                             ) : (
                               <>
-                                <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                                <XCircle
+                                  className="w-4 h-4 text-[var(--crimson)] shrink-0 mt-0.5 sm:mt-0"
+                                  aria-hidden="true"
+                                />
                                 <span>
-                                  Pusiste: "{attempt.userTyped}". Significado real: <strong>{w.primaryMeaningEs}</strong>
+                                  Pusiste "{attempt.userTyped}". Significado real:{' '}
+                                  <strong className="text-[var(--ink)]">{w.primaryMeaningEs}</strong>
                                 </span>
                               </>
                             )}
@@ -1156,72 +1236,67 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                                 }
                               }))
                             }
-                            className="text-xs text-slate-600 hover:text-slate-900 underline font-bold cursor-pointer"
+                            className="text-xs text-[var(--ink)] hover:text-[var(--accent)] underline font-semibold min-h-[32px] px-1"
                           >
                             Reintentar
                           </button>
                         </div>
 
-                        {/* Explicación y contexto */}
-                        <div className="text-xs bg-white p-3 rounded-xl border border-slate-200 text-slate-700 space-y-1">
+                        <div className="inset-well p-3.5 text-xs text-[var(--ink)] space-y-1.5">
                           <p>
-                            <strong>💡 Significado en español:</strong> {w.primaryMeaningEs} (Traducción frase: <em>"{w.sceneContextEs}"</em>)
+                            <strong>Significado en español:</strong> {w.primaryMeaningEs}{' '}
+                            <span className="text-[var(--ink-muted)] italic">
+                              ("{w.sceneContextEs}")
+                            </span>
                           </p>
                           {w.explanationWhyEs && (
-                            <p className="text-slate-500">
-                              <strong>🇬🇧 Uso en UK:</strong> {w.explanationWhyEs}
+                            <p className="text-[var(--ink-muted)]">
+                              <strong className="text-[var(--ink)]">Uso en Reino Unido:</strong>{' '}
+                              {w.explanationWhyEs}
                             </p>
                           )}
                         </div>
 
-                        {/* Botón para añadir a mi Machaque */}
                         <button
                           type="button"
                           onClick={() => handleSaveWordToVocabulary(w)}
                           disabled={isSaved}
-                          className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
-                            isSaved
-                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
-                              : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
-                          }`}
+                          className={`btn w-full btn-sm ${isSaved ? 'btn-soft' : 'btn-primary'}`}
                         >
                           {isSaved ? (
                             <>
-                              <Check className="w-4 h-4 text-emerald-600" />
-                              <span>¡Guardada en tu Diccionario de Machaque!</span>
+                              <Check className="w-4 h-4" aria-hidden="true" />
+                              <span>Guardada en tu diccionario de Machaque</span>
                             </>
                           ) : (
                             <>
-                              <Plus className="w-4 h-4" />
-                              <span>➕ Añadir a mi Vocabulario para Machacarla</span>
+                              <Plus className="w-4 h-4" aria-hidden="true" />
+                              <span>Añadir a mi vocabulario para repasar</span>
                             </>
                           )}
                         </button>
                       </div>
                     )}
-                  </div>
+                  </article>
                 );
               })}
             </div>
-          </div>
+          </section>
 
-          {/* ======================================================== */}
           {/* PARTE 2: PREGUNTAS SOBRE QUÉ HA PASADO EN EL EPISODIO */}
-          {/* ======================================================== */}
-          <div className="bg-white border-2 border-indigo-200 rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
-            <div className="pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <span className="w-7 h-7 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center font-black text-sm">
-                  2
-                </span>
-                <h4 className="text-base sm:text-lg font-black text-slate-900">
+          <section className="card p-5 sm:p-6 space-y-5">
+            <div className="pb-3 border-b border-[var(--border)] flex items-start gap-3">
+              <span className="w-7 h-7 rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)] flex items-center justify-center font-mono font-bold text-xs shrink-0 tabular-nums mt-0.5">
+                02
+              </span>
+              <div className="space-y-1">
+                <h4 className="font-display text-base sm:text-lg font-bold text-[var(--ink)]">
                   ¿Qué ha pasado en este episodio? (Escribe en inglés)
                 </h4>
+                <p className="text-xs sm:text-sm text-[var(--ink-muted)]">
+                  Responde con tus palabras en inglés. La IA verificará los hechos, corregirá la gramática y te pedirá fijar los fallos de memoria.
+                </p>
               </div>
-              <p className="text-xs text-slate-600 mt-1">
-                Escribe en inglés con tus propias palabras qué ocurrió. La IA revisará la exactitud
-                con lo que pasó en el episodio, corregirá tu gramática y te pedirá repetir los fallos de memoria.
-              </p>
             </div>
 
             <div className="space-y-5">
@@ -1229,70 +1304,98 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                 const userAns = questionAnswers[q.id] || '';
                 const isEvaluating = evaluatingQId === q.id;
                 const fb = questionFeedbacks[q.id];
+                const qErr = questionErrors[q.id];
                 const showTrans = !!questionShowTrans[q.id];
                 const repState = repetitionMap[q.id];
+                const qTextareaId = `media-question-input-${q.id}`;
+                const repInputId = `media-rep-input-${q.id}`;
 
                 return (
-                  <div
+                  <article
                     key={q.id}
-                    className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-3"
+                    className="p-4 sm:p-5 rounded-xl bg-[var(--surface-2)]/60 border border-[var(--border)] space-y-3.5"
                   >
                     {/* Pregunta en inglés */}
                     <div className="flex flex-wrap items-start justify-between gap-2">
-                      <p className="font-extrabold text-sm sm:text-base text-slate-900">
-                        {idx + 1}. {q.questionEn}
+                      <p className="font-semibold text-sm sm:text-base text-[var(--ink)] leading-snug">
+                        <span className="font-mono text-xs text-[var(--ink-subtle)] mr-1.5 tabular-nums">
+                          0{idx + 1}
+                        </span>
+                        {q.questionEn}
                       </p>
                       <button
                         type="button"
                         onClick={() =>
                           setQuestionShowTrans((prev) => ({ ...prev, [q.id]: !prev[q.id] }))
                         }
-                        className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center gap-1.5 cursor-pointer shrink-0"
+                        aria-expanded={showTrans}
+                        className="btn btn-secondary btn-sm shrink-0"
                       >
-                        <Languages className="w-3.5 h-3.5" />
-                        {showTrans ? 'Ocultar traducción' : 'Traducir pregunta'}
+                        <Languages className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span>{showTrans ? 'Ocultar traducción' : 'Traducir pregunta'}</span>
                       </button>
                     </div>
 
                     {showTrans && (
-                      <p className="text-xs sm:text-sm text-indigo-950 bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2">
-                        🌐 {q.questionEs}
+                      <p className="text-xs sm:text-sm text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent-border)] rounded-xl px-3.5 py-2.5">
+                        {q.questionEs}
                       </p>
                     )}
 
                     {q.sceneHintEs && (
-                      <p className="text-xs text-slate-500 font-medium">
-                        🎬 {q.sceneHintEs} • {q.targetGrammarHint}
+                      <p className="text-xs text-[var(--ink-muted)] flex items-start gap-1.5">
+                        <Lightbulb
+                          className="w-3.5 h-3.5 text-[var(--brass)] shrink-0 mt-0.5"
+                          aria-hidden="true"
+                        />
+                        <span>
+                          {q.sceneHintEs}
+                          {q.targetGrammarHint ? ` · ${q.targetGrammarHint}` : ''}
+                        </span>
                       </p>
                     )}
 
-                    {/* Textarea de respuesta */}
-                    <textarea
-                      rows={3}
-                      value={userAns}
-                      onChange={(e) =>
-                        setQuestionAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
-                      }
-                      placeholder="Escribe tu respuesta en inglés aquí sobre qué pasó..."
-                      className="w-full bg-white border-2 border-slate-300 focus:border-indigo-600 rounded-xl p-3 text-xs sm:text-sm text-slate-900 outline-none min-h-[85px]"
-                      spellCheck={false}
-                    />
+                    <div className="space-y-1.5">
+                      <label htmlFor={qTextareaId} className="sr-only">
+                        Respuesta en inglés para la pregunta {idx + 1}
+                      </label>
+                      <textarea
+                        id={qTextareaId}
+                        rows={3}
+                        value={userAns}
+                        onChange={(e) =>
+                          setQuestionAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
+                        }
+                        placeholder="Escribe tu respuesta en inglés aquí sobre qué ocurrió…"
+                        className="input-field resize-y min-h-[88px]"
+                        spellCheck={false}
+                      />
+                    </div>
 
-                    {/* Botón Corregir */}
+                    {qErr && (
+                      <div
+                        role="alert"
+                        className="p-3 rounded-xl bg-[var(--crimson-soft)] border border-[var(--crimson-border)] text-[var(--crimson)] text-xs font-medium flex items-center gap-2"
+                      >
+                        <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
+                        <span>{qErr}</span>
+                      </div>
+                    )}
+
                     <button
                       type="button"
                       disabled={isEvaluating || !userAns.trim()}
                       onClick={() => handleEvaluateQuestion(q)}
-                      className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs flex items-center justify-center gap-2 cursor-pointer min-h-[42px]"
+                      className="btn btn-pine w-full sm:w-auto"
                     >
                       {isEvaluating ? (
                         <>
-                          <RotateCcw className="w-4 h-4 animate-spin" />
-                          <span>Analizando tu respuesta con IA...</span>
+                          <RotateCcw className="w-4 h-4 animate-spin" aria-hidden="true" />
+                          <span>Analizando tu respuesta…</span>
                         </>
                       ) : (
                         <>
-                          <Sparkles className="w-4 h-4" />
+                          <Sparkles className="w-4 h-4" aria-hidden="true" />
                           <span>Corregir mi respuesta</span>
                         </>
                       )}
@@ -1300,66 +1403,76 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
 
                     {/* Feedback de la IA */}
                     {fb && (
-                      <div className="mt-4 p-4 rounded-2xl bg-white border border-emerald-300 space-y-3.5 text-xs sm:text-sm shadow-xs">
-                        <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
-                          <span className="font-extrabold text-emerald-800 text-sm">
-                            ✅ Corrección de la IA (Nota: {fb.scoreOutOf10}/10)
+                      <div
+                        aria-live="polite"
+                        className="mt-3 p-4 sm:p-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-4 text-xs sm:text-sm"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-[var(--border)]">
+                          <span className="font-semibold text-[var(--pine)] flex items-center gap-1.5 tabular-nums">
+                            <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+                            <span>Evaluación completada · Nota: {fb.scoreOutOf10}/10</span>
                           </span>
                           <span
-                            className={`px-2 py-0.5 rounded-full text-xs font-bold border ${
+                            className={`px-2.5 py-0.5 rounded-md text-xs font-semibold border ${
                               fb.isContentAccurate
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : 'bg-amber-50 text-amber-800 border-amber-200'
+                                ? 'bg-[var(--pine-soft)] text-[var(--pine)] border-[var(--pine-border)]'
+                                : 'bg-[var(--brass-soft)] text-[var(--brass)] border-[var(--brass-border)]'
                             }`}
                           >
                             {fb.isContentAccurate
-                              ? '🎬 Hechos del episodio correctos'
-                              : '⚠️ Revisa los hechos del episodio'}
+                              ? 'Hechos del episodio correctos'
+                              : 'Revisa los hechos de la escena'}
                           </span>
                         </div>
 
-                        <p className="text-slate-700 leading-relaxed">{fb.feedbackEs}</p>
+                        <p className="text-[var(--ink)] leading-relaxed">{fb.feedbackEs}</p>
 
                         {/* Errores encontrados */}
                         {fb.errorsFound && fb.errorsFound.length > 0 && (
                           <div className="space-y-2">
-                            <span className="text-xs font-bold uppercase text-rose-800 block">
-                              Errores detectados en tu inglés:
+                            <span className="text-xs font-semibold text-[var(--crimson)] block">
+                              Errores detectados en tu inglés
                             </span>
                             {fb.errorsFound.map((err, i) => (
                               <div
                                 key={i}
-                                className="bg-slate-50 border border-rose-200 rounded-xl p-2.5 space-y-1"
+                                className="bg-[var(--crimson-soft)]/50 border border-[var(--crimson-border)] rounded-xl p-3 space-y-1"
                               >
-                                <p className="text-rose-700 line-through">❌ {err.wrong}</p>
-                                <p className="text-emerald-800 font-bold">✅ {err.right}</p>
-                                <p className="text-slate-500 text-xs">{err.whyEs}</p>
+                                <p className="text-[var(--crimson)] line-through flex items-center gap-1.5">
+                                  <XCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                                  <span>{err.wrong}</span>
+                                </p>
+                                <p className="text-[var(--pine)] font-semibold flex items-center gap-1.5">
+                                  <Check className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                                  <span>{err.right}</span>
+                                </p>
+                                <p className="text-[var(--ink-muted)] text-xs">{err.whyEs}</p>
                               </div>
                             ))}
                           </div>
                         )}
 
-                        {/* Frase corregida y Versión B2 */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
-                          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                            <span className="text-[10px] uppercase font-bold text-emerald-800 block mb-1">
-                              Tu frase corregida:
+                        {/* Frase corregida y versión nativa */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="inset-well p-3.5 space-y-1">
+                            <span className="text-xs font-semibold text-[var(--pine)] block">
+                              Tu frase corregida
                             </span>
-                            <p className="text-slate-900 font-semibold">
+                            <p className="text-[var(--ink)] font-medium">
                               {fb.correctedUserSentence}
                             </p>
                           </div>
-                          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
-                            <span className="text-[10px] uppercase font-bold text-amber-900 block mb-1">
-                              Versión modelo nativa:
+                          <div className="p-3.5 rounded-xl bg-[var(--brass-soft)] border border-[var(--brass-border)] space-y-1">
+                            <span className="text-xs font-semibold text-[var(--brass)] block">
+                              Versión modelo nativa
                             </span>
-                            <p className="text-amber-950 font-semibold">
+                            <p className="text-[var(--ink)] font-medium">
                               {fb.b2UpgradeSentence || q.sampleIdealAnswerEn}
                             </p>
                           </div>
                         </div>
 
-                        {/* REPETICIÓN ACTIVA DE FALLOS (0/2 DE MEMORIA) */}
+                        {/* Repetición activa de fallos (0/2 de memoria) */}
                         {(() => {
                           const targetSentence = (
                             fb.correctedUserSentence || q.sampleIdealAnswerEn
@@ -1371,32 +1484,35 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
 
                           if (!hasMistakes) {
                             return (
-                              <div className="mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-300 flex items-center gap-2 text-xs sm:text-sm text-emerald-900 font-bold">
-                                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                                <span>🌟 ¡Respuesta impecable sin fallos! No necesitas repetir nada.</span>
+                              <div className="p-3.5 rounded-xl bg-[var(--pine-soft)] border border-[var(--pine-border)] flex items-center gap-2 text-xs sm:text-sm text-[var(--pine)] font-semibold">
+                                <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+                                <span>Respuesta precisa sin fallos. No necesitas repetición adicional.</span>
                               </div>
                             );
                           }
 
                           return (
-                            <div className="mt-4 p-4 rounded-xl bg-amber-50/80 border-2 border-amber-300 space-y-3">
+                            <div className="p-4 rounded-xl bg-[var(--brass-soft)] border border-[var(--brass-border)] space-y-3">
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
-                                  <RotateCcw className="w-4 h-4 text-amber-700" />
-                                  <span className="font-extrabold text-amber-950 text-xs sm:text-sm">
-                                    🔁 Repite de memoria para fijar el fallo ({repState?.repsCompleted || 0}/2)
+                                  <RotateCcw
+                                    className="w-4 h-4 text-[var(--brass)]"
+                                    aria-hidden="true"
+                                  />
+                                  <span className="font-semibold text-[var(--ink)] text-xs sm:text-sm tabular-nums">
+                                    Repite de memoria para fijar el fallo ({repState?.repsCompleted || 0}/2)
                                   </span>
                                 </div>
                                 {repState?.isCompleted && (
-                                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black border border-emerald-300 flex items-center gap-1">
-                                    <Check className="w-3 h-3" />
-                                    ¡Fallo superado!
+                                  <span className="px-2.5 py-0.5 rounded-md bg-[var(--pine-soft)] text-[var(--pine)] text-xs font-semibold border border-[var(--pine-border)] flex items-center gap-1">
+                                    <Check className="w-3 h-3" aria-hidden="true" />
+                                    <span>Fallo superado</span>
                                   </span>
                                 )}
                               </div>
 
-                              <p className="text-xs text-amber-900 font-medium leading-relaxed">
-                                Recuerda la corrección de arriba y escribe la frase completa sin errores <strong>2 veces seguidas de memoria</strong> para fijarla:
+                              <p className="text-xs text-[var(--ink)] leading-relaxed">
+                                Escribe la frase corregida completa <strong>2 veces seguidas de memoria</strong> sin errores para fijarla.
                               </p>
 
                               {!repState?.isCompleted && (
@@ -1404,18 +1520,21 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                                   <button
                                     type="button"
                                     onClick={() => speakEnglishText(targetSentence)}
-                                    title="Escuchar pista en audio"
-                                    className="text-[11px] font-bold text-amber-900 hover:text-amber-950 flex items-center gap-1 bg-amber-100/70 hover:bg-amber-200 px-2.5 py-1 rounded-lg cursor-pointer transition-colors"
+                                    className="btn btn-secondary btn-sm text-xs"
                                   >
-                                    <Volume2 className="w-3.5 h-3.5" />
-                                    <span>Pista en audio (escuchar)</span>
+                                    <Volume2 className="w-3.5 h-3.5 text-[var(--accent)]" aria-hidden="true" />
+                                    <span>Pista en audio</span>
                                   </button>
                                 </div>
                               )}
 
                               {!repState?.isCompleted ? (
                                 <div className="space-y-2.5">
+                                  <label htmlFor={repInputId} className="sr-only">
+                                    Repetición de memoria para la frase corregida
+                                  </label>
                                   <input
+                                    id={repInputId}
                                     type="text"
                                     value={repState?.currentInput || ''}
                                     onChange={(e) => {
@@ -1423,7 +1542,10 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                                       setRepetitionMap((prev) => ({
                                         ...prev,
                                         [q.id]: {
-                                          ...(prev[q.id] || { repsCompleted: 0, isCompleted: false }),
+                                          ...(prev[q.id] || {
+                                            repsCompleted: 0,
+                                            isCompleted: false
+                                          }),
                                           currentInput: text,
                                           errorNotice: undefined
                                         }
@@ -1435,37 +1557,41 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                                         handleCheckRepetition(q.id, targetSentence);
                                       }
                                     }}
-                                    placeholder={`Repetición ${(repState?.repsCompleted || 0) + 1} de 2: Escribe la frase de memoria...`}
-                                    className="w-full bg-white border-2 border-amber-300 focus:border-amber-600 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 outline-none"
+                                    placeholder={`Repetición ${(repState?.repsCompleted || 0) + 1} de 2: escribe la frase…`}
+                                    className="input-field"
                                   />
 
                                   <button
                                     type="button"
                                     onClick={() => handleCheckRepetition(q.id, targetSentence)}
                                     disabled={!repState?.currentInput?.trim()}
-                                    className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-[0.99] disabled:opacity-40 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs cursor-pointer min-h-[42px] flex items-center justify-center gap-1.5"
+                                    className="btn btn-brass w-full"
                                   >
-                                    <Check className="w-4 h-4" />
+                                    <Check className="w-4 h-4" aria-hidden="true" />
                                     <span>Comprobar repetición</span>
                                   </button>
 
                                   {repState?.errorNotice && (
-                                    <p className="text-xs text-rose-700 font-semibold bg-rose-50 p-2.5 rounded-lg border border-rose-200">
-                                      ⚠️ {repState.errorNotice}
+                                    <p
+                                      role="alert"
+                                      className="text-xs text-[var(--crimson)] font-medium bg-[var(--crimson-soft)] p-2.5 rounded-lg border border-[var(--crimson-border)] flex items-center gap-1.5"
+                                    >
+                                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                                      <span>{repState.errorNotice}</span>
                                     </p>
                                   )}
 
                                   {(repState?.repsCompleted || 0) === 1 && !repState?.isCompleted && (
-                                    <p className="text-xs text-emerald-800 font-bold bg-emerald-50 p-2 rounded-lg border border-emerald-200 flex items-center gap-1.5">
-                                      <Check className="w-4 h-4 text-emerald-600" />
-                                      ¡1ª repetición perfecta! Escríbela 1 vez más de memoria para dominarla.
+                                    <p className="text-xs text-[var(--pine)] font-semibold bg-[var(--pine-soft)] p-2.5 rounded-lg border border-[var(--pine-border)] flex items-center gap-1.5">
+                                      <Check className="w-4 h-4 shrink-0" aria-hidden="true" />
+                                      <span>Primera repetición correcta. Escríbela una vez más.</span>
                                     </p>
                                   )}
                                 </div>
                               ) : (
-                                <div className="bg-emerald-50 border border-emerald-300 p-3 rounded-xl flex items-center gap-2 text-emerald-900 text-xs sm:text-sm font-bold">
-                                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                                  <span>🎉 ¡Fallo superado con éxito! Has escrito la frase perfecta 2 veces seguidas de memoria.</span>
+                                <div className="bg-[var(--pine-soft)] border border-[var(--pine-border)] p-3 rounded-xl flex items-center gap-2 text-[var(--pine)] text-xs sm:text-sm font-semibold">
+                                  <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+                                  <span>Fallo superado: has escrito la frase exacta 2 veces de memoria.</span>
                                 </div>
                               )}
                             </div>
@@ -1473,11 +1599,11 @@ export const MediaLearningZone: React.FC<MediaLearningZoneProps> = ({
                         })()}
                       </div>
                     )}
-                  </div>
+                  </article>
                 );
               })}
             </div>
-          </div>
+          </section>
         </div>
       )}
     </div>

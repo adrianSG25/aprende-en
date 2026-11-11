@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Exercise, UserStats } from './types';
 import { GameProgress } from './types/streetGame';
+import { STREET_LEVELS } from './data/streetData';
 import {
   loadUserStats,
   saveUserStats,
@@ -8,6 +9,7 @@ import {
   loadGameProgress,
   saveGameProgress
 } from './services/storageService';
+import { BrandMark } from './components/BrandMark';
 import { StreetLevelMap } from './components/StreetLevelMap';
 import { StreetDrillArena } from './components/StreetDrillArena';
 import { StreetWhatsAppSimulator } from './components/StreetWhatsAppSimulator';
@@ -16,17 +18,20 @@ import { FieldDictionaryZone } from './components/FieldDictionaryZone';
 import { ReadingZone } from './components/ReadingZone';
 import { MediaLearningZone } from './components/MediaLearningZone';
 import { SettingsModal } from './components/SettingsModal';
+import { runViewTransition } from './utils/viewTransition';
 import {
-  Gamepad2,
+  Map,
   Flame,
   MessageSquare,
   FileText,
-  Trophy,
+  Award,
   Settings,
   Sparkles,
   Coins,
   BookOpen,
-  Tv
+  Clapperboard,
+  LayoutGrid,
+  ChevronRight
 } from 'lucide-react';
 
 type ActiveTab = 'levels' | 'vocab' | 'media' | 'drills' | 'whatsapp' | 'reading' | 'profile';
@@ -36,6 +41,9 @@ export function App() {
   const [stats, setStats] = useState<UserStats>(() => loadUserStats());
   const [gameProgress, setGameProgress] = useState<GameProgress>(() => loadGameProgress());
   const [showSettings, setShowSettings] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  const morePopoverRef = useRef<HTMLDivElement>(null);
 
   const handleUpdateGameProgress = (updated: GameProgress) => {
     saveGameProgress(updated);
@@ -62,131 +70,183 @@ export function App() {
     }
   };
 
-  const desktopNavItems: {
+  const handleSwitchTab = (tab: ActiveTab) => {
+    if (morePopoverRef.current?.matches(':popover-open')) {
+      morePopoverRef.current.hidePopover();
+    }
+    if (tab === activeTab) return;
+    runViewTransition(() => {
+      setActiveTab(tab);
+    }, 'main-content');
+  };
+
+  const totalBosses = STREET_LEVELS.length;
+
+  const navItems: {
     id: ActiveTab;
     label: string;
-    icon: React.ReactNode;
-    badge?: string;
+    shortLabel: string;
+    description: string;
+    icon: React.ComponentType<{ className?: string }>;
   }[] = [
     {
       id: 'levels',
-      label: 'Niveles UK (Juego)',
-      icon: <Gamepad2 className="w-4 h-4 text-amber-500" />
+      label: 'Niveles UK',
+      shortLabel: 'Niveles',
+      description: 'Ruta por barrios y retos de jefe',
+      icon: Map
     },
     {
       id: 'vocab',
-      label: 'Top 50 & Vocabulario',
-      icon: <BookOpen className="w-4 h-4 text-indigo-500" />
+      label: 'Diccionario',
+      shortLabel: 'Vocab',
+      description: 'Top 50, pasados y listas con IA',
+      icon: BookOpen
     },
     {
       id: 'media',
-      label: '🎬 Series & Pelis IA',
-      icon: <Tv className="w-4 h-4 text-rose-500" />
+      label: 'Series y Cine IA',
+      shortLabel: 'Series IA',
+      description: 'Aprende con episodios y películas',
+      icon: Clapperboard
     },
     {
       id: 'whatsapp',
-      label: 'WhatsApp Simulator',
-      icon: <MessageSquare className="w-4 h-4 text-emerald-500" />
+      label: 'WhatsApp UK',
+      shortLabel: 'WhatsApp',
+      description: 'Conversaciones reales por turnos',
+      icon: MessageSquare
     },
     {
       id: 'drills',
-      label: 'Machaque Callejero',
-      icon: <Flame className="w-4 h-4 text-rose-500" />
+      label: 'Machaque',
+      shortLabel: 'Machaque',
+      description: 'Práctica intensiva de escritura',
+      icon: Flame
     },
     {
       id: 'reading',
-      label: 'Textos & Historias',
-      icon: <FileText className="w-4 h-4 text-sky-500" />
+      label: 'Lecturas',
+      shortLabel: 'Lecturas',
+      description: 'Historias guiadas y analizador',
+      icon: FileText
     },
     {
       id: 'profile',
-      label: 'Mi Pasaporte & Rep',
-      icon: <Trophy className="w-4 h-4 text-purple-500" />
+      label: 'Pasaporte',
+      shortLabel: 'Perfil',
+      description: 'Rangos y progreso guardado',
+      icon: Award
     }
   ];
 
+  // 4 rutas primarias en barra móvil + menú "Más" (máximo 5 controles inferiores)
+  const primaryMobileIds: ActiveTab[] = ['levels', 'vocab', 'media', 'drills'];
+  const primaryMobileItems = navItems.filter((item) => primaryMobileIds.includes(item.id));
+  const overflowMobileItems = navItems.filter((item) => !primaryMobileIds.includes(item.id));
+  const isOverflowActive = !primaryMobileIds.includes(activeTab);
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col pb-24 lg:pb-12">
-      {/* Top Header */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-3">
-          {/* Logo & Title */}
+    <div className="min-h-dvh bg-[var(--bg)] text-[var(--ink)] flex flex-col pb-24 lg:pb-12">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 btn btn-primary btn-sm"
+      >
+        Saltar al contenido principal
+      </a>
+
+      {/* Cabecera principal fija */}
+      <header className="sticky top-0 z-30 bg-[var(--surface)]/95 backdrop-blur-md border-b border-[var(--border)]">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-3">
+          {/* Identidad */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-indigo-700 via-indigo-900 to-slate-950 flex items-center justify-center font-black text-white text-base sm:text-lg shadow-sm shrink-0 border border-indigo-500">
-              🇬🇧
-            </div>
+            <BrandMark size={30} className="shrink-0 sm:w-[34px] sm:h-[34px]" />
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <h1 className="font-black text-sm sm:text-lg tracking-tight text-slate-900 truncate">
-                  UK Street English
-                </h1>
-                <span className="hidden xs:inline-block text-[10px] sm:text-[11px] font-black px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 shrink-0">
-                  Inglés Callejero Real
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 hidden sm:block">
-                Aprende a hablar y chatear como en las calles y pubs de UK
+              <h1 className="font-display font-bold text-[14px] sm:text-lg tracking-[-0.02em] text-[var(--ink)] truncate leading-tight">
+                UK Street English
+              </h1>
+              <p className="text-[11px] sm:text-xs text-[var(--ink-muted)] hidden sm:block leading-tight">
+                Inglés cotidiano de Londres, pubs y mensajería
               </p>
             </div>
           </div>
 
-          {/* Gamification Stats & Settings Button */}
+          {/* Métricas y botón de ajustes */}
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-            {/* Desktop XP & Quids */}
-            <div className="hidden sm:flex items-center gap-2.5 bg-slate-50 border border-slate-200 rounded-2xl px-3 py-1.5 text-xs font-black">
-              <div className="flex items-center gap-1 text-amber-700">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            {/* Barra de progreso compacta en escritorio */}
+            <div className="hidden sm:flex items-center gap-3 px-3 py-1.5 rounded-lg bg-[var(--surface-2)] border border-[var(--border)] text-xs font-semibold tabular-nums">
+              <span className="flex items-center gap-1.5 text-[var(--brass)]">
+                <Sparkles className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                 <span>{gameProgress.xp} XP</span>
-              </div>
-              <div className="h-3.5 w-px bg-slate-200" />
-              <div className="flex items-center gap-1 text-emerald-700">
-                <Coins className="w-3.5 h-3.5 text-emerald-500" />
-                <span>{gameProgress.quids} Quids 💷</span>
-              </div>
-              <div className="h-3.5 w-px bg-slate-200" />
-              <div className="flex items-center gap-1 text-purple-700">
-                <Trophy className="w-3.5 h-3.5 text-purple-500" />
-                <span>{gameProgress.bossesDefeated.length}/5 Jefes</span>
-              </div>
+              </span>
+              <span className="h-3.5 w-px bg-[var(--border-strong)]" aria-hidden="true" />
+              <span className="flex items-center gap-1.5 text-[var(--pine)]">
+                <Coins className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                <span>{gameProgress.quids} Quids</span>
+              </span>
+              <span className="h-3.5 w-px bg-[var(--border-strong)]" aria-hidden="true" />
+              <span className="flex items-center gap-1.5 text-[var(--ink)]">
+                <Award className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" aria-hidden="true" />
+                <span>
+                  {gameProgress.bossesDefeated.length}/{totalBosses} Jefes
+                </span>
+              </span>
             </div>
 
-            {/* Mobile quick XP pill */}
-            <div className="sm:hidden flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 font-black text-xs shrink-0">
-              <Sparkles className="w-3 h-3 text-amber-600" />
+            {/* Indicador compacto XP en móvil */}
+            <div className="sm:hidden flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--brass-soft)] border border-[var(--brass-border)] text-[var(--brass)] font-bold text-[11px] tabular-nums">
+              <Sparkles className="w-3 h-3 shrink-0" aria-hidden="true" />
               <span>{gameProgress.xp} XP</span>
             </div>
 
-            {/* Prominent Settings Button: 100% accessible for mobile */}
             <button
               type="button"
               onClick={() => setShowSettings(true)}
-              className="min-h-[42px] px-3.5 py-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer shrink-0"
-              title="Abrir ajustes de IA y API Key"
+              className="btn btn-dark btn-sm"
+              aria-label="Abrir ajustes de inteligencia artificial y copia de seguridad"
             >
-              <Settings className="w-4 h-4 text-white" />
-              <span>Ajustes IA</span>
+              <Settings className="w-4 h-4" aria-hidden="true" />
+              <span>
+                Ajustes<span className="hidden min-[400px]:inline"> IA</span>
+              </span>
             </button>
           </div>
         </div>
 
-        {/* Desktop Navigation Tabs */}
-        <nav className="hidden lg:block border-t border-slate-200 bg-white">
-          <div className="max-w-7xl mx-auto px-4 py-2 flex items-center gap-2">
-            {desktopNavItems.map((item) => {
+        {/* Navegación principal en escritorio */}
+        <nav
+          aria-label="Secciones principales"
+          className="hidden lg:block border-t border-[var(--border)] bg-[var(--surface)]"
+        >
+          <div className="max-w-6xl mx-auto px-6 flex items-center gap-1 overflow-x-auto no-scrollbar">
+            {navItems.map((item) => {
+              const Icon = item.icon;
               const isActive = activeTab === item.id;
               return (
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setActiveTab(item.id)}
-                  className={`px-4 py-2 rounded-2xl font-black text-xs sm:text-sm flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
+                  onClick={() => handleSwitchTab(item.id)}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`relative px-3.5 py-3 text-[13px] font-semibold flex items-center gap-2 whitespace-nowrap transition-colors ${
                     isActive
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      ? 'text-[var(--accent)]'
+                      : 'text-[var(--ink-muted)] hover:text-[var(--ink)]'
                   }`}
                 >
-                  {item.icon}
+                  <Icon
+                    className={`w-4 h-4 shrink-0 ${
+                      isActive ? 'text-[var(--accent)]' : 'text-[var(--ink-subtle)]'
+                    }`}
+                    aria-hidden="true"
+                  />
                   <span>{item.label}</span>
+                  {isActive && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-[var(--accent)]"
+                    />
+                  )}
                 </button>
               );
             })}
@@ -194,8 +254,12 @@ export function App() {
         </nav>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-5 sm:py-6">
+      {/* Área de contenido principal */}
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex-1 max-w-6xl w-full mx-auto px-3.5 sm:px-6 py-5 sm:py-7 outline-none"
+      >
         {activeTab === 'levels' && (
           <StreetLevelMap
             progress={gameProgress}
@@ -251,116 +315,125 @@ export function App() {
         )}
       </main>
 
-      {/* Mobile Bottom Navigation Bar (7 dedicated large touch targets) */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-1 pt-1.5 pb-safe shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-        <div className="grid grid-cols-7 gap-0.5 max-w-lg mx-auto">
-          {/* 1: Niveles (Juego) */}
-          <button
-            type="button"
-            onClick={() => setActiveTab('levels')}
-            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[9px] font-black transition-all cursor-pointer ${
-              activeTab === 'levels'
-                ? 'text-indigo-600 bg-indigo-50/90'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Gamepad2 className={`w-4 h-4 sm:w-5 sm:h-5 ${activeTab === 'levels' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            <span className="mt-0.5 truncate">Niveles</span>
-          </button>
+      {/* Popover de navegación adicional para móvil (WhatsApp, Lecturas, Pasaporte) */}
+      <div
+        id="mobile-more-nav"
+        ref={morePopoverRef}
+        popover="auto"
+        onToggle={(e) => {
+          const evt = e.nativeEvent as Event & { newState?: string };
+          setMoreOpen(evt.newState === 'open');
+        }}
+        className="mobile-more-popover lg:hidden"
+      >
+        <div className="px-2.5 py-2 border-b border-[var(--border)] mb-1 flex items-center justify-between">
+          <span className="text-xs font-semibold text-[var(--ink-muted)]">
+            Más herramientas
+          </span>
+          <span className="text-xs font-semibold text-[var(--pine)] tabular-nums">
+            {gameProgress.quids} Quids · {gameProgress.bossesDefeated.length}/{totalBosses} Jefes
+          </span>
+        </div>
+        <div className="space-y-1">
+          {overflowMobileItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleSwitchTab(item.id)}
+                aria-current={isActive ? 'page' : undefined}
+                className={`w-full text-left px-3 py-2.5 rounded-xl flex items-center justify-between gap-3 transition-colors min-h-[48px] ${
+                  isActive
+                    ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
+                    : 'hover:bg-[var(--surface-2)] text-[var(--ink)]'
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                      isActive
+                        ? 'bg-[var(--surface)] text-[var(--accent)] border border-[var(--accent-border)]'
+                        : 'bg-[var(--surface-2)] text-[var(--ink-muted)]'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="block text-sm font-semibold truncate">{item.label}</span>
+                    <span className="block text-[11px] text-[var(--ink-muted)] truncate">
+                      {item.description}
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-[var(--ink-subtle)] shrink-0" aria-hidden="true" />
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-          {/* 2: Vocabulario & Top 50 */}
-          <button
-            type="button"
-            onClick={() => setActiveTab('vocab')}
-            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[9px] font-black transition-all cursor-pointer ${
-              activeTab === 'vocab'
-                ? 'text-indigo-600 bg-indigo-50/90'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <BookOpen className={`w-4 h-4 sm:w-5 sm:h-5 ${activeTab === 'vocab' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            <span className="mt-0.5 truncate">Vocab</span>
-          </button>
+      {/* Barra de navegación inferior móvil (5 espacios amplios >= 48px) */}
+      <nav
+        aria-label="Navegación móvil"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--surface)]/95 backdrop-blur-md border-t border-[var(--border)] px-2 pt-1.5 pb-safe"
+      >
+        <div className="grid grid-cols-5 gap-1 max-w-md mx-auto">
+          {primaryMobileItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleSwitchTab(item.id)}
+                aria-current={isActive ? 'page' : undefined}
+                className={`relative flex flex-col items-center justify-center min-h-[48px] py-1 px-1 rounded-xl text-[11px] font-semibold transition-colors ${
+                  isActive
+                    ? 'text-[var(--accent)] bg-[var(--accent-soft)]'
+                    : 'text-[var(--ink-muted)]'
+                }`}
+              >
+                {isActive && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-0.5 w-6 h-0.5 rounded-full bg-[var(--accent)]"
+                  />
+                )}
+                <Icon className="w-5 h-5" aria-hidden="true" />
+                <span className="mt-0.5 truncate max-w-full">{item.shortLabel}</span>
+              </button>
+            );
+          })}
 
-          {/* 3: Series & Cine con IA */}
           <button
             type="button"
-            onClick={() => setActiveTab('media')}
-            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[9px] font-black transition-all cursor-pointer ${
-              activeTab === 'media'
-                ? 'text-indigo-600 bg-indigo-50/90'
-                : 'text-slate-500 hover:text-slate-800'
+            popoverTarget="mobile-more-nav"
+            aria-expanded={moreOpen}
+            aria-controls="mobile-more-nav"
+            className={`relative flex flex-col items-center justify-center min-h-[48px] py-1 px-1 rounded-xl text-[11px] font-semibold transition-colors ${
+              isOverflowActive || moreOpen
+                ? 'text-[var(--accent)] bg-[var(--accent-soft)]'
+                : 'text-[var(--ink-muted)]'
             }`}
           >
-            <Tv className={`w-4 h-4 sm:w-5 sm:h-5 ${activeTab === 'media' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            <span className="mt-0.5 truncate">Series IA</span>
-          </button>
-
-          {/* 4: WhatsApp */}
-          <button
-            type="button"
-            onClick={() => setActiveTab('whatsapp')}
-            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[9px] font-black transition-all cursor-pointer ${
-              activeTab === 'whatsapp'
-                ? 'text-indigo-600 bg-indigo-50/90'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <MessageSquare className={`w-4 h-4 sm:w-5 sm:h-5 ${activeTab === 'whatsapp' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            <span className="mt-0.5 truncate">WhatsApp</span>
-          </button>
-
-          {/* 5: Machaque */}
-          <button
-            type="button"
-            onClick={() => setActiveTab('drills')}
-            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[9px] font-black transition-all cursor-pointer ${
-              activeTab === 'drills'
-                ? 'text-indigo-600 bg-indigo-50/90'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Flame className={`w-4 h-4 sm:w-5 sm:h-5 ${activeTab === 'drills' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            <span className="mt-0.5 truncate">Machaque</span>
-          </button>
-
-          {/* 6: Textos */}
-          <button
-            type="button"
-            onClick={() => setActiveTab('reading')}
-            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[9px] font-black transition-all cursor-pointer ${
-              activeTab === 'reading'
-                ? 'text-indigo-600 bg-indigo-50/90'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <FileText className={`w-4 h-4 sm:w-5 sm:h-5 ${activeTab === 'reading' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            <span className="mt-0.5 truncate">Textos</span>
-          </button>
-
-          {/* 7: Perfil */}
-          <button
-            type="button"
-            onClick={() => setActiveTab('profile')}
-            className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl text-[9px] font-black transition-all cursor-pointer ${
-              activeTab === 'profile'
-                ? 'text-indigo-600 bg-indigo-50/90'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Trophy className={`w-4 h-4 sm:w-5 sm:h-5 ${activeTab === 'profile' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            <span className="mt-0.5 truncate">Perfil</span>
+            {isOverflowActive && (
+              <span
+                aria-hidden="true"
+                className="absolute top-0.5 w-6 h-0.5 rounded-full bg-[var(--accent)]"
+              />
+            )}
+            <LayoutGrid className="w-5 h-5" aria-hidden="true" />
+            <span className="mt-0.5 truncate max-w-full">Más</span>
           </button>
         </div>
       </nav>
 
-      {/* Settings Modal (API Keys, Groq, Gemini, etc.) */}
-      {showSettings && (
-        <SettingsModal
-          onClose={() => setShowSettings(false)}
-        />
-      )}
+      {/* Diálogo modal nativo de Ajustes IA */}
+      <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 }
+
 export default App;

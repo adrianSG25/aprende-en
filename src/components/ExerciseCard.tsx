@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Exercise } from '../types';
 import {
   checkAnswerMatch,
@@ -26,21 +26,21 @@ interface ExerciseCardProps {
   streakCount?: number;
 }
 
-const LEVEL_BADGE_COLORS: Record<string, string> = {
-  'A2+': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  'B1': 'bg-sky-50 text-sky-700 border-sky-200',
-  'B1+': 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  'B2': 'bg-purple-50 text-purple-700 border-purple-200',
-  'B2+': 'bg-rose-50 text-rose-700 border-rose-200'
+const LEVEL_BADGE_STYLES: Record<string, string> = {
+  'A2+': 'bg-[var(--pine-soft)] text-[var(--pine)] border-[var(--pine-border)]',
+  'B1': 'bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent-border)]',
+  'B1+': 'bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent-border)]',
+  'B2': 'bg-[var(--brass-soft)] text-[var(--brass)] border-[var(--brass-border)]',
+  'B2+': 'bg-[var(--crimson-soft)] text-[var(--crimson)] border-[var(--crimson-border)]'
 };
 
 const TYPE_LABELS: Record<string, string> = {
-  cloze: 'Rellenar Hueco',
-  transformation: 'Key Word Transformation',
-  error_correction: 'Caza y Corrige el Error',
-  translation: 'Traducción Inversa (ES → EN)',
-  word_formation: 'Word Formation (Raíz)',
-  multiple_choice: 'Opción Múltiple'
+  cloze: 'Rellenar hueco',
+  transformation: 'Transformación con palabra clave',
+  error_correction: 'Corregir el error',
+  translation: 'Traducción inversa (ES → EN)',
+  word_formation: 'Formación de palabras',
+  multiple_choice: 'Opción múltiple'
 };
 
 export const ExerciseCard: React.FC<ExerciseCardProps> = ({
@@ -50,6 +50,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   indexLabel,
   streakCount
 }) => {
+  const [prevExerciseId, setPrevExerciseId] = useState(exercise.id);
   const [userInput, setUserInput] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [evaluation, setEvaluation] = useState<DetailedEvaluation | null>(null);
@@ -59,7 +60,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   const [practiceAgainInput, setPracticeAgainInput] = useState('');
   const [practiceAgainSuccess, setPracticeAgainSuccess] = useState(false);
 
-  useEffect(() => {
+  if (exercise.id !== prevExerciseId) {
+    setPrevExerciseId(exercise.id);
     setUserInput('');
     setSubmitted(false);
     setEvaluation(null);
@@ -68,7 +70,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
     setSavedToVault(false);
     setPracticeAgainInput('');
     setPracticeAgainSuccess(false);
-  }, [exercise.id]);
+  }
 
   const { englishTargetWithGap, spanishTranslation } = extractTargetAndTranslation(exercise);
 
@@ -100,14 +102,13 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
     }
   };
 
-  // Ordenamos respuestas para que la pista muestre la respuesta corta
   const sortedAnswers = [...exercise.acceptedAnswers].sort((a, b) => a.length - b.length);
   const shortTargetAnswer = sortedAnswers[0] || '';
+  const wordCount = shortTargetAnswer.split(' ').length;
   const firstLetterHint = shortTargetAnswer
-    ? `Empieza por: "${shortTargetAnswer.slice(0, Math.min(3, shortTargetAnswer.length))}..." (${shortTargetAnswer.split(' ').length} palabra${shortTargetAnswer.split(' ').length > 1 ? 's' : ''})`
+    ? `Empieza por: «${shortTargetAnswer.slice(0, Math.min(3, shortTargetAnswer.length))}…» (${wordCount} ${wordCount === 1 ? 'palabra' : 'palabras'})`
     : '';
 
-  // Resaltar dentro de la frase completa corregida la parte que se ha cambiado/rellenado
   const renderHighlightedFullSentence = (fullSentence: string, highlightChunk: string) => {
     if (!highlightChunk) return fullSentence;
     const idx = fullSentence.toLowerCase().indexOf(highlightChunk.toLowerCase());
@@ -118,7 +119,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
     return (
       <>
         {before}
-        <span className="px-1.5 py-0.5 mx-0.5 rounded bg-emerald-100 border border-emerald-300 text-emerald-900 font-extrabold underline decoration-emerald-500">
+        <span className="px-1.5 py-0.5 mx-0.5 rounded bg-[var(--pine-soft)] border border-[var(--pine-border)] text-[var(--pine)] font-bold underline decoration-[var(--pine)]">
           {match}
         </span>
         {after}
@@ -127,239 +128,228 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   };
 
   return (
-    <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-6 shadow-sm transition-all">
-      {/* Header Badges */}
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+    <article className="card p-4 sm:p-6 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {indexLabel && (
-            <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700">
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-[var(--surface-2)] text-[var(--ink)] tabular-nums">
               {indexLabel}
             </span>
           )}
           <span
-            className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${
-              LEVEL_BADGE_COLORS[exercise.level] || 'bg-slate-100 text-slate-700 border-slate-200'
+            className={`text-xs font-semibold px-2.5 py-1 rounded-md border ${
+              LEVEL_BADGE_STYLES[exercise.level] ||
+              'bg-[var(--surface-2)] text-[var(--ink-muted)] border-[var(--border)]'
             }`}
           >
             Nivel {exercise.level}
           </span>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200">
+          <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-[var(--surface-2)] text-[var(--ink-muted)]">
             {TYPE_LABELS[exercise.type] || exercise.type}
           </span>
-          <span className="text-xs text-slate-500 font-medium">
-            • {exercise.topicLabel}
-          </span>
+          <span className="text-xs text-[var(--ink-muted)]">· {exercise.topicLabel}</span>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Botón opcional para mostrar/ocultar traducción al español */}
           {spanishTranslation && exercise.type !== 'translation' && (
             <button
               type="button"
               onClick={() => setShowTranslation(!showTranslation)}
-              className={`text-xs font-bold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all cursor-pointer ${
-                showTranslation
-                  ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
-                  : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
-              }`}
+              className={`btn btn-sm ${showTranslation ? 'btn-soft' : 'btn-secondary'}`}
             >
-              <Languages className="w-3.5 h-3.5" />
-              {showTranslation ? 'Ocultar traducción' : 'Mostrar traducción'}
+              <Languages className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>{showTranslation ? 'Ocultar traducción' : 'Ver traducción'}</span>
             </button>
           )}
 
           {streakCount !== undefined && streakCount > 0 && (
-            <div className="flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-orange-50 text-orange-700 border border-orange-200">
-              <Sparkles className="w-3.5 h-3.5 text-orange-500" />
-              Racha: {streakCount}
+            <div className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-md bg-[var(--brass-soft)] text-[var(--brass)] border border-[var(--brass-border)] tabular-nums">
+              <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Racha: {streakCount}</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Prompt Instruction (or Cloze Sentence) */}
-      <div className="mb-3">
+      <div>
         <p
-          className={`${
+          className={
             exercise.prompt.includes('___')
-              ? 'text-base sm:text-lg font-semibold text-slate-900 bg-slate-50 border border-slate-200 rounded-xl p-4'
-              : 'text-slate-700 text-sm sm:text-base font-medium'
-          }`}
+              ? 'text-base sm:text-lg font-semibold text-[var(--ink)] inset-well p-4'
+              : 'text-sm sm:text-base font-medium text-[var(--ink)]'
+          }
         >
           {exercise.prompt}
         </p>
       </div>
 
-      {/* Base Sentence (for Transformation, Error Correction, Word Formation) */}
       {exercise.baseSentence && (
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4 space-y-2.5">
-          <p className="text-base sm:text-lg font-semibold text-slate-900 leading-relaxed">
+        <div className="inset-well p-4 space-y-2">
+          <p className="text-base sm:text-lg font-semibold text-[var(--ink)] leading-relaxed">
             {exercise.baseSentence}
           </p>
           {exercise.keyWord && (
             <div className="flex items-center gap-2">
-              <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold">
-                Palabra clave:
-              </span>
-              <span className="px-3 py-0.5 rounded-md bg-amber-100 border border-amber-300 text-amber-900 font-mono font-bold text-sm tracking-wider">
+              <span className="text-xs font-medium text-[var(--ink-muted)]">Palabra clave:</span>
+              <span className="px-2.5 py-0.5 rounded-md bg-[var(--brass-soft)] border border-[var(--brass-border)] text-[var(--brass)] font-mono font-bold text-sm">
                 {exercise.keyWord}
               </span>
             </div>
           )}
           {exercise.type === 'error_correction' && (
-            <p className="text-xs text-slate-500">
-              💡 Puedes escribir <strong>solo las palabras corregidas</strong> o la <strong>frase entera corregida</strong>.
+            <p className="text-xs text-[var(--ink-muted)]">
+              Puedes escribir solo el fragmento corregido o la frase completa.
             </p>
           )}
         </div>
       )}
 
-      {/* Target English Sentence with Gap (for Key Word Transformation) */}
       {englishTargetWithGap && (
-        <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-4 mb-4">
-          <span className="text-[11px] uppercase tracking-wider text-indigo-800 font-bold block mb-1">
-            Completa la segunda frase para que signifique lo mismo:
+        <div className="rounded-xl p-4 bg-[var(--accent-soft)] border border-[var(--accent-border)] space-y-1">
+          <span className="text-xs font-semibold text-[var(--accent)] block">
+            Completa la segunda frase con el mismo sentido
           </span>
-          <p className="text-base sm:text-lg text-slate-950 font-bold">
+          <p className="text-base sm:text-lg text-[var(--ink)] font-bold">
             {englishTargetWithGap}
           </p>
         </div>
       )}
 
-      {/* Direct Spanish Prompt (ONLY for Reverse Translation exercises) */}
       {exercise.type === 'translation' && spanishTranslation && (
-        <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-4 mb-4">
-          <span className="text-[11px] uppercase tracking-wider text-indigo-800 font-bold block mb-1">
-            Frase a traducir al inglés:
+        <div className="rounded-xl p-4 bg-[var(--accent-soft)] border border-[var(--accent-border)] space-y-1">
+          <span className="text-xs font-semibold text-[var(--accent)] block">
+            Frase a traducir al inglés
           </span>
-          <p className="text-base sm:text-lg text-slate-950 font-bold">
-            "{spanishTranslation}"
+          <p className="text-base sm:text-lg text-[var(--ink)] font-bold">
+            “{spanishTranslation}”
           </p>
         </div>
       )}
 
-      {/* Optional Spanish Translation Box (when user clicks "Mostrar traducción") */}
       {showTranslation && spanishTranslation && exercise.type !== 'translation' && (
-        <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 mb-4 flex items-center gap-2.5 text-sm text-amber-950">
-          <Languages className="w-4 h-4 text-amber-700 shrink-0" />
+        <div className="rounded-xl p-3.5 bg-[var(--brass-soft)] border border-[var(--brass-border)] flex items-center gap-2.5 text-sm text-[var(--ink)]">
+          <Languages className="w-4 h-4 text-[var(--brass)] shrink-0" aria-hidden="true" />
           <span>
-            <strong>Traducción:</strong> {spanishTranslation}
+            <strong className="font-semibold">Traducción:</strong> {spanishTranslation}
           </span>
         </div>
       )}
 
-      {/* Multiple Choice Options if available and not submitted */}
       {exercise.options && exercise.options.length > 0 && !submitted && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {exercise.options.map((opt) => (
             <button
               key={opt}
               type="button"
               onClick={() => handleCheck(undefined, opt)}
-              className="text-left px-4 py-3.5 rounded-xl bg-slate-50 hover:bg-indigo-50/80 border border-slate-200 hover:border-indigo-300 text-slate-900 font-semibold transition-all flex items-center justify-between group cursor-pointer min-h-[48px]"
+              className="text-left px-4 py-3.5 rounded-xl bg-[var(--surface-2)] hover:bg-[var(--accent-soft)] border border-[var(--border)] hover:border-[var(--accent-border)] text-[var(--ink)] font-semibold transition-colors flex items-center justify-between group min-h-[48px]"
             >
               <span>{opt}</span>
-              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-transform group-hover:translate-x-0.5" />
+              <ArrowRight
+                className="w-4 h-4 text-[var(--ink-subtle)] group-hover:text-[var(--accent)] transition-colors"
+                aria-hidden="true"
+              />
             </button>
           ))}
         </div>
       )}
 
-      {/* Text Input Form */}
       <form onSubmit={(e) => handleCheck(e)} className="space-y-3">
         <div className="flex flex-col sm:flex-row gap-2.5">
-          <input
-            type="text"
-            value={userInput}
-            disabled={submitted}
-            onChange={(e) => setUserInput(e.target.value)}
-            placeholder={
-              exercise.type === 'error_correction'
-                ? 'Escribe el verbo/parte corregida (o la frase entera)...'
-                : exercise.type === 'translation'
-                ? 'Escribe la frase traducida al inglés...'
-                : 'Escribe tu respuesta para el hueco...'
-            }
-            className="flex-1 bg-white border-2 border-slate-300 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 rounded-xl px-4 py-3.5 text-slate-900 placeholder-slate-400 text-base font-medium outline-none disabled:bg-slate-50 disabled:text-slate-400 min-h-[48px]"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-          />
+          <div className="flex-1">
+            <label htmlFor={`exercise-input-${exercise.id}`} className="sr-only">
+              Tu respuesta
+            </label>
+            <input
+              id={`exercise-input-${exercise.id}`}
+              name="exerciseAnswer"
+              type="text"
+              value={userInput}
+              disabled={submitted}
+              onChange={(e) => setUserInput(e.target.value)}
+              placeholder={
+                exercise.type === 'error_correction'
+                  ? 'Escribe la parte corregida o la frase entera…'
+                  : exercise.type === 'translation'
+                  ? 'Escribe la frase traducida al inglés…'
+                  : 'Escribe tu respuesta para el hueco…'
+              }
+              className="input-field font-medium"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+          </div>
 
           {!submitted ? (
             <div className="flex gap-2">
-              <button
-                type="submit"
-                className="flex-1 sm:flex-initial px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-xs transition-all cursor-pointer min-h-[48px]"
-              >
+              <button type="submit" className="btn btn-primary flex-1 sm:flex-initial">
                 Comprobar
               </button>
               <button
                 type="button"
                 onClick={() => setShowHint(!showHint)}
-                title="Ver pista"
-                className="px-4 py-3.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl border border-amber-200 transition-all cursor-pointer min-h-[48px]"
+                className="btn btn-secondary px-3.5"
+                aria-label="Mostrar pista"
               >
-                <HelpCircle className="w-5 h-5 text-amber-600" />
+                <HelpCircle className="w-5 h-5 text-[var(--brass)]" aria-hidden="true" />
               </button>
             </div>
           ) : (
             onNext && (
-              <button
-                type="button"
-                onClick={onNext}
-                className="px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[48px]"
-              >
+              <button type="button" onClick={onNext} className="btn btn-pine">
                 <span>Siguiente</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </button>
             )
           )}
         </div>
 
-        {/* Hint Box before submitting */}
         {showHint && !submitted && (
-          <div className="flex items-start gap-2.5 text-xs sm:text-sm bg-amber-50 border border-amber-200 text-amber-900 px-3.5 py-2.5 rounded-xl">
-            <Lightbulb className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2.5 text-xs sm:text-sm bg-[var(--brass-soft)] border border-[var(--brass-border)] text-[var(--ink)] px-3.5 py-2.5 rounded-xl">
+            <Lightbulb className="w-4 h-4 text-[var(--brass)] shrink-0 mt-0.5" aria-hidden="true" />
             <div>
               <p className="font-semibold">{firstLetterHint}</p>
               {exercise.grammarRule && (
-                <p className="text-amber-800 mt-0.5">Fórmula: {exercise.grammarRule}</p>
+                <p className="text-[var(--ink-muted)] mt-0.5">Fórmula: {exercise.grammarRule}</p>
               )}
             </div>
           </div>
         )}
       </form>
 
-      {/* Feedback & Full Corrected Sentence Section */}
       {submitted && evaluation && (
         <div
-          className={`mt-5 rounded-xl p-4 sm:p-5 border space-y-4 ${
+          aria-live="polite"
+          className={`rounded-xl p-4 sm:p-5 border space-y-4 ${
             evaluation.isCorrect
-              ? 'bg-emerald-50/90 border-emerald-200 text-emerald-950'
-              : 'bg-rose-50/90 border-rose-200 text-rose-950'
+              ? 'bg-[var(--pine-soft)] border-[var(--pine-border)]'
+              : 'bg-[var(--crimson-soft)] border-[var(--crimson-border)]'
           }`}
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-start gap-2.5">
               {evaluation.isCorrect ? (
-                <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-5 h-5 text-[var(--pine)] shrink-0 mt-0.5" aria-hidden="true" />
               ) : (
-                <XCircle className="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
+                <XCircle className="w-5 h-5 text-[var(--crimson)] shrink-0 mt-0.5" aria-hidden="true" />
               )}
               <div>
-                <h4 className="font-bold text-base">
+                <h4
+                  className={`font-bold text-sm sm:text-base ${
+                    evaluation.isCorrect ? 'text-[var(--pine)]' : 'text-[var(--crimson)]'
+                  }`}
+                >
                   {evaluation.isCorrect
                     ? evaluation.hasMinorSpellingTypos
-                      ? '¡Gramática correcta! (Con una pequeña errata de letras al copiar la frase)'
-                      : '¡Correcto! Muy bien clavada la estructura.'
-                    : '¡Casi! Mira la frase corregida abajo (se ha guardado en tu Zona de Repetición).'}
+                      ? 'Gramática correcta (con una errata menor de escritura)'
+                      : 'Correcto: estructura clavada.'
+                    : 'No es exacto; revisa la frase corregida abajo.'}
                 </h4>
 
-                {/* Si tenía errata de teclado en el resto de la frase pero acertó la gramática */}
                 {evaluation.hasMinorSpellingTypos && evaluation.typoNotes.length > 0 && (
-                  <p className="text-xs sm:text-sm text-amber-800 font-semibold mt-1">
-                    ⚠️ Ojo solo al spelling de: {evaluation.typoNotes.join(', ')}
+                  <p className="text-xs sm:text-sm text-[var(--brass)] font-semibold mt-1">
+                    Revisa ortografía en: {evaluation.typoNotes.join(', ')}
                   </p>
                 )}
               </div>
@@ -369,37 +359,34 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               type="button"
               onClick={handleSaveToVault}
               disabled={savedToVault}
-              className={`text-xs font-semibold px-3 py-1.5 rounded-lg border flex items-center gap-1.5 transition-all cursor-pointer ${
-                savedToVault
-                  ? 'bg-amber-100 border-amber-300 text-amber-900'
-                  : 'bg-white hover:bg-slate-50 border-slate-300 text-slate-700'
-              }`}
+              className="btn btn-secondary btn-sm"
             >
-              <BookmarkPlus className="w-3.5 h-3.5" />
-              {savedToVault ? 'Guardado en Repetición' : 'Forzar Repetición'}
+              <BookmarkPlus className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>{savedToVault ? 'Guardado' : 'Guardar fallo'}</span>
             </button>
           </div>
 
-          {/* CAJA DE FRASE CORREGIDA COMPLETA + CAMBIO EXACTO */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2.5 shadow-2xs">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 space-y-2.5">
             {exercise.type === 'error_correction' && exercise.errorWord && (
               <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-                <span className="text-slate-500 font-semibold">Cambio gramatical clave:</span>
-                <span className="px-2 py-0.5 rounded bg-rose-100 border border-rose-200 text-rose-800 line-through font-mono">
-                  ❌ {exercise.errorWord}
+                <span className="text-[var(--ink-muted)] font-semibold">Corrección clave:</span>
+                <span className="px-2 py-0.5 rounded bg-[var(--crimson-soft)] border border-[var(--crimson-border)] text-[var(--crimson)] line-through font-mono">
+                  {exercise.errorWord}
                 </span>
-                <span className="text-slate-400">→</span>
-                <span className="px-2.5 py-0.5 rounded bg-emerald-100 border border-emerald-300 text-emerald-900 font-mono font-bold">
-                  ✅ {evaluation.shortCorrection}
+                <span className="text-[var(--ink-subtle)]" aria-hidden="true">
+                  →
+                </span>
+                <span className="px-2.5 py-0.5 rounded bg-[var(--pine-soft)] border border-[var(--pine-border)] text-[var(--pine)] font-mono font-bold">
+                  {evaluation.shortCorrection}
                 </span>
               </div>
             )}
 
             <div>
-              <span className="text-[11px] uppercase tracking-wider text-emerald-700 font-bold block mb-1">
-                ✅ Frase completa corregida:
+              <span className="text-xs font-semibold text-[var(--pine)] block mb-1">
+                Frase completa corregida
               </span>
-              <p className="text-base sm:text-lg text-slate-900 font-semibold leading-relaxed">
+              <p className="text-base sm:text-lg text-[var(--ink)] font-semibold leading-relaxed">
                 {renderHighlightedFullSentence(
                   evaluation.fullCorrectedSentence,
                   evaluation.shortCorrection
@@ -407,18 +394,17 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               </p>
             </div>
 
-            {/* Si el usuario cometió errores o erratas, le mostramos palabra por palabra dónde falló su frase */}
             {(!evaluation.isCorrect || evaluation.hasMinorSpellingTypos) &&
               evaluation.wordDiff.length > 0 && (
-                <div className="pt-2 border-t border-slate-200">
-                  <span className="text-[11px] uppercase tracking-wider text-slate-500 font-bold block mb-1">
-                    🔍 Lo que escribiste tú (revisión palabra por palabra):
+                <div className="pt-2.5 border-t border-[var(--border)]">
+                  <span className="text-xs font-medium text-[var(--ink-muted)] block mb-1.5">
+                    Comparación palabra por palabra
                   </span>
                   <div className="flex flex-wrap gap-1.5 text-sm">
                     {evaluation.wordDiff.map((token, idx) => {
                       if (token.status === 'ok') {
                         return (
-                          <span key={idx} className="text-emerald-800 font-medium">
+                          <span key={idx} className="text-[var(--pine)] font-medium">
                             {token.word}
                           </span>
                         );
@@ -427,20 +413,18 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                         return (
                           <span
                             key={idx}
-                            className="px-1.5 py-0.5 rounded bg-amber-100 border border-amber-300 text-amber-900 font-bold"
+                            className="px-1.5 py-0.5 rounded bg-[var(--brass-soft)] border border-[var(--brass-border)] text-[var(--brass)] font-semibold"
                             title={`Errata: ${token.expected}`}
                           >
                             {token.word}{' '}
-                            <span className="text-emerald-700 text-xs">
-                              ({token.expected})
-                            </span>
+                            <span className="text-[var(--pine)] text-xs">({token.expected})</span>
                           </span>
                         );
                       }
                       return (
                         <span
                           key={idx}
-                          className="px-1.5 py-0.5 rounded bg-rose-100 border border-rose-300 text-rose-900 line-through font-bold"
+                          className="px-1.5 py-0.5 rounded bg-[var(--crimson-soft)] border border-[var(--crimson-border)] text-[var(--crimson)] line-through font-semibold"
                         >
                           {token.word}
                         </span>
@@ -451,50 +435,50 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               )}
           </div>
 
-          {/* Detailed Grammatical Explanation */}
-          <div className="pt-1 text-sm space-y-1.5">
-            <p className="leading-relaxed text-slate-800">
-              <strong className="text-amber-800">Por qué: </strong>
+          <div className="text-sm space-y-2">
+            <p className="leading-relaxed text-[var(--ink)]">
+              <strong className="font-semibold text-[var(--accent)]">Por qué: </strong>
               {exercise.explanation}
             </p>
             {exercise.grammarRule && (
-              <p className="text-xs font-mono bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg text-indigo-800 inline-block font-semibold">
-                📐 Regla: {exercise.grammarRule}
+              <p className="text-xs font-mono bg-[var(--accent-soft)] border border-[var(--accent-border)] px-3 py-1.5 rounded-lg text-[var(--accent)] inline-block font-semibold">
+                Regla: {exercise.grammarRule}
               </p>
             )}
           </div>
 
-          {/* Instant Re-type Box when the user fails */}
           {!evaluation.isCorrect && (
-            <form onSubmit={handlePracticeAgainCheck} className="pt-3 border-t border-slate-200">
-              <label className="block text-xs font-bold uppercase tracking-wider text-amber-800 mb-1.5">
-                ✍️ Escribe ahora "{evaluation.shortCorrection}" (o la frase entera) para fijarlo:
+            <form onSubmit={handlePracticeAgainCheck} className="pt-3 border-t border-[var(--border)] space-y-2">
+              <label
+                htmlFor={`retype-${exercise.id}`}
+                className="block text-xs font-semibold text-[var(--ink)]"
+              >
+                Escribe ahora «{evaluation.shortCorrection}» para fijarlo:
               </label>
               <div className="flex gap-2">
                 <input
+                  id={`retype-${exercise.id}`}
+                  name="retypeAnswer"
                   type="text"
                   value={practiceAgainInput}
                   onChange={(e) => setPracticeAgainInput(e.target.value)}
                   placeholder={`Escribe: ${evaluation.shortCorrection}`}
-                  className="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 outline-none focus:border-amber-500"
+                  className="input-field !min-h-[42px]"
                 />
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  Fijar
+                <button type="submit" className="btn btn-brass btn-sm">
+                  <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>Fijar</span>
                 </button>
               </div>
               {practiceAgainSuccess && (
-                <p className="text-xs text-emerald-700 font-semibold mt-1.5">
-                  ✅ ¡Perfecto! Ya la tienes en la memoria muscular.
+                <p className="text-xs text-[var(--pine)] font-semibold">
+                  Correcto, estructura fijada.
                 </p>
               )}
             </form>
           )}
         </div>
       )}
-    </div>
+    </article>
   );
 };

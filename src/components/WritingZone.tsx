@@ -408,7 +408,7 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
               </div>
 
               {/* Speech Bubble from Mechanic / Landlord / Boss */}
-              <div className="bg-amber-50/70 border-l-4 border-amber-500 rounded-r-2xl p-4 sm:p-5 space-y-2">
+              <div className="bg-amber-50/70 border border-amber-300 rounded-2xl p-4 sm:p-5 space-y-2">
                 <span className="text-xs font-extrabold uppercase tracking-wider text-amber-800 block">
                   🗣️ {currentScenario.roleLabel} te dice:
                 </span>
@@ -542,7 +542,7 @@ export const WritingZone: React.FC<WritingZoneProps> = ({
                   {/* Follow-up reply from the character */}
                   {rpResult.characterFollowUpEn && (
                     <div className="pt-3 border-t border-slate-200 space-y-3">
-                      <div className="bg-white border-l-4 border-sky-500 rounded-r-xl p-3.5 space-y-1 shadow-2xs">
+                      <div className="bg-white border border-sky-300 rounded-xl p-3.5 space-y-1 shadow-2xs">
                         <span className="text-xs font-bold text-sky-700 block">
                           💬 {currentScenario.roleLabel} te contesta ahora:
                         </span>

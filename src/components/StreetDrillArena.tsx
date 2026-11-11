@@ -7,7 +7,10 @@ import {
   XCircle,
   ArrowRight,
   Lightbulb,
-  Send
+  Send,
+  Flame,
+  Sparkles,
+  Coins
 } from 'lucide-react';
 
 interface StreetDrillArenaProps {
@@ -18,8 +21,7 @@ interface StreetDrillArenaProps {
 
 export const StreetDrillArena: React.FC<StreetDrillArenaProps> = ({
   progress,
-  onUpdateProgress,
-  onOpenSettings: _onOpenSettings
+  onUpdateProgress
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userInput, setUserInput] = useState('');
@@ -27,7 +29,6 @@ export const StreetDrillArena: React.FC<StreetDrillArenaProps> = ({
   const [isAnswered, setIsAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
 
-  // Extract all exercises from unlocked levels + boss challenges
   const availableExercises: StreetExercise[] = useMemo(() => {
     const list: StreetExercise[] = [];
     STREET_LEVELS.forEach((lvl) => {
@@ -74,157 +75,164 @@ export const StreetDrillArena: React.FC<StreetDrillArenaProps> = ({
 
   if (!currentQ) {
     return (
-      <div className="bg-white rounded-3xl p-8 text-center max-w-lg mx-auto border border-slate-200">
-        <p className="text-slate-600 text-sm">No hay ejercicios disponibles en este momento.</p>
+      <div className="card p-8 text-center max-w-lg mx-auto">
+        <p className="text-sm text-[var(--ink-muted)]">
+          No hay ejercicios disponibles en este momento.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 max-w-3xl mx-auto animate-in fade-in duration-200">
-      {/* Header Bar */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-300 flex items-center justify-center text-xl shrink-0">
-            ⚡
+    <div className="space-y-5 max-w-2xl mx-auto">
+      {/* Cabecera compacta */}
+      <section className="card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-[var(--brass-soft)] border border-[var(--brass-border)] text-[var(--brass)] flex items-center justify-center shrink-0">
+            <Flame className="w-5 h-5" aria-hidden="true" />
           </div>
-          <div>
-            <h2 className="font-extrabold text-slate-900 text-sm sm:text-base">
-              Machaque de Escritura Callejera
+          <div className="min-w-0">
+            <h2 className="font-display font-bold text-base sm:text-lg text-[var(--ink)] truncate">
+              Machaque de escritura callejera
             </h2>
-            <p className="text-xs text-slate-500">
-              Escribe las respuestas en inglés cotidiano para ganar XP y Quids.
+            <p className="text-xs text-[var(--ink-muted)] truncate">
+              Entrena respuestas rápidas de los barrios desbloqueados
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-black px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200">
-            {progress.xp} XP ⚡
+        <div className="flex items-center gap-2 text-xs font-semibold tabular-nums shrink-0">
+          <span className="px-2.5 py-1 rounded-lg bg-[var(--brass-soft)] text-[var(--brass)] border border-[var(--brass-border)] flex items-center gap-1">
+            <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>{progress.xp} XP</span>
           </span>
-          <span className="text-xs font-black px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
-            {progress.quids} Quids 💷
+          <span className="px-2.5 py-1 rounded-lg bg-[var(--pine-soft)] text-[var(--pine)] border border-[var(--pine-border)] flex items-center gap-1">
+            <Coins className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>{progress.quids} Quids</span>
           </span>
         </div>
-      </div>
+      </section>
 
-      {/* Exercise Card */}
-      <div className="bg-white rounded-3xl border-2 border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between text-xs text-slate-500 font-bold">
+      {/* Tarjeta de ejercicio */}
+      <section className="card p-5 sm:p-6 space-y-4">
+        <div className="flex items-center justify-between text-xs font-semibold text-[var(--ink-muted)] tabular-nums">
           <span>
             Frase {(currentIndex % availableExercises.length) + 1} de {availableExercises.length}
           </span>
-          <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full font-black">
-            +{currentQ.xpReward} XP ⚡
+          <span className="px-2.5 py-0.5 rounded-md bg-[var(--brass-soft)] text-[var(--brass)] border border-[var(--brass-border)]">
+            +{currentQ.xpReward} XP
           </span>
         </div>
 
-        {/* Situation */}
-        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs sm:text-sm">
-          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
-            Situación de Calle:
-          </span>
-          <p className="text-slate-800 font-medium">{currentQ.situation}</p>
+        <div className="inset-well p-4 text-sm space-y-1">
+          <span className="text-xs font-semibold text-[var(--ink-muted)] block">Situación</span>
+          <p className="text-[var(--ink)] font-medium leading-relaxed">{currentQ.situation}</p>
         </div>
 
-        {/* Question */}
-        <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">
+        <h3 className="font-display font-bold text-base sm:text-lg text-[var(--ink)]">
           {currentQ.question}
         </h3>
 
-        {/* Hint */}
         {currentQ.hint && (
           <div>
             {!showHint ? (
               <button
                 type="button"
                 onClick={() => setShowHint(true)}
-                className="text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1.5 cursor-pointer"
+                className="text-xs font-semibold text-[var(--brass)] hover:underline flex items-center gap-1.5"
               >
-                <Lightbulb className="w-4 h-4 text-amber-500" />
-                <span>¿Dudas? Ver pista para escribir</span>
+                <Lightbulb className="w-4 h-4" aria-hidden="true" />
+                <span>Ver pista</span>
               </button>
             ) : (
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 animate-in fade-in">
-                💡 {currentQ.hint}
+              <div className="p-3 rounded-xl bg-[var(--brass-soft)] border border-[var(--brass-border)] text-xs sm:text-sm text-[var(--ink)]">
+                {currentQ.hint}
               </div>
             )}
           </div>
         )}
 
-        {/* Form with Input */}
         <form onSubmit={handleSubmit} className="space-y-3">
-          <input
-            type="text"
-            value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-            disabled={isAnswered}
-            placeholder="Escribe cómo lo dirías en inglés cotidiano..."
-            className="w-full p-4 rounded-2xl border-2 border-slate-300 focus:border-indigo-600 focus:bg-white text-sm font-semibold text-slate-900 outline-none transition-all placeholder:text-slate-400"
-            autoComplete="off"
-            autoFocus
-          />
+          <div>
+            <label htmlFor="drill-arena-input" className="sr-only">
+              Tu respuesta en inglés
+            </label>
+            <input
+              id="drill-arena-input"
+              name="drillAnswer"
+              type="text"
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              disabled={isAnswered}
+              placeholder="Escribe cómo lo dirías en inglés cotidiano…"
+              className="input-field font-medium"
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </div>
 
           {!isAnswered && (
             <button
               type="submit"
               disabled={!userInput.trim()}
-              className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-all"
+              className="btn btn-primary w-full"
             >
               <span>Comprobar respuesta</span>
-              <Send className="w-4 h-4" />
+              <Send className="w-4 h-4" aria-hidden="true" />
             </button>
           )}
         </form>
 
-        {/* Feedback Card */}
         {isAnswered && (
           <div
-            className={`p-4 rounded-2xl border-2 animate-in fade-in duration-200 ${
+            aria-live="polite"
+            className={`p-4 rounded-xl border space-y-3 ${
               isCorrect
-                ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
-                : 'bg-rose-50 border-rose-300 text-rose-950'
+                ? 'bg-[var(--pine-soft)] border-[var(--pine-border)]'
+                : 'bg-[var(--crimson-soft)] border-[var(--crimson-border)]'
             }`}
           >
-            <div className="flex items-center gap-2 font-black text-sm mb-1">
+            <div
+              className={`flex items-center gap-2 font-bold text-sm ${
+                isCorrect ? 'text-[var(--pine)]' : 'text-[var(--crimson)]'
+              }`}
+            >
               {isCorrect ? (
                 <>
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                  <span>¡Totalmente natural! (+{currentQ.xpReward} XP y +1 Quid 💷)</span>
+                  <CheckCircle2 className="w-5 h-5 shrink-0" aria-hidden="true" />
+                  <span className="tabular-nums">
+                    Natural y directo (+{currentQ.xpReward} XP y +1 Quid)
+                  </span>
                 </>
               ) : (
                 <>
-                  <XCircle className="w-5 h-5 text-rose-600 shrink-0" />
+                  <XCircle className="w-5 h-5 shrink-0" aria-hidden="true" />
                   <span>No suena como lo diría un local</span>
                 </>
               )}
             </div>
 
-            <div className="mt-2 text-xs sm:text-sm bg-white/90 p-3 rounded-xl border border-slate-200">
-              <span className="text-[10px] font-black uppercase text-slate-500 block mb-0.5">
-                Respuesta natural ideal:
+            <div className="bg-[var(--surface)] p-3.5 rounded-lg border border-[var(--border)]">
+              <span className="text-xs font-medium text-[var(--ink-muted)] block mb-0.5">
+                Respuesta natural esperada
               </span>
-              <strong className="text-emerald-900 font-black">
-                "{currentQ.sampleIdealAnswer}"
+              <strong className="text-[var(--pine)] text-sm sm:text-base font-bold">
+                “{currentQ.sampleIdealAnswer}”
               </strong>
             </div>
 
-            <p className="text-xs sm:text-sm mt-2">{currentQ.explanationEs}</p>
-            <div className="mt-2 text-xs font-semibold bg-white/80 p-2.5 rounded-xl text-slate-700">
-              💡 <strong>Truco callejero:</strong> {currentQ.streetTip}
-            </div>
+            <p className="text-xs sm:text-sm text-[var(--ink)]">{currentQ.explanationEs}</p>
+            <p className="text-xs text-[var(--ink-muted)]">
+              <strong className="text-[var(--ink)]">Truco:</strong> {currentQ.streetTip}
+            </p>
 
-            <button
-              type="button"
-              onClick={handleNext}
-              className="mt-3.5 w-full py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-transform active:scale-98"
-            >
-              <span>Siguiente Frase</span>
-              <ArrowRight className="w-4 h-4" />
+            <button type="button" onClick={handleNext} className="btn btn-dark w-full">
+              <span>Siguiente frase</span>
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 };

@@ -3,15 +3,23 @@ import { StreetLevel, StreetTopic, GameProgress } from '../types/streetGame';
 import { STREET_LEVELS, canUnlockLevel } from '../data/streetData';
 import { StreetTopicView } from './StreetTopicView';
 import { StreetBossFight } from './StreetBossFight';
+import { runViewTransition } from '../utils/viewTransition';
 import {
   Lock,
   Unlock,
-  Trophy,
+  Award,
   Sparkles,
   ChevronRight,
   CheckCircle2,
-  Sword,
-  Coins
+  Swords,
+  Coins,
+  PlaneLanding,
+  Beer,
+  TrainFront,
+  Hand,
+  PoundSterling,
+  Smartphone,
+  MoonStar
 } from 'lucide-react';
 
 interface StreetLevelMapProps {
@@ -20,10 +28,30 @@ interface StreetLevelMapProps {
   onOpenSettings?: () => void;
 }
 
+function getLevelDistrictVisual(levelId: number): {
+  icon: React.ComponentType<{ className?: string }>;
+  dotColor: string;
+} {
+  if (levelId === 1) {
+    return { icon: PlaneLanding, dotColor: 'bg-[var(--brass)]' };
+  }
+  if (levelId === 2) {
+    return { icon: Beer, dotColor: 'bg-[var(--pine)]' };
+  }
+  return { icon: TrainFront, dotColor: 'bg-[var(--accent)]' };
+}
+
+function getTopicIcon(topicId: string) {
+  if (topicId.includes('l1-t1')) return Hand;
+  if (topicId.includes('l1-t2')) return PoundSterling;
+  if (topicId.includes('l2-t1')) return Beer;
+  if (topicId.includes('l2-t2')) return MoonStar;
+  return Smartphone;
+}
+
 export const StreetLevelMap: React.FC<StreetLevelMapProps> = ({
   progress,
-  onUpdateProgress,
-  onOpenSettings: _onOpenSettings
+  onUpdateProgress
 }) => {
   const [selectedTopic, setSelectedTopic] = useState<StreetTopic | null>(null);
   const [activeBossFight, setActiveBossFight] = useState<StreetLevel | null>(null);
@@ -33,9 +61,10 @@ export const StreetLevelMap: React.FC<StreetLevelMapProps> = ({
       ...progress,
       xp: isCorrect ? progress.xp + xp : progress.xp,
       quids: isCorrect ? progress.quids + 1 : progress.quids,
-      completedExerciseIds: isCorrect && !progress.completedExerciseIds.includes(exerciseId)
-        ? [...progress.completedExerciseIds, exerciseId]
-        : progress.completedExerciseIds
+      completedExerciseIds:
+        isCorrect && !progress.completedExerciseIds.includes(exerciseId)
+          ? [...progress.completedExerciseIds, exerciseId]
+          : progress.completedExerciseIds
     };
     onUpdateProgress(updated);
   };
@@ -55,7 +84,7 @@ export const StreetLevelMap: React.FC<StreetLevelMapProps> = ({
       xp: progress.xp + xpEarned,
       quids: progress.quids + 5,
       bossesDefeated,
-      unlockedLevels: unlockedLevels.filter((id) => id <= 5)
+      unlockedLevels: unlockedLevels.filter((id) => id <= STREET_LEVELS.length)
     };
     onUpdateProgress(updated);
   };
@@ -64,16 +93,21 @@ export const StreetLevelMap: React.FC<StreetLevelMapProps> = ({
     return (
       <StreetTopicView
         topic={selectedTopic}
-        onBack={() => setSelectedTopic(null)}
+        onBack={() =>
+          runViewTransition(() => setSelectedTopic(null), 'levels-route-heading')
+        }
         onCompleteExercise={handleCompleteExercise}
         completedExerciseIds={progress.completedExerciseIds}
       />
     );
   }
 
+  const totalDistricts = STREET_LEVELS.length;
+  const unlockedPct = Math.round((progress.unlockedLevels.length / totalDistricts) * 100);
+
   return (
-    <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-200">
-      {/* Boss Fight Modal Overlay if open */}
+    <div className="space-y-6 max-w-4xl mx-auto">
+      {/* Diálogo nativo de Reto del Jefe */}
       {activeBossFight && (
         <StreetBossFight
           boss={activeBossFight.boss}
@@ -82,149 +116,181 @@ export const StreetLevelMap: React.FC<StreetLevelMapProps> = ({
         />
       )}
 
-      {/* Gamer Header Stats Bar */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-4 sm:p-6 shadow-md border border-indigo-800">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black text-2xl shadow-md shrink-0">
-              🇬🇧
-            </div>
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200 border border-indigo-400">
-                Campaña de Calle UK
-              </span>
-              <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">
-                El Camino del Idioma Callejero
-              </h2>
-              <p className="text-xs text-slate-300">
-                Aprende el inglés que habla la gente de verdad: sin postureo ni libros de texto.
-              </p>
-            </div>
+      {/* Resumen de Ruta y Métricas */}
+      <section className="card p-5 sm:p-6 space-y-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h2
+              id="levels-route-heading"
+              tabIndex={-1}
+              className="font-display text-xl sm:text-2xl font-bold text-[var(--ink)] tracking-[-0.02em] outline-none"
+            >
+              Ruta por barrios de Reino Unido
+            </h2>
+            <p className="text-sm text-[var(--ink-muted)] max-w-xl">
+              Domina cada situación real escribiendo como un nativo y supera a cada jefe de zona para abrir el siguiente barrio.
+            </p>
           </div>
 
-          {/* Gamification Stats: XP, Quids, Bosses */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap bg-white/5 border border-white/10 rounded-2xl p-2.5 sm:p-3">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-400/20 border border-amber-400/40 text-amber-300 text-xs font-black">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span>{progress.xp} XP</span>
+          <div className="grid grid-cols-3 gap-2 sm:gap-2.5 shrink-0">
+            <div className="inset-well px-3 py-2 text-center sm:text-left">
+              <div className="text-[11px] font-medium text-[var(--ink-muted)] flex items-center justify-center sm:justify-start gap-1">
+                <Sparkles className="w-3 h-3 text-[var(--brass)]" aria-hidden="true" />
+                <span>XP</span>
+              </div>
+              <div className="font-display text-base sm:text-lg font-bold text-[var(--ink)] tabular-nums mt-0.5">
+                {progress.xp}
+              </div>
             </div>
 
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-400/20 border border-emerald-400/40 text-emerald-300 text-xs font-black">
-              <Coins className="w-4 h-4 text-emerald-400" />
-              <span>{progress.quids} Quids 💷</span>
+            <div className="inset-well px-3 py-2 text-center sm:text-left">
+              <div className="text-[11px] font-medium text-[var(--ink-muted)] flex items-center justify-center sm:justify-start gap-1">
+                <Coins className="w-3 h-3 text-[var(--pine)]" aria-hidden="true" />
+                <span>Quids</span>
+              </div>
+              <div className="font-display text-base sm:text-lg font-bold text-[var(--ink)] tabular-nums mt-0.5">
+                {progress.quids}
+              </div>
             </div>
 
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-400/20 border border-purple-400/40 text-purple-200 text-xs font-black">
-              <Trophy className="w-4 h-4 text-purple-300" />
-              <span>{progress.bossesDefeated.length}/5 Jefes</span>
+            <div className="inset-well px-3 py-2 text-center sm:text-left">
+              <div className="text-[11px] font-medium text-[var(--ink-muted)] flex items-center justify-center sm:justify-start gap-1">
+                <Award className="w-3 h-3 text-[var(--accent)]" aria-hidden="true" />
+                <span>Jefes</span>
+              </div>
+              <div className="font-display text-base sm:text-lg font-bold text-[var(--ink)] tabular-nums mt-0.5">
+                {progress.bossesDefeated.length}/{totalDistricts}
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Global Level Progress Bar */}
-        <div className="mt-4 pt-3 border-t border-white/10">
-          <div className="flex justify-between items-center text-xs font-bold text-slate-300 mb-1.5">
-            <span>Progreso General de los 5 Barrios de UK</span>
-            <span className="text-amber-300">{progress.unlockedLevels.length * 20}% Conquistado</span>
-          </div>
-          <div className="w-full h-3 bg-slate-800 rounded-full overflow-hidden border border-white/10">
-            <div
-              className="h-full bg-gradient-to-r from-amber-400 via-emerald-400 to-indigo-400 transition-all duration-500 rounded-full"
-              style={{ width: `${progress.unlockedLevels.length * 20}%` }}
-            />
           </div>
         </div>
-      </div>
 
-      {/* Levels Roadmap List */}
-      <div className="space-y-6">
+        {/* Barra segmentada de progreso general */}
+        <div className="pt-4 border-t border-[var(--border)] space-y-2">
+          <div className="flex items-center justify-between text-xs font-semibold">
+            <span className="text-[var(--ink-muted)]">
+              Progreso de la campaña ({progress.unlockedLevels.length} de {totalDistricts} zonas)
+            </span>
+            <span className="text-[var(--accent)] tabular-nums">{unlockedPct}%</span>
+          </div>
+          <div
+            className="grid gap-1.5"
+            style={{ gridTemplateColumns: `repeat(${totalDistricts}, minmax(0, 1fr))` }}
+            role="progressbar"
+            aria-valuenow={unlockedPct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Progreso de barrios desbloqueados"
+          >
+            {STREET_LEVELS.map((lvl) => {
+              const isOpen = progress.unlockedLevels.includes(lvl.id);
+              const isCleared = progress.bossesDefeated.includes(lvl.id);
+              return (
+                <div
+                  key={lvl.id}
+                  className={`h-2 rounded-full transition-colors ${
+                    isCleared
+                      ? 'bg-[var(--pine)]'
+                      : isOpen
+                      ? 'bg-[var(--accent)]'
+                      : 'bg-[var(--surface-3)]'
+                  }`}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Lista de Barrios / Niveles */}
+      <div className="space-y-5">
         {STREET_LEVELS.map((level) => {
           const isUnlocked = progress.unlockedLevels.includes(level.id);
           const isBossDefeated = progress.bossesDefeated.includes(level.id);
           const unlockStatus = canUnlockLevel(level.id, progress.xp, progress.bossesDefeated);
+          const { icon: DistrictIcon, dotColor } = getLevelDistrictVisual(level.id);
 
           return (
-            <div
+            <article
               key={level.id}
-              className={`rounded-3xl border-2 transition-all overflow-hidden ${
-                isUnlocked
-                  ? 'bg-white border-slate-200 shadow-sm hover:shadow-md'
-                  : 'bg-slate-100/90 border-slate-300 opacity-80'
-              }`}
+              className={`card overflow-hidden ${isUnlocked ? '' : 'opacity-85 bg-[var(--surface-2)]/60'}`}
             >
-              {/* Level Header Banner */}
-              <div
-                className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                  isUnlocked ? level.bgColor : 'bg-slate-200/70'
-                } border-b border-slate-200`}
-              >
-                <div className="flex items-start gap-3 sm:gap-4">
+              {/* Cabecera del barrio */}
+              <div className="p-4 sm:p-5 border-b border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-3.5 min-w-0">
                   <div
-                    className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-xs shrink-0 ${
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border ${
                       isUnlocked
-                        ? 'bg-white border-2 border-slate-200'
-                        : 'bg-slate-300 border border-slate-400 grayscale'
+                        ? 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--ink)]'
+                        : 'bg-[var(--surface-3)] border-[var(--border)] text-[var(--ink-subtle)]'
                     }`}
                   >
-                    {level.badge}
+                    <DistrictIcon className="w-5 h-5" aria-hidden="true" />
                   </div>
-                  <div>
+
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-900 text-white">
-                        Nivel {level.number}
+                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold font-mono text-[var(--ink)] tabular-nums">
+                        <span className={`w-2 h-2 rounded-full ${dotColor}`} aria-hidden="true" />
+                        Zona 0{level.number}
                       </span>
-                      <span className="text-xs font-bold text-slate-600">
+                      <span className="text-xs text-[var(--ink-muted)] truncate">
                         {level.districtName}
                       </span>
                       {isBossDefeated && (
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          Jefe Derrotado
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-md bg-[var(--pine-soft)] text-[var(--pine)] border border-[var(--pine-border)]">
+                          <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                          <span>Jefe superado</span>
                         </span>
                       )}
                     </div>
-                    <h3 className="text-lg sm:text-xl font-black text-slate-900 mt-1">
+
+                    <h3 className="font-display text-lg sm:text-xl font-bold text-[var(--ink)] mt-1">
                       {level.title}
                     </h3>
-                    <p className="text-xs text-slate-600 font-medium">
-                      Rango: <strong className="text-slate-800">{level.rankTitle}</strong>
+                    <p className="text-xs text-[var(--ink-muted)] mt-0.5">
+                      Rango asignado:{' '}
+                      <strong className="font-semibold text-[var(--ink)]">{level.rankTitle}</strong>
                     </p>
                   </div>
                 </div>
 
-                {/* Lock or Play Action Pill */}
-                <div className="shrink-0 flex items-center">
+                <div className="shrink-0">
                   {isUnlocked ? (
-                    <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500 text-white text-xs font-black shadow-xs">
-                      <Unlock className="w-3.5 h-3.5" />
-                      <span>Desbloqueado</span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--pine-soft)] border border-[var(--pine-border)] text-[var(--pine)] text-xs font-semibold">
+                      <Unlock className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>Disponible</span>
                     </span>
                   ) : (
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 text-white text-xs font-black shadow-xs">
-                      <Lock className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--surface-3)] border border-[var(--border-strong)] text-[var(--ink-muted)] text-xs font-semibold">
+                      <Lock className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>Bloqueado</span>
-                    </div>
+                    </span>
                   )}
                 </div>
               </div>
 
-              {/* Locked Requirements Banner if locked */}
+              {/* Aviso de desbloqueo si está cerrado */}
               {!isUnlocked && (
-                <div className="p-4 bg-amber-50 border-b border-amber-200 text-xs sm:text-sm text-amber-950 flex items-start gap-3">
-                  <Lock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <strong className="font-black text-amber-900">
-                      Requisitos para desbloquear este barrio:
-                    </strong>
-                    <ul className="list-disc list-inside mt-1 space-y-0.5 text-xs text-amber-800">
+                <div className="px-4 sm:px-5 py-3.5 bg-[var(--brass-soft)] border-b border-[var(--brass-border)] text-xs sm:text-sm text-[var(--ink)] flex items-start gap-2.5">
+                  <Lock className="w-4 h-4 text-[var(--brass)] shrink-0 mt-0.5" aria-hidden="true" />
+                  <div className="space-y-1">
+                    <div className="font-semibold text-[var(--brass)]">
+                      Requisitos para abrir esta zona
+                    </div>
+                    <ul className="space-y-0.5 text-xs text-[var(--ink-muted)]">
                       {unlockStatus.missingXP > 0 && (
-                        <li>
-                          Te faltan <strong>{unlockStatus.missingXP} XP</strong> de calle (tienes {progress.xp} / {level.requiredXP} XP).
+                        <li className="tabular-nums">
+                          Necesitas <strong className="text-[var(--ink)]">{unlockStatus.missingXP} XP</strong> más ({progress.xp} / {level.requiredXP} XP).
                         </li>
                       )}
                       {unlockStatus.needsBoss && (
                         <li>
-                          Debes derrotar al jefe anterior: <strong>{unlockStatus.prevBossName || `Jefe de Nivel ${level.id - 1}`}</strong>.
+                          Supera al jefe previo:{' '}
+                          <strong className="text-[var(--ink)]">
+                            {unlockStatus.prevBossName || `Jefe de Zona ${level.id - 1}`}
+                          </strong>
+                          .
                         </li>
                       )}
                     </ul>
@@ -232,20 +298,15 @@ export const StreetLevelMap: React.FC<StreetLevelMapProps> = ({
                 </div>
               )}
 
-              {/* Level Body: Topics & Boss Fight Button */}
+              {/* Contenido del nivel */}
               <div className="p-4 sm:p-5 space-y-4">
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  {level.description}
-                </p>
+                <p className="text-sm text-[var(--ink-muted)] leading-relaxed">{level.description}</p>
 
                 {isUnlocked && (
-                  <div className="space-y-3 pt-2">
-                    <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
-                      Temas del Barrio:
-                    </h4>
-
+                  <div className="space-y-4 pt-1">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {level.topics.map((topic) => {
+                        const TopicIcon = getTopicIcon(topic.id);
                         const totalTopicExercises = topic.exercises.length;
                         const completedCount = topic.exercises.filter((ex) =>
                           progress.completedExerciseIds.includes(ex.id)
@@ -255,70 +316,69 @@ export const StreetLevelMap: React.FC<StreetLevelMapProps> = ({
                           <button
                             key={topic.id}
                             type="button"
-                            onClick={() => setSelectedTopic(topic)}
-                            className="text-left p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-indigo-50/50 hover:border-indigo-300 transition-all flex items-center justify-between gap-3 cursor-pointer group shadow-2xs"
+                            onClick={() =>
+                              runViewTransition(() => setSelectedTopic(topic), 'topic-view-heading')
+                            }
+                            className="text-left p-3.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] hover:border-[var(--accent-border)] hover:bg-[var(--accent-soft)]/50 transition-colors flex items-center justify-between gap-3 group"
                           >
                             <div className="flex items-center gap-3 min-w-0">
-                              <span className="text-2xl shrink-0 group-hover:scale-110 transition-transform">
-                                {topic.icon}
-                              </span>
+                              <div className="w-10 h-10 rounded-lg bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center text-[var(--ink)] group-hover:text-[var(--accent)] shrink-0 transition-colors">
+                                <TopicIcon className="w-4 h-4" aria-hidden="true" />
+                              </div>
                               <div className="min-w-0">
-                                <h5 className="font-extrabold text-xs sm:text-sm text-slate-900 group-hover:text-indigo-700 truncate">
+                                <h4 className="font-semibold text-sm text-[var(--ink)] group-hover:text-[var(--accent)] truncate">
                                   {topic.title}
-                                </h5>
-                                <p className="text-[11px] text-slate-500 truncate">
+                                </h4>
+                                <p className="text-xs text-[var(--ink-muted)] truncate">
                                   {topic.subtitle}
                                 </p>
                               </div>
                             </div>
 
                             <div className="flex items-center gap-2 shrink-0">
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-600">
+                              <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded-md bg-[var(--surface)] border border-[var(--border)] text-[var(--ink-muted)] tabular-nums">
                                 {completedCount}/{totalTopicExercises}
                               </span>
-                              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 transition-colors" />
+                              <ChevronRight
+                                className="w-4 h-4 text-[var(--ink-subtle)] group-hover:text-[var(--accent)] transition-colors"
+                                aria-hidden="true"
+                              />
                             </div>
                           </button>
                         );
                       })}
                     </div>
 
-                    {/* Boss Fight Card */}
-                    <div className="pt-2">
-                      <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-2 border-amber-400/60 shadow-sm">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center text-2xl font-black shrink-0">
-                            {level.boss.bossAvatar}
-                          </div>
-                          <div>
-                            <span className="text-[10px] font-black uppercase tracking-wider text-amber-300">
-                              Desafío de Puerta de Salida
-                            </span>
-                            <h5 className="font-black text-sm sm:text-base text-white">
-                              {level.boss.bossName}
-                            </h5>
-                            <p className="text-xs text-slate-300">
-                              {level.boss.bossTitle}
-                            </p>
-                          </div>
+                    {/* Barra del Jefe de Zona */}
+                    <div className="rounded-xl bg-[var(--tarmac)] text-white p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-[var(--tarmac-border)]">
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="w-11 h-11 rounded-xl bg-[var(--tarmac-soft)] border border-[var(--tarmac-border)] flex items-center justify-center text-amber-400 shrink-0">
+                          <Swords className="w-5 h-5" aria-hidden="true" />
                         </div>
-
-                        <button
-                          type="button"
-                          onClick={() => setActiveBossFight(level)}
-                          className="px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-all"
-                        >
-                          <Sword className="w-4 h-4" />
-                          <span>
-                            {isBossDefeated ? 'Repetir Desafío del Jefe' : '⚔️ Enfrentar al Jefe (Desbloquear Nivel)'}
-                          </span>
-                        </button>
+                        <div className="min-w-0">
+                          <div className="text-xs font-medium text-amber-300">
+                            Prueba final de salida
+                          </div>
+                          <h4 className="font-display font-bold text-base text-white truncate">
+                            {level.boss.bossName}
+                          </h4>
+                          <p className="text-xs text-slate-300 truncate">{level.boss.bossTitle}</p>
+                        </div>
                       </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveBossFight(level)}
+                        className="btn bg-amber-400 hover:bg-amber-300 text-[var(--tarmac)] font-bold shrink-0"
+                      >
+                        <Swords className="w-4 h-4" aria-hidden="true" />
+                        <span>{isBossDefeated ? 'Repetir prueba' : 'Enfrentar al jefe'}</span>
+                      </button>
                     </div>
                   </div>
                 )}
               </div>
-            </div>
+            </article>
           );
         })}
       </div>

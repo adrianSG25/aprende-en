@@ -6,22 +6,23 @@ const htmlContent = `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>EngDrill Pro - Arquitectura y Funcionamiento Interno del Código</title>
+  <title>UK Street English (antes EngDrill Pro) — Arquitectura, Diseño y Código v6.0</title>
   <style>
     @page {
       size: A4 portrait;
       margin: 18mm 16mm 20mm 16mm;
       @bottom-right {
-        content: counter(page);
-        font-family: 'Segoe UI', system-ui, sans-serif;
-        font-size: 9pt;
-        color: #64748b;
-      }
-      @bottom-left {
-        content: "EngDrill Pro (A2+ a B2+) — Documento de Arquitectura y Código";
+        content: "Pág. " counter(page);
         font-family: 'Segoe UI', system-ui, sans-serif;
         font-size: 8.5pt;
-        color: #94a3b8;
+        font-weight: 600;
+        color: #525866;
+      }
+      @bottom-left {
+        content: "UK Street English (v6.0 · Noviembre 2026) — Memoria Técnica y Pedagógica";
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        font-size: 8.2pt;
+        color: #666d7d;
       }
     }
 
@@ -33,10 +34,10 @@ const htmlContent = `<!DOCTYPE html>
 
     body {
       font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
-      color: #1e293b;
+      color: #12151c;
       background: #ffffff;
-      line-height: 1.55;
-      font-size: 10pt;
+      line-height: 1.54;
+      font-size: 9.8pt;
       margin: 0;
       padding: 0;
     }
@@ -46,105 +47,163 @@ const htmlContent = `<!DOCTYPE html>
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      height: 94vh;
-      padding: 40px 10px 20px 10px;
+      min-height: 94vh;
+      padding: 28px 6px 16px 6px;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
     }
 
     .badge {
       display: inline-block;
-      padding: 4px 12px;
-      font-size: 8.5pt;
+      padding: 4px 11px;
+      font-size: 8pt;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      border-radius: 9999px;
-      background: #e0e7ff;
-      color: #3730a3;
-      margin-bottom: 14px;
+      border-radius: 6px;
+      background: #edf3fc;
+      border: 1px solid #bfd0ec;
+      color: #12397a;
+    }
+
+    .badge-pine {
+      background: #ecf8f2;
+      border-color: #b3dfc8;
+      color: #0e6b47;
+    }
+
+    .badge-brass {
+      background: #fef8e7;
+      border-color: #eedaa1;
+      color: #9a5d07;
     }
 
     .cover-title {
-      font-size: 30pt;
+      font-size: 29pt;
       font-weight: 800;
-      color: #0f172a;
-      line-height: 1.15;
-      margin: 0 0 10px 0;
-      letter-spacing: -0.02em;
+      color: #12151c;
+      line-height: 1.1;
+      margin: 0 0 8px 0;
+      letter-spacing: -0.025em;
+    }
+
+    .cover-formerly {
+      font-size: 10.5pt;
+      font-weight: 600;
+      color: #12397a;
+      margin-bottom: 10px;
     }
 
     .cover-subtitle {
-      font-size: 13.5pt;
-      color: #475569;
-      margin: 0 0 30px 0;
+      font-size: 12.5pt;
+      color: #525866;
+      margin: 0 0 22px 0;
       font-weight: 400;
-      line-height: 1.4;
+      line-height: 1.42;
     }
 
     .cover-highlights {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin-top: 30px;
+      gap: 12px;
+      margin-top: 20px;
     }
 
     .highlight-card {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+      background: #f5f6f4;
+      border: 1px solid #dcdfd8;
       border-radius: 10px;
-      padding: 16px;
+      padding: 14px;
+      page-break-inside: avoid;
     }
 
     .highlight-card h4 {
-      margin: 0 0 6px 0;
-      font-size: 10.5pt;
-      color: #1e293b;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      margin: 0 0 5px 0;
+      font-size: 10pt;
+      color: #12151c;
     }
 
     .highlight-card p {
       margin: 0;
       font-size: 8.5pt;
-      color: #64748b;
-      line-height: 1.45;
+      color: #525866;
+      line-height: 1.42;
+      text-align: left;
+    }
+
+    .cover-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .stat-pill {
+      background: #ffffff;
+      border: 1px solid #dcdfd8;
+      border-top: 3px solid #12397a;
+      border-radius: 8px;
+      padding: 10px 8px;
+      text-align: center;
+    }
+
+    .stat-pill strong {
+      display: block;
+      font-size: 15pt;
+      color: #12397a;
+      line-height: 1.1;
+    }
+
+    .stat-pill span {
+      font-size: 7.8pt;
+      color: #525866;
     }
 
     .cover-footer {
-      border-top: 2px solid #e2e8f0;
-      padding-top: 18px;
+      border-top: 2px solid #dcdfd8;
+      padding-top: 14px;
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
-      font-size: 8.5pt;
-      color: #64748b;
+      font-size: 8.3pt;
+      color: #525866;
     }
 
     h1, h2, h3, h4 {
-      color: #0f172a;
+      color: #12151c;
       font-weight: 700;
       page-break-after: avoid;
     }
 
     h2 {
-      font-size: 16pt;
-      border-bottom: 2px solid #e2e8f0;
-      padding-bottom: 6px;
-      margin-top: 26px;
-      margin-bottom: 12px;
-      letter-spacing: -0.01em;
+      font-size: 14.5pt;
+      border-bottom: 2px solid #dcdfd8;
+      padding-bottom: 5px;
+      margin-top: 16px;
+      margin-bottom: 9px;
+      letter-spacing: -0.015em;
+    }
+
+    h2 .sec-num {
+      color: #12397a;
+      margin-right: 4px;
     }
 
     h3 {
-      font-size: 12pt;
-      margin-top: 18px;
-      margin-bottom: 8px;
-      color: #1e293b;
+      font-size: 10.8pt;
+      margin-top: 12px;
+      margin-bottom: 5px;
+      color: #12397a;
     }
 
     p {
       margin-top: 0;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       text-align: justify;
     }
 
@@ -157,90 +216,97 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     .callout {
-      border-left: 4px solid #4f46e5;
-      background: #f5f3ff;
-      padding: 12px 16px;
+      border-left: 4px solid #12397a;
+      background: #edf3fc;
+      padding: 11px 14px;
       border-radius: 0 8px 8px 0;
-      margin: 14px 0;
-      font-size: 9.5pt;
+      margin: 12px 0;
+      font-size: 9.1pt;
+      page-break-inside: avoid;
     }
 
     .callout-success {
-      border-left-color: #10b981;
-      background: #ecfdf5;
+      border-left-color: #0e6b47;
+      background: #ecf8f2;
     }
 
     .callout-warning {
-      border-left-color: #f59e0b;
-      background: #fffbeb;
+      border-left-color: #9a5d07;
+      background: #fef8e7;
+    }
+
+    .callout-danger {
+      border-left-color: #b91c2e;
+      background: #fdf2f3;
     }
 
     .callout-title {
       font-weight: 700;
       margin-bottom: 4px;
-      color: #0f172a;
+      color: #12151c;
       display: block;
     }
 
     code {
       font-family: 'Consolas', 'Courier New', monospace;
-      font-size: 8.5pt;
-      background: #f1f5f9;
-      color: #0f172a;
-      padding: 2px 5px;
+      font-size: 8.2pt;
+      background: #eceee9;
+      color: #12151c;
+      padding: 1.5px 4.5px;
       border-radius: 4px;
-      border: 1px solid #e2e8f0;
+      border: 1px solid #dcdfd8;
     }
 
     pre {
       font-family: 'Consolas', 'Courier New', monospace;
-      font-size: 8pt;
-      background: #0f172a;
-      color: #f8fafc;
-      padding: 12px 14px;
+      font-size: 7.7pt;
+      background: #14181f;
+      color: #f5f6f4;
+      padding: 10px 12px;
       border-radius: 8px;
       overflow-x: auto;
-      margin: 10px 0 14px 0;
-      line-height: 1.45;
+      margin: 8px 0 12px 0;
+      line-height: 1.42;
       page-break-inside: avoid;
+      white-space: pre-wrap;
     }
 
     pre .comment { color: #94a3b8; font-style: italic; }
-    pre .keyword { color: #c084fc; font-weight: bold; }
+    pre .keyword { color: #93c5fd; font-weight: bold; }
     pre .string { color: #86efac; }
-    pre .func { color: #67e8f9; }
-    pre .number { color: #fde047; }
+    pre .func { color: #fcd34d; }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin: 12px 0 16px 0;
-      font-size: 8.5pt;
+      margin: 10px 0 14px 0;
+      font-size: 8.3pt;
       page-break-inside: avoid;
     }
 
     th, td {
-      border: 1px solid #cbd5e1;
-      padding: 8px 10px;
+      border: 1px solid #c2c7bd;
+      padding: 7px 9px;
       text-align: left;
+      vertical-align: top;
     }
 
     th {
-      background: #f1f5f9;
-      color: #0f172a;
+      background: #eceee9;
+      color: #12151c;
       font-weight: 700;
     }
 
     tr:nth-child(even) {
-      background: #f8fafc;
+      background: #f5f6f4;
     }
 
     .diagram-box {
-      background: #f8fafc;
-      border: 2px dashed #cbd5e1;
+      background: #f5f6f4;
+      border: 1.5px solid #c2c7bd;
       border-radius: 10px;
-      padding: 16px;
-      margin: 14px 0;
+      padding: 14px;
+      margin: 12px 0;
       text-align: center;
       page-break-inside: avoid;
     }
@@ -248,30 +314,29 @@ const htmlContent = `<!DOCTYPE html>
     .flow-step {
       display: inline-block;
       background: #ffffff;
-      border: 1px solid #cbd5e1;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+      border: 1px solid #c2c7bd;
       border-radius: 8px;
-      padding: 8px 12px;
-      margin: 4px;
-      font-size: 8.5pt;
+      padding: 7px 10px;
+      margin: 3px;
+      font-size: 8.1pt;
       font-weight: 600;
-      color: #1e293b;
+      color: #12151c;
       vertical-align: middle;
     }
 
     .flow-arrow {
       display: inline-block;
-      color: #6366f1;
+      color: #12397a;
       font-weight: 900;
-      font-size: 11pt;
-      margin: 0 4px;
+      font-size: 10.5pt;
+      margin: 0 3px;
       vertical-align: middle;
     }
 
     ul, ol {
       margin-top: 0;
-      margin-bottom: 12px;
-      padding-left: 20px;
+      margin-bottom: 10px;
+      padding-left: 19px;
     }
 
     li {
@@ -279,32 +344,57 @@ const htmlContent = `<!DOCTYPE html>
     }
 
     .toc {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+      background: #f5f6f4;
+      border: 1px solid #dcdfd8;
       border-radius: 8px;
-      padding: 16px 20px;
-      margin-bottom: 24px;
+      padding: 14px 18px;
+      margin-bottom: 18px;
       page-break-inside: avoid;
     }
 
     .toc-item {
       display: flex;
       justify-content: space-between;
-      border-bottom: 1px dotted #cbd5e1;
+      border-bottom: 1px dotted #c2c7bd;
       padding: 5px 0;
-      font-size: 9pt;
+      font-size: 8.8pt;
     }
 
     .toc-item a {
       text-decoration: none;
-      color: #1e293b;
+      color: #12151c;
       font-weight: 600;
     }
 
     .two-col {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      gap: 12px;
+      page-break-inside: avoid;
+    }
+
+    .swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 10px 0 14px 0;
+      page-break-inside: avoid;
+    }
+
+    .swatch {
+      border: 1px solid #c2c7bd;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #ffffff;
+      font-size: 7.8pt;
+    }
+
+    .swatch-color {
+      height: 22px;
+    }
+
+    .swatch-meta {
+      padding: 6px 7px;
     }
   </style>
 </head>
@@ -313,429 +403,466 @@ const htmlContent = `<!DOCTYPE html>
   <!-- ==================== PORTADA ==================== -->
   <div class="cover-page">
     <div>
-      <span class="badge">Documento Técnico Oficial & Arquitectura</span>
-      <h1 class="cover-title">EngDrill Pro</h1>
-      <div class="cover-subtitle">
-        Manual de Arquitectura, Funcionamiento Interno del Código y Guía Pedagógica (Niveles A2+ a B2+ Advanced)
+      <div class="brand-row">
+        <svg width="46" height="46" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="40" height="40" rx="10" fill="#0F2747"/>
+          <circle cx="20" cy="20" r="11" stroke="#C8102E" stroke-width="3.6" fill="#F7F7F5"/>
+          <rect x="4" y="16.5" width="32" height="7" rx="2" fill="#12397A"/>
+          <path d="M11.5 18.2V20.5C11.5 21.1 11.9 21.5 12.5 21.5C13.1 21.5 13.5 21.1 13.5 20.5V18.2M15.8 18.2V21.8M15.8 20L17.9 18.2M16.6 19.4L18.1 21.8M22.2 18.2V21.8M24.2 18.2H26.4M24.2 20H26M24.2 21.8H26.4M27.7 21.8V18.2L29.9 21.8V18.2" stroke="#FFFFFF" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div>
+          <span class="badge">Memoria Técnica Oficial · Release v6.0</span>
+          <span class="badge badge-pine" style="margin-left:4px;">TVMaze Live + London Press UI</span>
+        </div>
       </div>
 
-      <p style="font-size: 10.5pt; color: #334155; line-height: 1.6;">
-        Este documento explica en detalle cómo está construida la aplicación <strong>EngDrill Pro</strong> por dentro:
-        cómo funciona su arquitectura <em>client-side first</em>, su generador combinatorio infinito sin coste de servidores,
-        su motor de evaluación tolerante a la ortografía informal de trabajo, su algoritmo de Repetición Espaciada (SRS),
-        y su integración serverless con modelos de Inteligencia Artificial (Groq / OpenAI / Llama 3).
+      <h1 class="cover-title">UK Street English</h1>
+      <div class="cover-formerly">Antes EngDrill Pro — Evolución a Plataforma Gamificada de Inglés Real Británico</div>
+      <div class="cover-subtitle">
+        Manual completo de arquitectura <em>client-side first</em>, sistema visual editorial <strong>"London Press &amp; Underground"</strong>, integración en tiempo real con <strong>TVMaze</strong>, enrutador Multi-LLM para 5 proveedores de IA y metodología de fijación muscular <code>0/2</code>.
+      </div>
+
+      <p style="font-size: 9.8pt; color: #525866; line-height: 1.55;">
+        Este documento detalla de forma técnica y práctica cómo funciona <strong>UK Street English</strong> de principio a fin: desde la progresión gamificada por barrios de Londres (Quids, XP y Jefes Finales) y el simulador de WhatsApp británico hasta las APIs nativas del navegador (<code>&lt;dialog showModal()&gt;</code>, <code>popover="auto"</code>, <code>View Transitions</code>, <code>SpeechSynthesis en-GB</code>), la consulta en vivo a TVMaze para temporadas estrenadas recientemente y el Service Worker offline <code>uk-street-v20</code>.
       </p>
 
       <div class="cover-highlights">
         <div class="highlight-card">
-          <h4>⚡ Zero-Backend / 100% Client-Side</h4>
-          <p>Toda la lógica de evaluación, combinatoria gramatical y persistencia de fallos corre en el navegador en JavaScript puro sin dependencias de base de datos externas.</p>
+          <h4>1. TVMaze API en Tiempo Real</h4>
+          <p>Antes de invocar al modelo IA en <strong>Series IA</strong>, consulta <code>api.tvmaze.com</code> para extraer la sinopsis oficial exacta de temporadas recientes (ej. <em>The Gentlemen T2</em> o <em>Reacher T4</em>) y bloquea negativas por desactualización.</p>
         </div>
         <div class="highlight-card">
-          <h4>🎯 Enfoque de Machaque A2+ a B2+</h4>
-          <p>Sin distracciones de audios ni tests para niños: 100% ejercicios activos de gramática Cambridge, phrasal verbs, collocations y redacción en situaciones reales.</p>
+          <h4>2. Rediseño "London Press &amp; Web Nativa"</h4>
+          <p>Estética editorial británica sobre papel neutro <code>#F5F6F4</code>, emblema Roundel propio (<code>BrandMark</code>), tipografías <em>Bricolage Grotesque</em> y <em>Onest</em>, barra móvil de 5 ítems con Popover nativo y diálogos accesibles.</p>
         </div>
         <div class="highlight-card">
-          <h4>🧠 Motor de Tolerancia Ortográfica</h4>
-          <p>Algoritmo con distancia Levenshtein que jamás penaliza guiones (<code>second hand</code> vs <code>second-hand</code>), apóstrofes o erratas menores de teclado.</p>
+          <h4>3. Router Multi-LLM (5 Proveedores)</h4>
+          <p>Auto-detección transparente por prefijo de API key entre <strong>Groq</strong> (<code>gsk_</code>), <strong>Google Gemini</strong> (<code>AIza</code>), <strong>xAI Grok</strong> (<code>xai-</code>), <strong>OpenRouter</strong> (<code>sk-or-</code>) y <strong>OpenAI</strong> (<code>sk-</code>) con auto-descubrimiento anti-404.</p>
         </div>
         <div class="highlight-card">
-          <h4>📱 PWA Offline & Despliegue en 2 Clics</h4>
-          <p>Service Worker v5 con soporte para instalación en iPhone y Android sin pasar por App Store y 0 € de coste de alojamiento en GitHub Pages.</p>
+          <h4>4. Fijación Muscular (0/2) y Coste 0 €</h4>
+          <p>Regla obligatoria de reescribir 2 veces toda estructura fallada, tolerancia Levenshtein en ortografía menor, fonética escrita en español (<code>[uént]</code>), voz <code>en-GB</code> local y PWA <code>uk-street-v20</code> en GitHub Pages.</p>
         </div>
+      </div>
+
+      <div class="cover-stats">
+        <div class="stat-pill"><strong>600+</strong><span>Ítems curados + lotes IA</span></div>
+        <div class="stat-pill"><strong>19</strong><span>Componentes React 19</span></div>
+        <div class="stat-pill"><strong>5 + TV</strong><span>APIs IA + TVMaze en vivo</span></div>
+        <div class="stat-pill"><strong>0 €/mes</strong><span>Servidor &amp; Hosting PWA</span></div>
       </div>
     </div>
 
     <div class="cover-footer">
       <div>
         <strong>Repositorio Oficial:</strong> github.com/adrianSG25/aprende-en<br>
-        <strong>URL en Producción:</strong> https://adriansg25.github.io/aprende-en/<br>
-        <strong>Tecnologías:</strong> React 19, TypeScript, Vite, Tailwind CSS v4, Web Workers
+        <strong>App en Vivo:</strong> https://adriansg25.github.io/aprende-en/<br>
+        <strong>Presentación 3D:</strong> https://adriansg25.github.io/aprende-en/presentacion/<br>
+        <strong>Stack:</strong> React 19, TypeScript, Vite, Tailwind CSS v4, PWA v20
       </div>
       <div style="text-align: right;">
-        <strong>Versión:</strong> 5.0.0 (Release Non-Pedantic)<br>
-        <strong>Fecha:</strong> Octubre 2026<br>
+        <strong>Versión:</strong> 6.0.0 (London Press &amp; TVMaze)<br>
+        <strong>Fecha:</strong> Noviembre 2026<br>
+        <strong>Archivo Cache SW:</strong> <code>uk-street-v20</code><br>
         <strong>Estado:</strong> Producción Activa
       </div>
     </div>
   </div>
 
   <!-- ==================== ÍNDICE ==================== -->
-  <h2>Tabla de Contenidos</h2>
+  <h2><span class="sec-num">00.</span> Tabla de Contenidos</h2>
   <div class="toc">
-    <div class="toc-item"><a href="#sec-1">1. Visión General y Filosofía de Diseño</a> <span>Pág. 2</span></div>
-    <div class="toc-item"><a href="#sec-2">2. Arquitectura Global del Sistema (Por Dentro)</a> <span>Pág. 3</span></div>
-    <div class="toc-item"><a href="#sec-3">3. El Motor de Evaluación y Tolerancia Ortográfica</a> <span>Pág. 4</span></div>
-    <div class="toc-item"><a href="#sec-4">4. El Generador Infinito de Ejercicios (Sin IA / Cero Coste)</a> <span>Pág. 5</span></div>
-    <div class="toc-item"><a href="#sec-5">5. Capa de Inteligencia Artificial Serverless (IA Opcional)</a> <span>Pág. 6</span></div>
-    <div class="toc-item"><a href="#sec-6">6. Persistencia y Algoritmo de Repetición Espaciada (SRS)</a> <span>Pág. 7</span></div>
-    <div class="toc-item"><a href="#sec-7">7. Recorrido por el Código Fuente (Archivo por Archivo)</a> <span>Pág. 8</span></div>
-    <div class="toc-item"><a href="#sec-8">8. Cómo Explicar la App a Otra Persona (El Pitch de 2 Minutos)</a> <span>Pág. 9</span></div>
-    <div class="toc-item"><a href="#sec-9">9. Despliegue, PWA y Acceso Móvil</a> <span>Pág. 10</span></div>
+    <div class="toc-item"><a href="#sec-1">1. Evolución Pedagógica: De EngDrill Pro a UK Street English</a> <span>Pág. 2</span></div>
+    <div class="toc-item"><a href="#sec-2">2. Sistema Visual "London Press &amp; Underground" y Web APIs Nativas</a> <span>Pág. 3</span></div>
+    <div class="toc-item"><a href="#sec-3">3. Arquitectura Global Client-Side First y Tolerancia No Pedante</a> <span>Pág. 4</span></div>
+    <div class="toc-item"><a href="#sec-4">4. Niveles por Distritos, WhatsApp UK y Diccionario de Campo</a> <span>Pág. 5</span></div>
+    <div class="toc-item"><a href="#sec-5">5. Módulo Series, Cine y Libros + API TVMaze en Tiempo Real</a> <span>Pág. 6</span></div>
+    <div class="toc-item"><a href="#sec-6">6. Lecturas con Rayos X Gramaticales y Regla Muscular 0/2</a> <span>Pág. 7</span></div>
+    <div class="toc-item"><a href="#sec-7">7. Motor Multi-LLM Serverless, Generador Infinito y SRS</a> <span>Pág. 8</span></div>
+    <div class="toc-item"><a href="#sec-8">8. Inventario Completo del Código Fuente (src/ y public/)</a> <span>Pág. 9</span></div>
+    <div class="toc-item"><a href="#sec-9">9. Presentación Interactiva 3D, PWA v20 y GitHub Pages</a> <span>Pág. 10</span></div>
+    <div class="toc-item"><a href="#sec-10">10. El Pitch de 2 Minutos y Preguntas Frecuentes</a> <span>Pág. 11</span></div>
   </div>
 
   <!-- ==================== SECCIÓN 1 ==================== -->
-  <h2 id="sec-1">1. Visión General y Filosofía de Diseño</h2>
+  <h2 id="sec-1"><span class="sec-num">01.</span> Evolución Pedagógica: De EngDrill Pro a UK Street English</h2>
   <p>
-    La mayoría de las aplicaciones de aprendizaje de idiomas del mercado (como Duolingo o Babbel) están orientadas a principiantes absolutos (A0–A1), utilizan mecánicas infantiles con animaciones lentas y dedican demasiado tiempo a audios básicos. Cuando un estudiante ya tiene un nivel intermedio (A2) y necesita consolidar las estructuras complejas del <strong>B1 y B2</strong> (inversiones sintácticas, condicionales mixtos, preposiciones dependientes y más de 60 phrasal verbs imprescindibles), este tipo de herramientas se vuelve ineficaz.
-  </p>
-  <p>
-    <strong>EngDrill Pro</strong> se diseñó bajo una premisa pedagógica radicalmente diferente:
+    La versión inicial del proyecto nació como <strong>EngDrill Pro</strong>: un entrenador intensivo de gramática y transformación de frases enfocado a consolidar niveles <strong>A2+ a B2+</strong> sin audios lentos ni tests infantiles. Sin embargo, al someter la aplicación a uso real por parte del usuario final, surgieron necesidades concretas que guiaron su transformación completa hacia <strong>UK Street English</strong>:
   </p>
   <ul>
-    <li><strong>Cero audios ni pérdida de tiempo pasiva:</strong> El input auditivo se adquiere de forma natural viendo series o podcasts en versión original. La app se concentra al 100% en la <em>producción activa y la fijación de patrones gramaticales por repetición masiva</em>.</li>
-    <li><strong>Entrenamiento por patrones y machaque:</strong> Los hispanohablantes suelen cometer siempre los mismos 30 errores estructurales (ej. decir <em>"I am agree"</em> en vez de <em>"I agree"</em>, o <em>"married with"</em> en vez de <em>"married to"</em>). EngDrill Pro cuenta con matrices específicas para desactivar esos errores mediante memoria muscular de tecleo.</li>
-    <li><strong>Inmediatez absoluta:</strong> Tiempo de respuesta menor a <strong>5 milisegundos</strong>. Cada ejercicio se evalúa al instante, mostrando en rojo la palabra fallada y en verde la solución correcta con su regla gramatical explicada en español.</li>
-    <li><strong>Simulaciones reales de trabajo y vida cotidiana:</strong> En la sección de redacción libre y situaciones ("¿Qué le responderías?"), el usuario se enfrenta a imprevistos reales (negociar un presupuesto con un mecánico en Londres, quejarse al casero por una fuga de agua, pedir explicaciones en un aeropuerto).</li>
+    <li><strong>Inglés real de la calle frente a frases de libro:</strong> Nadie saluda en un pub de Camden diciendo <em>"How do you do, sir?"</em> ni compra una entrada escribiendo como una enciclopedia. Se sustituyó la jerga artificial de acrónimos por expresiones reales británicas (<code>quid</code>, <code>innit</code>, <code>sorted</code>, <code>dodgy</code>, <code>fancy a pint</code>, <code>cheers mate</code>).</li>
+    <li><strong>Producción escrita activa sobre opciones obvias:</strong> Las respuestas tipo test con dos opciones evidentes provocan una falsa ilusión de dominio. En los módulos de calle, diccionario, lecturas y series, el usuario escribe de su puño y letra la frase o traducción.</li>
+    <li><strong>Síntesis de voz británica (<code>en-GB</code>) opcional y directa:</strong> Aunque el enfoque rechaza diálogos pasivos eternos, se integró la <code>Web Speech API</code> nativa del navegador en acento británico (sin latencia ni APIs externas) junto a <strong>transcripciones fonéticas en español</strong> (ej. <code>went</code> = <code>[uént]</code>, <code>knowledge</code> = <code>[nó-ledzh]</code>).</li>
+    <li><strong>Progresión tipo videojuego con bloqueos reales:</strong> Para evitar saltar de tema sin asimilar bases, se estructuró una ruta de <strong>3 distritos londinenses</strong> con ganancia de <strong>XP</strong>, monedas <strong>Quids</strong> y combates finales de jefe (<code>StreetBossFight</code>).</li>
   </ul>
+
+  <div class="callout callout-success">
+    <span class="callout-title">Principio Rector Actualizado</span>
+    Entrenar en el móvil durante 10 minutos al día enfrentándote a mensajes reales de WhatsApp, sinopsis vivas de tu serie actual y corrección inmediata de tus errores hasta fijar la estructura correcta en memoria motora.
+  </div>
 
   <!-- ==================== SECCIÓN 2 ==================== -->
   <div class="page-break"></div>
-  <h2 id="sec-2">2. Arquitectura Global del Sistema (Por Dentro)</h2>
+  <h2 id="sec-2"><span class="sec-num">02.</span> Sistema Visual "London Press &amp; Underground" y Web APIs Nativas</h2>
   <p>
-    EngDrill Pro está desarrollada como una <strong>Single Page Application (SPA) / Progressive Web App (PWA)</strong> en <strong>React 19 con TypeScript estricto</strong>, compilada mediante el empaquetador ultrarrápido <strong>Vite</strong> y estilizada con <strong>Tailwind CSS v4</strong>.
+    En versiones anteriores la interfaz abusaba de tarjetas moradas estándar de plantilla IA y saturaba la barra móvil inferior con 7 botones apretujados. En la Release v6.0 se ejecutó un rediseño integral bajo el sistema visual <strong>"London Press &amp; Underground"</strong> (definido en <code>src/index.css</code> e <code>index.html</code>), eliminando CSS heredado innecesario y adoptando primitivas web modernas:
   </p>
 
-  <div class="diagram-box">
-    <div style="font-size: 8.5pt; font-weight: 700; color: #475569; margin-bottom: 8px;">ARQUITECTURA CLIENT-SIDE FIRST & SERVERLESS DE ENGDRILL PRO</div>
-    <div>
-      <div class="flow-step" style="border-left: 4px solid #6366f1;">
-        <strong>Navegador del Usuario</strong><br>
-        React 19 + TypeScript + UI
-      </div>
-      <div class="flow-arrow">⇄</div>
-      <div class="flow-step" style="border-left: 4px solid #10b981;">
-        <strong>Generador Local</strong><br>
-        1000+ Matrices / Levenshtein
-      </div>
-      <div class="flow-arrow">⇄</div>
-      <div class="flow-step" style="border-left: 4px solid #f59e0b;">
-        <strong>Storage Local (SRS)</strong><br>
-        LocalStorage + Baúl Errores
-      </div>
+  <div class="swatch-grid" style="margin: 8px 0 10px 0;">
+    <div class="swatch">
+      <div class="swatch-color" style="background:#f5f6f4; border-bottom:1px solid #dcdfd8;"></div>
+      <div class="swatch-meta"><strong>Papel Neutro</strong><br><code>#F5F6F4</code> · Fondo base</div>
     </div>
-    <div style="margin-top: 10px;">
-      <div class="flow-arrow" style="transform: rotate(90deg);">⇄</div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#12397a;"></div>
+      <div class="swatch-meta"><strong>Cobalto Oxford</strong><br><code>#12397A</code> · Acción primaria</div>
     </div>
-    <div>
-      <div class="flow-step" style="border-left: 4px solid #ec4899; width: 65%;">
-        <strong>Capa de IA Opcional (Directa desde el Cliente)</strong><br>
-        Groq API / OpenAI (Llama 3.3 / GPT-4o-mini) — <em>Cero servidores intermedios</em>
-      </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#0e6b47;"></div>
+      <div class="swatch-meta"><strong>Verde Libra</strong><br><code>#0E6B47</code> · Acierto / TVMaze</div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#b91c2e;"></div>
+      <div class="swatch-meta"><strong>Carmín Bus</strong><br><code>#B91C2E</code> · Roundel / Alerta</div>
     </div>
   </div>
 
-  <h3>¿Por qué esta arquitectura es superior para el usuario?</h3>
-  <ol>
-    <li>
-      <strong>Coste Cero de Servidor (0 €/mes):</strong> Al no existir un backend en Node, Python o PHP que deba procesar cada clic, el proyecto se aloja como archivos estáticos puros en GitHub Pages. Puede atender a 1 persona o a 50.000 personas simultáneas sin que se caiga y sin pagar ni un solo céntimo.
-    </li>
-    <li>
-      <strong>Privacidad Total:</strong> Los datos del usuario (estadísticas, errores cometidos, racha y clave API de IA si la usa) se almacenan <strong>únicamente en el propio dispositivo del usuario</strong> a través de <code>localStorage</code>. No hay bases de datos externas recopilando datos personales.
-    </li>
-    <li>
-      <strong>Funcionamiento Offline:</strong> Gracias al <code>Service Worker v5</code>, una vez abierta la app en el móvil o portátil, el 90% de las funciones (todos los ejercicios de gramática, phrasal verbs, vocabulario y exámenes) funcionan en un avión o en el metro sin tener conexión a internet.
-    </li>
-  </ol>
+  <h3>Tipografía, Identidad y Ergonomía Táctil</h3>
+  <ul style="margin-bottom: 8px;">
+    <li><strong>Sistema tipográfico:</strong> Títulos con <code>Bricolage Grotesque</code> (<code>text-wrap: balance</code>), cuerpo en <code>Onest</code> y etiquetas/XP en <code>JetBrains Mono</code> con <code>tabular-nums</code>.</li>
+    <li><strong>Emblema vectorial propio (<code>BrandMark.tsx</code>):</strong> Roundel londinense en SVG (<code>#C8102E</code> / <code>#12397A</code>) compartido con <code>public/icon.svg</code> y <code>public/favicon.svg</code>.</li>
+    <li><strong>Sin bloqueo de zoom y confort en iOS:</strong> Eliminado <code>maximum-scale=1</code>; objetivos táctiles de 48 px en móvil e inputs a <code>16px</code> mínimos para evitar el auto-zoom en Safari.</li>
+  </ul>
 
-  <!-- ==================== SECCIÓN 3 ==================== -->
-  <div class="page-break"></div>
-  <h2 id="sec-3">3. El Motor de Evaluación y Tolerancia Ortográfica</h2>
-  <p>
-    Uno de los problemas más frustrantes de las plataformas de idiomas convencionales es su <strong>pedantería ortográfica</strong>: si un usuario escribe <code>second hand</code> en lugar de <code>second-hand</code>, o si teclea rápido en el móvil y pone <code>dont</code> en vez de <code>don't</code>, muchas apps le dan la respuesta por errónea y le restan vidas.
-  </p>
-  <p>
-    En EngDrill Pro implementamos un motor de evaluación inteligente en dos capas dentro de <a href="file:///c:/Users/adria/OneDrive/Escritorio/Aprende_EN/src/data/infiniteGenerator.ts"><code>src/data/infiniteGenerator.ts</code></a> y <a href="file:///c:/Users/adria/OneDrive/Escritorio/Aprende_EN/src/services/aiService.ts"><code>src/services/aiService.ts</code></a>:
-  </p>
-
-  <h3>1. Normalización Lingüística No Pedante (<code>normalizeAnswer</code>)</h3>
-  <pre><span class="keyword">export function</span> <span class="func">normalizeAnswer</span>(raw: <span class="string">string</span>): <span class="string">string</span> {
-  <span class="keyword">let</span> s = raw.toLowerCase().trim();
-  
-  <span class="comment">// 1. Los guiones se tratan exactamente igual que espacios (second-hand === second hand)</span>
-  s = s.replace(/[-–—_]/g, <span class="string">' '</span>);
-  
-  <span class="comment">// 2. Expansión tolerante de contracciones sin apóstrofe para tecleo móvil</span>
-  s = s.replace(/\bdont\b/g, <span class="string">"don't"</span>).replace(/\bcant\b/g, <span class="string">"can't"</span>)
-       .replace(/\bive\b/g, <span class="string">"i've"</span>).replace(/\bim\b/g, <span class="string">"i'm"</span>);
-       
-  <span class="comment">// 3. Eliminación de signos de puntuación periféricos y espacios dobles</span>
-  s = s.replace(/[.,!?;:"'«»()\[\]]/g, <span class="string">''</span>).replace(/\s+/g, <span class="string">' '</span>).trim();
-  <span class="keyword">return</span> s;
-}</pre>
-
-  <h3>2. Tolerancia a Erratas Menores de Teclado (Fuzzy Matching con Levenshtein)</h3>
-  <p>
-    Cuando el usuario teclea palabras largas (5 letras o más), la función <code>checkAnswerMatch</code> calcula la distancia de edición de Levenshtein. Si el usuario escribió por ejemplo <code>responsible</code> pero se le escapó un dedo y puso <code>responsable</code>, o <code>explained</code> vs <code>expalined</code>, el evaluador local lo acepta pero le muestra en la interfaz la corrección visual exacta para que no se frustre por una simple pulsación de tecla.
-  </p>
-
-  <div class="callout callout-success">
-    <span class="callout-title">✓ Filosofía de Corrección en Situaciones Reales</span>
-    En un entorno laboral o cotidiano en Londres o Nueva York, escribir <em>"second hand part"</em> o <em>"dont worry"</em> en un correo o mensaje es 100% comprensible y natural. La app solo penaliza fallos <strong>gramaticales y conceptuales reales</strong> (como usar un tiempo verbal incorrecto o una preposición dependiente equivocada).
-  </div>
-
-  <!-- ==================== SECCIÓN 4 ==================== -->
-  <div class="page-break"></div>
-  <h2 id="sec-4">4. El Generador Infinito de Ejercicios (Sin IA / Cero Coste)</h2>
-  <p>
-    El corazón de la práctica masiva de la aplicación reside en el archivo <a href="file:///c:/Users/adria/OneDrive/Escritorio/Aprende_EN/src/data/infiniteGenerator.ts"><code>src/data/infiniteGenerator.ts</code></a>.
-    En lugar de hacer que cada ejercicio dependa de una llamada a una IA externa (lo que sería lento, costoso y requeriría conexión continua), la app cuenta con un <strong>motor combinatorio procedimental</strong>.
-  </p>
-
-  <table class="no-break">
+  <h3>Modernización con Estándares Web Nativos</h3>
+  <table class="no-break" style="margin: 6px 0 8px 0; font-size: 8pt;">
     <thead>
       <tr>
-        <th style="width: 25%;">Tipo de Ejercicio</th>
-        <th style="width: 35%;">Estructura en el Código</th>
-        <th style="width: 40%;">Objetivo Pedagógico Cambridge</th>
+        <th style="width: 24%;">Capacidad Web</th>
+        <th style="width: 31%;">Implementación en Código</th>
+        <th style="width: 45%;">Beneficio Técnico y de UX</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td><strong>Cloze / Relleno</strong></td>
-        <td><code>type: 'cloze'</code><br>Oración con hueco <code>___</code> y 4 opciones o respuesta abierta.</td>
-        <td>Preposiciones dependientes (<em>"accused of"</em>, <em>"congratulate on"</em>) y partículas de phrasal verbs.</td>
+        <td><strong>Native Modal Dialog</strong></td>
+        <td><code>src/components/NativeDialog.tsx</code></td>
+        <td><code>&lt;dialog showModal()&gt;</code> en <em>top-layer</em>: fondo <code>inert</code> nativo, cierre <code>Esc</code>, <code>closedby="any"</code> y fallback por bounding rect en Safari.</td>
       </tr>
       <tr>
-        <td><strong>Corrección de Errores</strong></td>
-        <td><code>type: 'error_correction'</code><br>Muestra una frase con una trampa típica de hispanohablantes.</td>
-        <td>Detección activa del fallo (<em>"Most of people"</em> ➔ <em>"Most people"</em>; <em>"explain me"</em> ➔ <em>"explain to me"</em>).</td>
+        <td><strong>Popover API Móvil</strong></td>
+        <td><code>popover="auto"</code> + <code>#mobile-more-nav</code></td>
+        <td>Reduce la barra inferior móvil de 7 pestañas a <strong>5 controles amplios</strong> (Niveles, Vocab, Series IA, Machaque y <strong>Más</strong>) con <em>light-dismiss</em> nativo.</td>
       </tr>
       <tr>
-        <td><strong>Transformación de Oraciones</strong></td>
-        <td><code>type: 'transformation'</code><br>Oración base + Palabra Clave (KEY WORD) en mayúsculas.</td>
-        <td>Equivalente al ejercicio estrella de Cambridge B2 First (Use of English Part 4). Ejemplo: <em>AS</em> ➔ <em>not as fast as</em>.</td>
-      </tr>
-      <tr>
-        <td><strong>Formación de Palabras</strong></td>
-        <td><code>type: 'cloze'</code> con raíz léxica en mayúsculas (ej. <em>SUCCEED</em> ➔ <em>success / successfully</em>).</td>
-        <td>Familias de sufijos y prefijos (Use of English Part 3): sustantivos, adjetivos, adverbios y opuestos con <em>un-</em>, <em>dis-</em>.</td>
+        <td><strong>View Transitions API</strong></td>
+        <td><code>runViewTransition()</code> (<code>viewTransition.ts</code>)</td>
+        <td>Transiciones suaves entre vistas vía <code>document.startViewTransition</code> + <code>flushSync</code>, respetando <code>prefers-reduced-motion</code> y foco en <code>#main-content</code>.</td>
       </tr>
     </tbody>
   </table>
 
-  <h3>Algoritmo de Mezcla Barajada (Fisher-Yates)</h3>
+  <pre style="margin: 6px 0 0 0; padding: 8px 10px; font-size: 7.4pt; line-height: 1.35;"><span class="comment">// NativeDialog.tsx: cierre exterior por coordenadas compatible con Safari</span>
+&lt;<span class="keyword">dialog</span> ref={dialogRef} aria-labelledby={labelledBy} {...(lightDismiss ? { closedby: <span class="string">'any'</span> } : {})}
+  onPointerDown={(e) =&gt; { pointerDownTargetOutside.current = e.target === dialogRef.current &amp;&amp; <span class="func">isOutsideRect</span>(dialogRef.current, e.clientX, e.clientY); }}
+  onPointerUp={(e) =&gt; { <span class="keyword">if</span> (pointerDownTargetOutside.current &amp;&amp; <span class="func">isOutsideRect</span>(dialogRef.current, e.clientX, e.clientY)) <span class="func">onClose</span>(); }} /&gt;</pre>
+
+  <!-- ==================== SECCIÓN 3 ==================== -->
+  <div class="page-break"></div>
+  <h2 id="sec-3"><span class="sec-num">03.</span> Arquitectura Global Client-Side First y Tolerancia No Pedante</h2>
   <p>
-    La función <code>generateInfiniteDrillQueue(filterLevel, filterCategory)</code> toma el banco estático curado más las matrices combinatorias procedimentales, filtra por nivel y aplica un algoritmo de barajado <em>Fisher-Yates</em> garantizando que nunca aparezcan dos ejercicios idénticos seguidos, ofreciendo una experiencia infinita de práctica continua.
+    La aplicación mantiene una arquitectura estrictamente <strong>Client-Side &amp; Serverless</strong> en React 19, TypeScript y Tailwind CSS v4. Esto significa que no existe ningún backend intermedio ni base de datos central que mantener: cada alumno ejecuta el motor de aprendizaje localmente y solo se conecta al exterior bajo demanda hacia la API gratuita de <strong>TVMaze</strong> o hacia el proveedor de IA elegido con su propia clave.
+  </p>
+
+  <div class="diagram-box">
+    <div style="font-size: 8.3pt; font-weight: 700; color: #525866; margin-bottom: 8px;">FLUJO DE DATOS CLIENT-SIDE Y CONEXIONES EN TIEMPO REAL</div>
+    <div>
+      <div class="flow-step" style="border-top: 3px solid #12397a;">
+        <strong>Cliente React 19 + PWA</strong><br>
+        600+ ítems locales + SW <code>uk-street-v20</code>
+      </div>
+      <div class="flow-arrow">&#8644;</div>
+      <div class="flow-step" style="border-top: 3px solid #0e6b47;">
+        <strong>TVMaze Live API</strong><br>
+        <code>api.tvmaze.com</code> (Sin clave)
+      </div>
+      <div class="flow-arrow">&#8644;</div>
+      <div class="flow-step" style="border-top: 3px solid #9a5d07;">
+        <strong>Router Multi-LLM</strong><br>
+        Groq / Gemini / GPT / xAI / OR
+      </div>
+    </div>
+    <div style="margin-top: 8px; font-size: 8pt; color: #525866;">
+      Persistencia local privada en <code>localStorage</code>: Progreso XP/Quids, Baúl de Errores (SRS), Vocabulario IA y Episodios guardados.
+    </div>
+  </div>
+
+  <h3>Motor de Tolerancia Ortográfica (Evaluador No Pedante)</h3>
+  <p>
+    Tanto en la evaluación local (<code>src/data/infiniteGenerator.ts</code> y <code>src/utils/answerChecker.ts</code>) como en el filtro post-procesador sobre respuestas de IA (<code>isPedanticOrMinorOrthography</code> en <code>aiService.ts</code>), se aplica la filosofía práctica: jamás penalizar un guion olvidado (<code>second hand</code> vs <code>second-hand</code>), una contracción sin apóstrofe en teclado móvil (<code>dont</code> / <code>im</code>) ni una errata tipográfica de una letra en palabras largas mediante distancia de <strong>Levenshtein</strong>.
+  </p>
+
+  <pre><span class="keyword">export function</span> <span class="func">normalizeAnswer</span>(raw: <span class="string">string</span>): <span class="string">string</span> {
+  <span class="keyword">let</span> s = raw.toLowerCase().trim();
+  s = s.replace(/[-–—_]/g, <span class="string">' '</span>); <span class="comment">// second-hand === second hand</span>
+  s = s.replace(/\\bdont\\b/g, <span class="string">"don't"</span>).replace(/\\bcant\\b/g, <span class="string">"can't"</span>)
+       .replace(/\\bive\\b/g, <span class="string">"i've"</span>).replace(/\\bim\\b/g, <span class="string">"i'm"</span>);
+  s = s.replace(/[.,!?;:"'«»()\\[\\]]/g, <span class="string">''</span>).replace(/\\s+/g, <span class="string">' '</span>).trim();
+  <span class="keyword">return</span> s;
+}</pre>
+
+  <!-- ==================== SECCIÓN 4 ==================== -->
+  <div class="page-break"></div>
+  <h2 id="sec-4"><span class="sec-num">04.</span> Niveles por Distritos, WhatsApp UK y Diccionario de Campo</h2>
+
+  <h3>A. Mapa Callejero por Barrios y Jefes (<code>StreetLevelMap.tsx</code> + <code>StreetBossFight.tsx</code>)</h3>
+  <p>
+    El aprendizaje central se organiza como una ruta progresiva por 3 escenarios de Reino Unido. Cada nivel contiene micro-lecciones reales (comparativa entre frase académica pedante vs. callejera, secretos culturales y consejos de pronunciación), ejercicios de escritura obligatoria y un <strong>Reto de Jefe Final</strong> para desbloquear el siguiente distrito:
+  </p>
+  <table class="no-break">
+    <thead>
+      <tr>
+        <th style="width: 12%;">Nivel</th>
+        <th style="width: 35%;">Distrito en <code>streetData.ts</code></th>
+        <th style="width: 28%;">Situaciones y Temas</th>
+        <th style="width: 25%;">Rango Desbloqueado</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Nivel 1</strong></td>
+        <td>Heathrow &amp; El Súper de la Esquina</td>
+        <td>Saludos reflejo (<code>Alright?</code>, <code>Cheers</code>), pagar y pedir para llevar en cafés/tiendas.</td>
+        <td>Guiri Despistado &#8594; Turista Avispado</td>
+      </tr>
+      <tr>
+        <td><strong>Nivel 2</strong></td>
+        <td>El Pub The Red Lion &amp; Vida Social</td>
+        <td>Pedir pintas, rondas, reaccionar ante precios y charlar en barra con naturalidad.</td>
+        <td>Habitual del Pub</td>
+      </tr>
+      <tr>
+        <td><strong>Nivel 3</strong></td>
+        <td>El Metro &amp; Mensajes del Día a Día</td>
+        <td>Retrasos en el Tube, pisos compartidos y responder rápido sin sonar formal.</td>
+        <td>Londinense Adoptao (3/3 Jefes)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>B. Simulador Multi-Turno WhatsApp UK (<code>StreetWhatsAppSimulator.tsx</code>)</h3>
+  <p>
+    Recreación interactiva de hilos reales en <code>whatsappScenarios.ts</code> con personajes británicos (<strong>Liam</strong> compartiendo piso, <strong>Sarah</strong> en la oficina por un corte de la Central Line, <strong>Dave</strong> hablando de entradas a <em>forty quid</em> y <strong>Chloe</strong> quedando en Camden). Cada turno evalúa lo que escribe o selecciona el alumno, reproduce voz en <code>en-GB</code> y premia con Quids y XP.
+  </p>
+
+  <h3>C. Diccionario de Campo y Generador IA por Lotes de 50 Palabras (<code>FieldDictionaryZone.tsx</code>)</h3>
+  <p>
+    Reúne <strong>158 fichas curadas</strong> en 6 categorías clave (destacando el <strong>Top 50 palabras más habladas</strong> y <strong>Verbos en Pasado</strong> irregulares) con pronunciación fonética legible en castellano con tildes (<code>[táim]</code>, <code>[pí-pol]</code>, <code>[uént]</code>, <code>[nó-ledzh]</code>), modos <em>Estudio</em>, <em>Quiz escrito</em> y <em>Machaque rápido</em>. Además, permite generar con IA <strong>lotes nuevos de 50 palabras</strong> sin repetir ninguna ya aprendida (pasando hasta 120 palabras existentes en el prompt para evitar duplicados).
   </p>
 
   <!-- ==================== SECCIÓN 5 ==================== -->
   <div class="page-break"></div>
-  <h2 id="sec-5">5. Capa de Inteligencia Artificial Serverless (IA Opcional)</h2>
+  <h2 id="sec-5"><span class="sec-num">05.</span> Módulo Series, Cine y Libros + API TVMaze en Tiempo Real</h2>
   <p>
-    Toda la lógica de IA se encuentra aislada en <a href="file:///c:/Users/adria/OneDrive/Escritorio/Aprende_EN/src/services/aiService.ts"><code>src/services/aiService.ts</code></a>. Se conecta directamente desde el navegador del usuario a cualquier proveedor con formato OpenAI compatible (por defecto <strong>Groq Cloud</strong> por su extrema velocidad y generoso plan gratuito, pero también OpenAI, OpenRouter o servidores locales como Ollama).
+    Una de las funciones más potentes de la app permite estudiar inglés real usando cualquier serie, película o libro que el alumno esté viendo ese mismo día. Al probar con estrenos recientes (como <em>The Gentlemen Temporada 2</em> o <em>Reacher Temporada 4</em>), se detectaron dos limitaciones clásicas de los LLMs estáticos: alucinar tramas de adaptaciones pasadas (película de 2019 vs. serie de Netflix) o responder <em>"Lo siento, no dispongo de información sobre ese episodio"</em>.
   </p>
 
-  <h3>Innovación Técnica 1: Auto-Descubrimiento de Modelos en Vivo</h3>
+  <h3>Solución Técnica Definitiva: <code>src/services/tvEpisodeService.ts</code></h3>
   <p>
-    Un fallo común en apps que usan APIs es que cuando una empresa da de baja un modelo (por ejemplo, al migrar de <em>llama-3.1-70b</em> a <em>llama-3.3-70b</em>), la app arroja un error <code>404 model_not_found</code>. En EngDrill Pro implementamos la función:
+    Para erradicar la desactualización temporal de los modelos de IA sin necesidad de suscripciones ni servidores backend, integramos la API abierta de <strong>TVMaze</strong> directamente desde el cliente:
   </p>
-  <pre><span class="keyword">export async function</span> <span class="func">fetchAvailableModelsForKey</span>(apiKey: <span class="string">string</span>): <span class="string">Promise</span>&lt;<span class="string">string[]</span>&gt; {
-  <span class="comment">// Consulta el endpoint GET /v1/models de la API en vivo con la clave del usuario</span>
-  <span class="keyword">const</span> res = <span class="keyword">await</span> fetch(<span class="string">'https://api.groq.com/openai/v1/models'</span>, {
-    headers: { <span class="string">'Authorization'</span>: <span class="string">\`Bearer \${apiKey.trim()}\`</span> }
-  });
-  <span class="keyword">const</span> data = <span class="keyword">await</span> res.json();
-  <span class="comment">// Filtra automáticamente los modelos de chat activos y vigentes</span>
-  <span class="keyword">return</span> data.data.map(m =&gt; m.id).filter(id =&gt; !id.includes(<span class="string">'whisper'</span>));
+  <ol>
+    <li><strong>Parser flexible de temporadas y capítulos (<code>parseSeasonAndEpisode</code>):</strong> Reconoce formatos naturales españoles o abreviaturas internacionales (<code>"Temporada 4, episodio 2"</code>, <code>"T2 E1"</code>, <code>"4x02"</code>, <code>"S02E01"</code>).</li>
+    <li><strong>Búsqueda e inyección previa en el prompt (<code>fetchOnlineEpisodeData</code>):</strong> Limpia ruido del título (como "(Serie de Netflix)"), localiza el identificador de serie en TVMaze, recupera la lista de episodios y extrae el título oficial, fecha de emisión y sinopsis limpia (sin etiquetas HTML).</li>
+    <li><strong>Bloqueo de negativas y botón de rescate automático:</strong> El prompt prohíbe explícitamente respuestas de rechazo, existe verificación en TypeScript mediante regex anti-negativas sobre <code>synopsisEs</code> (si detecta un rechazo antiguo, muestra aviso con el botón <strong>"Regenerar con base oficial en vivo"</strong>), y permite <strong>editar la sinopsis manualmente</strong> o usar el <strong>panel de corrección</strong> dentro de <code>MediaLearningZone.tsx</code>.</li>
+  </ol>
+
+  <pre><span class="comment">// src/services/tvEpisodeService.ts — Consulta en vivo y desambiguación</span>
+<span class="keyword">export async function</span> <span class="func">fetchOnlineEpisodeData</span>(showTitle: <span class="string">string</span>, episodeStr: <span class="string">string</span>) {
+  <span class="keyword">const</span> target = <span class="func">parseSeasonAndEpisode</span>(episodeStr);
+  <span class="keyword">const</span> searchRes = <span class="keyword">await</span> <span class="func">fetch</span>(\`https://api.tvmaze.com/search/shows?q=\${encodeURIComponent(cleanTitle)}\`);
+  <span class="keyword">const</span> show = exactMatch ? exactMatch.show : searchData[0].show;
+  <span class="keyword">const</span> eps = <span class="keyword">await</span> (<span class="keyword">await</span> <span class="func">fetch</span>(\`https://api.tvmaze.com/shows/\${show.id}/episodes\`)).json();
+  <span class="keyword">const</span> found = eps.find((e) =&gt; e.season === target.season &amp;&amp; e.number === target.episode);
+  <span class="keyword">return</span> found ? { showName: show.name, episodeName: found.name, summary: <span class="func">stripHtml</span>(found.summary) } : <span class="keyword">null</span>;
 }</pre>
 
-  <h3>Innovación Técnica 2: Evaluación No Pedante por IA en Situaciones Reales</h3>
-  <p>
-    En la función <code>evaluateRoleplayResponseWithAI</code> (empleada en el simulador de "¿Qué le responderías?"), el prompt del sistema y el código TypeScript tienen reglas estrictas:
-  </p>
-  <ul>
-    <li>El prompt ordena explícitamente al LLM: <em>"NEVER flag missing hyphens (e.g. 'second hand' vs 'second-hand'), missing apostrophes in contractions, or minor spelling slips as errors"</em>.</li>
-    <li>Posteriormente, el código ejecuta la función <code>isPedanticOrMinorOrthography</code> como filtro de seguridad en TypeScript sobre la lista de errores devuelta por la IA. Si la IA devuelve un error tiquismiquis, <strong>el código lo descarta y eleva la nota a 9.5/10</strong>.</li>
-    <li>Además, genera automáticamente dos elementos de alto valor pedagógico:
-      <ol>
-        <li><strong>Versión B2 Native Upgrade:</strong> Cómo diría esa misma frase un nativo británico o americano usando colocaciones más ricas.</li>
-        <li><strong>Character Follow-Up:</strong> Qué responde el personaje a continuación (ej. qué replica el mecánico o casero) para permitir una conversación continua.</li>
-      </ol>
-    </li>
-  </ul>
+  <div class="callout callout-warning">
+    <span class="callout-title">Desambiguación de Adaptaciones (Ejemplo Real: The Gentlemen)</span>
+    Además de la consulta a TVMaze, el sistema incluye contexto explícito cuando el título coincide con <em>The Gentlemen</em> para diferenciar la serie de Netflix (Eddie Horniman y Susie Glass negociando en Milán con Marco Moretti en T2) de la película de 2019 (Mickey Pearson), e incluye presets rápidos de un clic.
+  </div>
 
   <!-- ==================== SECCIÓN 6 ==================== -->
   <div class="page-break"></div>
-  <h2 id="sec-6">6. Persistencia y Algoritmo de Repetición Espaciada (SRS)</h2>
-  <p>
-    En <a href="file:///c:/Users/adria/OneDrive/Escritorio/Aprende_EN/src/services/storageService.ts"><code>src/services/storageService.ts</code></a> reside la lógica del <strong>Baúl de Errores (Mistake Vault)</strong>.
-    Aprender un idioma no consiste en acertar a la primera por casualidad, sino en transformar los errores sistemáticos en hábitos automáticos.
-  </p>
+  <h2 id="sec-6"><span class="sec-num">06.</span> Lecturas con Rayos X Gramaticales y Regla Muscular 0/2</h2>
 
+  <h3>1. Lector Comprensivo "Rayos X", Buscador Contextual y Creador Libre (<code>ReadingZone.tsx</code>)</h3>
+  <p>
+    Incluye <strong>5 historias completas graduadas</strong> (<em>story-a2p-train</em>, <em>remote-work</em>, etc.) más un generador libre con IA y un analizador de cualquier texto inglés pegado por el usuario:
+  </p>
+  <ul>
+    <li><strong>Modo Rayos X:</strong> Al activar el interruptor, resalta estructuras clave dentro de cada párrafo (tiempos narrativos, pasivas, inversiones, <em>be/get used to</em>) para mostrar su regla aplicada sobre texto real, no en tablas aisladas.</li>
+    <li><strong>Buscador rápido de palabras en contexto:</strong> Al escribir una palabra desconocida durante la lectura, primero busca en local en el Diccionario de Campo (<code>DICTIONARY_WORDS</code>) y, si no figura, consulta en directo a <code>explainWordInStoryContextWithAI</code> devolviendo significado contextual, fonética española y un botón <strong>+ Guardar en mi Diccionario</strong>.</li>
+  </ul>
+
+  <h3>2. La Regla de Oro: Repetición Muscular Guiada (<code>0/2</code>)</h3>
+  <p>
+    Tanto en el entrenamiento intensivo (<code>StreetDrillArena.tsx</code>) como tras recibir corrección de una pregunta abierta en <strong>Lecturas</strong> o <strong>Series IA</strong>, cada fallo activa el ciclo de fijación motora:
+  </p>
   <div class="diagram-box">
-    <div style="font-size: 8.5pt; font-weight: 700; color: #475569; margin-bottom: 8px;">CICLO DE DOMINIO DEL BAÚL DE ERRORES (SRS)</div>
-    <div class="flow-step" style="border-color: #ef4444; color: #b91c1c;">
-      1. El usuario falla un ejercicio<br>
-      <code>failCount++</code> | <code>consecutive = 0</code>
+    <div class="flow-step" style="border-color:#b91c2e;">
+      1. Detección del fallo<br>
+      Muestra frase corregida + versión B2
     </div>
-    <div class="flow-arrow">➔</div>
-    <div class="flow-step" style="border-color: #f59e0b; color: #b45309;">
-      2. Entra en el Baúl de Errores<br>
-      Disponible en la pestaña de repaso
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-step" style="border-color:#9a5d07;">
+      2. Escritura <code>1 / 2</code><br>
+      Reproducir frase exacta de memoria
     </div>
-    <div class="flow-arrow">➔</div>
-    <div class="flow-step" style="border-color: #10b981; color: #047857;">
-      3. Lo acierta 3 veces seguidas<br>
-      <code>consecutive >= 3</code> ➔ <strong>MASTERED</strong>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-step" style="border-color:#0e6b47;">
+      3. Escritura <code>2 / 2</code><br>
+      Fijación completada y XP sumado
     </div>
   </div>
 
-  <h3>La Regla de las 3 Victorias Consecutivas</h3>
-  <p>
-    Cuando el usuario entra en la pestaña <em>"Baúl de Errores"</em>, solo se le presentan los ejercicios en los que ha tropezado.
-    Para que un ejercicio salga del baúl y se marque como <code>mastered: true</code>, el usuario está obligado a <strong>acertarlo 3 veces consecutivas</strong>. Si lo acierta 2 veces pero al tercer día vuelve a fallar, el contador <code>consecutiveCorrect</code> se resetea inmediatamente a <code>0</code>.
-  </p>
-
-  <h3>Control de Racha Diaria (Streak)</h3>
-  <p>
-    La app compara la fecha actual (<code>YYYY-MM-DD</code>) con <code>lastActiveDate</code>. Si el usuario practicó ayer, incrementa <code>streakDays + 1</code>. Si dejó pasar más de 48 horas sin practicar, la racha vuelve a 1 día, incentivando el hábito diario de tecleo.
-  </p>
-
   <!-- ==================== SECCIÓN 7 ==================== -->
   <div class="page-break"></div>
-  <h2 id="sec-7">7. Recorrido por el Código Fuente (Archivo por Archivo)</h2>
+  <h2 id="sec-7"><span class="sec-num">07.</span> Motor Multi-LLM Serverless, Generador Infinito y SRS</h2>
+
+  <h3>1. Enrutador Multi-Proveedor en Cliente (<code>src/services/aiService.ts</code>)</h3>
   <p>
-    A continuación se describe la responsabilidad exacta de cada archivo clave dentro del directorio <code>src/</code>:
+    Para evitar depender de una única empresa o cuota, <code>resolveProviderAndEndpoint()</code> inspecciona automáticamente el prefijo de la API key guardada en <code>localStorage</code> (permitiendo incluso cambiar de proveedor sin tocar selectores manuales) y consulta el listado vivo de modelos disponibles (<code>fetchAvailableModelsForKey</code>) ordenándolos por prioridad y descartando modelos no aptos (Whisper, TTS, embeddings):
+  </p>
+  <pre><span class="keyword">if</span> (key.startsWith(<span class="string">'AIza'</span>))   <span class="keyword">return</span> { provider: <span class="string">'gemini'</span>,     baseUrl: <span class="string">'https://generativelanguage.googleapis.com/v1beta'</span> };
+<span class="keyword">if</span> (key.startsWith(<span class="string">'xai-'</span>))   <span class="keyword">return</span> { provider: <span class="string">'xai'</span>,        baseUrl: <span class="string">'https://api.x.ai/v1'</span> };
+<span class="keyword">if</span> (key.startsWith(<span class="string">'sk-or-'</span>)) <span class="keyword">return</span> { provider: <span class="string">'openrouter'</span>, baseUrl: <span class="string">'https://openrouter.ai/api/v1'</span> };
+<span class="keyword">if</span> (key.startsWith(<span class="string">'gsk_'</span>))   <span class="keyword">return</span> { provider: <span class="string">'groq'</span>,       baseUrl: <span class="string">'https://api.groq.com/openai/v1'</span> };
+<span class="keyword">if</span> (key.startsWith(<span class="string">'sk-'</span>))    <span class="keyword">return</span> { provider: <span class="string">'openai'</span>,     baseUrl: <span class="string">'https://api.openai.com/v1'</span> };</pre>
+  <p>
+    También incorpora <code>extractCleanJson()</code> para limpiar bloques <code>&lt;think&gt;...&lt;/think&gt;</code> de modelos de razonamiento (como Qwen o DeepSeek) y vallas Markdown antes de parsear el JSON en caliente.
+  </p>
+
+  <h3>2. Generador Combinatorio Offline (<code>infiniteGenerator.ts</code>) y Baúl de Errores SRS</h3>
+  <ul>
+    <li><strong>Cero dependencia de red para practicar gramática:</strong> Más de 360 ejercicios directos (<code>expandedGrammarExercises.ts</code>, <code>grammarData.ts</code>, <code>phrasalVerbsData.ts</code>, <code>vocabularyData.ts</code>, matrices en <code>infiniteGenerator.ts</code>) barajados mediante <strong>Fisher-Yates</strong>.</li>
+    <li><strong>Regla de las 3 victorias consecutivas (<code>storageService.ts</code>):</strong> Todo error cae en el Baúl de Errores y solo pasa a <code>mastered: true</code> cuando el alumno lo acierta <strong>3 veces seguidas</strong>. Un único desliz resetea <code>consecutiveCorrect</code> a <code>0</code>.</li>
+  </ul>
+
+  <!-- ==================== SECCIÓN 8 ==================== -->
+  <div class="page-break"></div>
+  <h2 id="sec-8"><span class="sec-num">08.</span> Inventario Completo del Código Fuente (<code>src/</code> y <code>public/</code>)</h2>
+  <p>
+    Resumen verificado de los módulos principales que integran la versión actual (40 ficheros fuente en <code>src/</code> y recursos PWA en <code>public/</code>):
   </p>
 
   <table>
     <thead>
       <tr>
-        <th style="width: 28%;">Archivo</th>
-        <th style="width: 72%;">Responsabilidad y Funciones Clave</th>
+        <th style="width: 34%;">Ruta del Archivo</th>
+        <th style="width: 66%;">Responsabilidad Exacta</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td><code>src/types/index.ts</code></td>
-        <td>
-          Contrato de datos de todo el proyecto en TypeScript. Define los niveles (<code>A2+</code>, <code>B1</code>, <code>B1+</code>, <code>B2</code>, <code>B2+</code>), las interfaces <code>Exercise</code>, <code>MistakeRecord</code>, <code>UserStats</code>, <code>RoleplayScenario</code> y <code>ExamResult</code>.
-        </td>
+        <td><code>src/App.tsx</code> + <code>src/index.css</code></td>
+        <td>Shell <em>London Press</em>, cabecera con métricas XP/Quids/Jefes, navegación escritorio, barra móvil de 5 botones + <code>popover="auto"</code> y tokens semánticos CSS.</td>
       </tr>
       <tr>
-        <td><code>src/App.tsx</code></td>
-        <td>
-          Componente raíz. Gestiona la barra de navegación superior (tabs), el estado global de la sesión, la racha diaria de fuego, el botón de ajustes y la orquestación de componentes.
-        </td>
+        <td><code>src/components/BrandMark.tsx</code><br><code>src/components/NativeDialog.tsx</code><br><code>src/utils/viewTransition.ts</code></td>
+        <td>Infraestructura visual y web nativa: Roundel SVG de marca, modal accesible sobre <code>&lt;dialog showModal()&gt;</code> y gestor de transiciones suaves con gestión de foco.</td>
       </tr>
       <tr>
-        <td><code>src/components/ExerciseCard.tsx</code></td>
-        <td>
-          Motor visual de renderizado de preguntas. Gestiona el campo de texto, el botón para mostrar la traducción al español, el resaltado de diferencias palabra por palabra (diff rojo/verde), y el botón de "Añadir al Baúl de Errores".
-        </td>
+        <td><code>src/components/StreetLevelMap.tsx</code><br><code>StreetTopicView.tsx</code> / <code>StreetBossFight.tsx</code></td>
+        <td>Mapa progresivo por 3 distritos de Reino Unido, fichas callejeras comparativas, audios <code>en-GB</code> y batallas finales contra jefes para desbloquear niveles.</td>
       </tr>
       <tr>
-        <td><code>src/components/DrillArena.tsx</code></td>
-        <td>
-          La arena de entrenamiento masivo. Permite alternar entre el modo infinito procedimental, el generador con IA por temas libres, y el Baúl de Errores para machaque intensivo.
-        </td>
+        <td><code>src/components/MediaLearningZone.tsx</code><br><code>src/services/tvEpisodeService.ts</code></td>
+        <td>Módulo Series, Cine y Libros con búsqueda en vivo en <code>api.tvmaze.com</code>, desambiguación, edición inline, panel de corrección y rescate anti-negativas.</td>
       </tr>
       <tr>
-        <td><code>src/components/WritingZone.tsx</code></td>
-        <td>
-          Módulo de redacción y situaciones reales ("¿Qué le responderías?"). Contiene escenarios preconfigurados (el mecánico, el casero, el trabajo) y generador de nuevos escenarios interactivos.
-        </td>
+        <td><code>src/components/FieldDictionaryZone.tsx</code><br><code>src/data/fieldDictionaryData.ts</code></td>
+        <td>Diccionario de campo (158 entradas + 6 categorías, Top 50 y Pasados) con fonética española y generador IA de lotes de 50 palabras sin duplicados.</td>
       </tr>
       <tr>
-        <td><code>src/components/ReadingZone.tsx</code></td>
-        <td>
-          Lector comprensivo con análisis sintáctico "Rayos X". Desglosa los párrafos de historias B1/B2 señalando las construcciones gramaticales utilizadas y lanza preguntas abiertas de redacción.
-        </td>
+        <td><code>src/components/StreetWhatsAppSimulator.tsx</code><br><code>src/components/StreetDrillArena.tsx</code><br><code>src/components/StreetProfile.tsx</code></td>
+        <td>Simulador multi-turno de chats UK (Liam, Sarah, Dave, Chloe), arena de machaque con repetición <code>0/2</code>, pasaporte de rangos y estadísticas.</td>
       </tr>
       <tr>
-        <td><code>src/components/PhrasalVerbsZone.tsx</code></td>
-        <td>
-          Explorador de 60+ Phrasal Verbs organizados por la <em>lógica de la partícula</em> (ej. <em>OFF</em> = desconexión/salida; <em>UP</em> = finalización completa) con 3 modos de práctica.
-        </td>
+        <td><code>src/components/ReadingZone.tsx</code><br><code>src/components/SettingsModal.tsx</code></td>
+        <td>Historias con Rayos X, buscador contextual de vocabulario en lectura, creador libre con IA y diálogo nativo de configuración Multi-LLM y respaldo JSON.</td>
       </tr>
       <tr>
-        <td><code>src/components/ExamZone.tsx</code></td>
-        <td>
-          Simulador oficial cronometrado Cambridge Use of English B1/B2 y test diagnóstico de nivelación con desglose de porcentajes por categoría gramatical.
-        </td>
+        <td><code>src/services/aiService.ts</code><br><code>src/services/storageService.ts</code><br><code>src/utils/answerChecker.ts</code></td>
+        <td>Enrutador Multi-LLM (5 proveedores), evaluador no pedante, comparador semántico en español/inglés, persistencia <code>localStorage</code> y Baúl SRS.</td>
       </tr>
       <tr>
-        <td><code>src/public/sw.js</code></td>
-        <td>
-          Service Worker v5. Intercepta las peticiones de red y cachea todos los ficheros JS, CSS, iconos y HTML para arranque instantáneo y uso sin internet.
-        </td>
+        <td><code>public/sw.js</code> &amp; <code>public/presentacion/</code></td>
+        <td>Service Worker <code>uk-street-v20</code> (caché offline Network-First) y copia sincronizada de la presentación interactiva 3D en <code>/presentacion/</code>.</td>
       </tr>
     </tbody>
   </table>
 
-  <!-- ==================== SECCIÓN 8 ==================== -->
-  <div class="page-break"></div>
-  <h2 id="sec-8">8. Cómo Explicar la App a Otra Persona (El Pitch de 2 Minutos)</h2>
-  <p>
-    Si un amigo, compañero de trabajo, profesor o entrevistador te pregunta: <em>"¿Cómo funciona esta app de inglés por detrás?"</em>, aquí tienes la explicación perfecta estructurada en 4 puntos clave:
-  </p>
-
-  <div class="callout">
-    <span class="callout-title">🗣️ Guion de Respuesta Rápida:</span>
-    <p>
-      <em>"Es una Progressive Web App desarrollada en <strong>React 19 y TypeScript</strong> pensada para saltar del nivel A2 al B2 avanzado de Cambridge. A diferencia de las apps típicas, está 100% enfocada en machacar gramática y redacción de situaciones reales sin perder el tiempo en audios básicos.</em>
-    </p>
-    <p>
-      <em>Por dentro funciona con una arquitectura <strong>client-side first</strong>: tiene un generador combinatorio con más de mil ejercicios algorítmicos que se ejecutan en local a cero coste y en menos de 5 milisegundos, sin necesidad de servidores. Tiene un sistema de <strong>repetición espaciada</strong> que te obliga a acertar cada fallo 3 veces consecutivas para darlo por superado.</em>
-    </p>
-    <p>
-      <em>Además, cuenta con una integración serverless con <strong>modelos de lenguaje (IA)</strong> que evalúa respuestas libres y te pone en situaciones cotidianas (como defenderte en el taller mecánico en inglés). El evaluador está programado con un algoritmo de <strong>tolerancia ortográfica</strong>: no es pedante con guiones ni apóstrofes y se centra en enseñarte inglés real y práctico para trabajar."</em>
-    </p>
-  </div>
-
-  <h3>Preguntas Frecuentes que te pueden hacer y cómo responder:</h3>
-  <ul>
-    <li>
-      <strong>"¿Cuánto cuesta mantener la app online?"</strong><br>
-      <em>0 euros al mes. Está alojada de forma estática en GitHub Pages y compilada con Vite. No requiere ningún servidor en la nube de pago.</em>
-    </li>
-    <li>
-      <strong>"¿Cómo hace para no dar error si pongo 'second hand' sin guion?"</strong><br>
-      <em>El código pasa cualquier respuesta por una función llamada <code>normalizeAnswer</code> que unifica guiones con espacios y tolera contracciones informales, y si se usa la IA, un filtro post-procesador descarta cualquier corrección tiquismiquis antes de mostrarla.</em>
-    </li>
-    <li>
-      <strong>"¿Cómo se instala en el móvil si no está en la App Store?"</strong><br>
-      <em>Es una PWA (Progressive Web App). Al abrir el enlace desde Safari en iPhone o Chrome en Android, pulsas 'Compartir' o menú de 3 puntos y seleccionas 'Añadir a pantalla de inicio'. Se instala al instante como si fuera nativa y funciona a pantalla completa.</em>
-    </li>
-  </ul>
-
   <!-- ==================== SECCIÓN 9 ==================== -->
   <div class="page-break"></div>
-  <h2 id="sec-9">9. Despliegue, PWA y Acceso Móvil</h2>
+  <h2 id="sec-9"><span class="sec-num">09.</span> Presentación Interactiva 3D, PWA <code>v20</code> y GitHub Pages</h2>
 
-  <h3>Proceso de Compilación y Publicación en GitHub Pages</h3>
+  <h3>Showcase 3D Interactivo (<code>presentacion/index.html</code>)</h3>
+  <p>
+    Además de la app principal, el repositorio incluye una web de presentación interactiva optimizada tanto para escritorio como para móvil (servida automáticamente en <code>/aprende-en/presentacion/</code>). Reúne 12 escenas animadas mediante <code>requestAnimationFrame</code> e interpolación ligada al scroll: globo 3D de partículas con ciudades de Reino Unido enlazadas por arcos (Londres, Birmingham, Mánchester, Bristol, Edimburgo, Camden, Soho, Brixton), carrusel cilíndrico 3D, pila técnica desmontada en 4 capas, tablero orbital de memoria muscular, arquitectura SVG animada, simuladores en vivo de WhatsApp y repetición <code>0/2</code>, tarjetas flip, diario de 8 retos resueltos en vuelo 3D y terminal PowerShell animada.
+  </p>
+
+  <h3>Flujo de Compilación, PDF y Despliegue Cero Coste</h3>
   <ol>
-    <li>
-      <strong>Compilación con Typecheck:</strong> Se ejecuta <code>npm run build</code>, que primero valida todos los tipos con <code>tsc -b</code> y luego genera el paquete optimizado y minificado con Vite en la carpeta <code>dist/</code>.
-    </li>
-    <li>
-      <strong>Soporte SPA en Servidores Estáticos:</strong> Se copia <code>dist/index.html</code> a <code>dist/404.html</code> para que las recargas directas o rutas profundas en GitHub Pages no provoquen error 404.
-    </li>
-    <li>
-      <strong>Despliegue a la rama <code>gh-pages</code>:</strong> El contenido de <code>dist/</code> se empuja mediante Git a la rama huérfana <code>gh-pages</code> del repositorio de GitHub, quedando inmediatamente disponible a nivel mundial bajo CDN de alta velocidad.
-    </li>
+    <li><strong>Verificación de tipos y empaquetado (<code>npm run build</code>):</strong> Ejecuta <code>tsc -b</code> y genera en <code>dist/</code> los activos optimizados junto a <code>dist/presentacion/index.html</code>.</li>
+    <li><strong>Regeneración automática de esta memoria:</strong> <code>node scripts/generate_doc_pdf.cjs</code> invoca Microsoft Edge Headless (<code>--headless --print-to-pdf</code>) garantizando documentación siempre sincronizada con el código real.</li>
+    <li><strong>Service Worker <code>uk-street-v20</code> y GitHub Pages:</strong> Despliega en rama <code>gh-pages</code> con limpieza automática de cachés anteriores al activarse para que cualquier dispositivo iOS/Android reciba el último bundle sin quedarse colgado en versiones viejas.</li>
   </ol>
 
-  <h3>PWA Manifest y Service Worker v5</h3>
-  <p>
-    El archivo <code>public/manifest.json</code> declara el modo <code>display: "standalone"</code>, con tema oscuro (<code>#0f172a</code>) y los iconos vectoriales SVG. El <code>public/sw.js</code> implementa una estrategia de caché <strong>Network-First con fallback a Cache Storage</strong>:
-  </p>
-  <pre><span class="comment">// public/sw.js - Versión 5 de Caché PWA</span>
-<span class="keyword">const</span> CACHE_NAME = <span class="string">'engdrill-pro-v5'</span>;
+  <pre><span class="comment">// public/sw.js — Activación limpia con cache-busting uk-street-v20</span>
+<span class="keyword">const</span> CACHE_NAME = <span class="string">'uk-street-v20'</span>;
 
-self.addEventListener(<span class="string">'activate'</span>, (event) =&gt; {
-  <span class="comment">// Limpia automáticamente versiones antiguas de caché cuando se sube una nueva release</span>
-  event.waitUntil(
-    caches.keys().then((keys) =&gt;
-      Promise.all(keys.map(k =&gt; k !== CACHE_NAME ? caches.delete(k) : <span class="keyword">null</span>))
-    ).then(() =&gt; self.clients.claim())
+self.<span class="func">addEventListener</span>(<span class="string">'activate'</span>, (event) =&gt; {
+  event.<span class="func">waitUntil</span>(
+    caches.<span class="func">keys</span>().then((keys) =&gt;
+      Promise.all(keys.<span class="func">map</span>((k) =&gt; (k !== CACHE_NAME ? caches.<span class="func">delete</span>(k) : <span class="keyword">null</span>)))
+    ).then(() =&gt; self.clients.<span class="func">claim</span>())
   );
 });</pre>
 
-  <div class="callout callout-success" style="margin-top: 25px;">
-    <span class="callout-title">📌 Conclusión y Resumen del Proyecto</span>
-    EngDrill Pro combina lo mejor de la ingeniería de software moderna (TypeScript estricto, React 19, PWA offline, zero-backend serverless) con una metodología pedagógica basada en la práctica activa y el machaque de patrones de alto rendimiento para hispanohablantes.
+  <!-- ==================== SECCIÓN 10 ==================== -->
+  <div class="page-break"></div>
+  <h2 id="sec-10"><span class="sec-num">10.</span> El Pitch de 2 Minutos y Preguntas Frecuentes</h2>
+
+  <div class="callout">
+    <span class="callout-title">Cómo explicar UK Street English en 60 segundos</span>
+    <p>
+      <em>"Es una PWA creada en <strong>React 19 y TypeScript</strong> diseñada para pasar de un inglés académico rígido al inglés real que se habla en Londres, pubs y chats de WhatsApp. Funciona 100% en cliente, con coste 0 € en servidores, y combina una ruta gamificada por barrios con XP, Quids y Jefes finales junto a un simulador de mensajería cotidiana, lecturas con Rayos X y aprendizaje con series de estreno."</em>
+    </p>
+    <p style="margin-bottom:0;">
+      <em>"Para evitar que la IA alucine o diga que no conoce temporadas recientes como The Gentlemen T2 o Reacher T4, se conecta en directo a <strong>TVMaze</strong> para leer la sinopsis oficial real antes de generar ejercicios. Además usa un motor Multi-LLM compatible con Groq, Gemini, OpenAI, xAI Grok y OpenRouter, audio británico local y regla obligatoria de repetición muscular <code>0/2</code> en cada fallo."</em>
+    </p>
+  </div>
+
+  <h3>Preguntas Habituales sobre el Funcionamiento Interno</h3>
+  <ul>
+    <li>
+      <strong>¿Por qué ahora sí acierta tramas de series recién estrenadas?</strong><br>
+      Porque <code>tvEpisodeService.ts</code> consulta en vivo <code>api.tvmaze.com</code> antes de enviar el prompt a la IA, inyecta los hechos oficiales del episodio y prohíbe respuestas negativas; además se puede editar la sinopsis o rescatar episodios previos con un clic.
+    </li>
+    <li>
+      <strong>¿Si el usuario pone el repositorio en privado o comparte el enlace, pierde acceso alguien?</strong><br>
+      En GitHub Pages gratuito los sitios de repos privados requieren cuenta GitHub Pro; con el repositorio público (sin claves en el código, ya que cada persona introduce su propia clave gratuita de Groq/Gemini en su móvil dentro de <code>localStorage</code>) cualquier amigo con el enlace accede al 100% sin riesgo de exponer API keys privadas.
+    </li>
+    <li>
+      <strong>¿Qué cambió a nivel visual en la última actualización (v6.0)?</strong><br>
+      Se sustituyeron estilos genéricos y barras saturadas por el sistema editorial <strong>London Press &amp; Underground</strong>: tipografía propia, emblema Roundel (<code>BrandMark</code>), <code>&lt;dialog showModal()&gt;</code>, menú móvil de 5 accesos con <code>popover="auto"</code>, <code>View Transitions</code> nativas y cero bloqueo de zoom.
+    </li>
+  </ul>
+
+  <div class="callout callout-success" style="margin-top: 18px;">
+    <span class="callout-title">Documento Verificado contra Código Fuente Actual</span>
+    Generado desde <code>scripts/generate_doc_pdf.cjs</code> para la Release v6.0 de <strong>UK Street English</strong> (Cache PWA <code>uk-street-v20</code> · Noviembre 2026).
   </div>
 
 </body>
@@ -760,9 +887,11 @@ try {
     console.log(`✅ PDF generado con éxito: ${pdfPath} (${(stats.size / 1024).toFixed(1)} KB)`);
   } else {
     console.error('❌ Error: El PDF no se creó.');
+    process.exitCode = 1;
   }
 } catch (err) {
   console.error('❌ Error al ejecutar Edge headless:', err);
+  process.exitCode = 1;
 } finally {
   if (fs.existsSync(htmlPath)) {
     fs.unlinkSync(htmlPath);

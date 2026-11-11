@@ -10,7 +10,9 @@ import {
   XCircle,
   ArrowRight,
   Lightbulb,
-  Send
+  Send,
+  PenLine,
+  Info
 } from 'lucide-react';
 
 interface StreetTopicViewProps {
@@ -57,314 +59,310 @@ export const StreetTopicView: React.FC<StreetTopicViewProps> = ({
   };
 
   return (
-    <div className="space-y-4 max-w-3xl mx-auto animate-in fade-in duration-200">
-      {/* Top Bar with Back Button */}
-      <div className="flex items-center justify-between gap-3 bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 shadow-xs">
+    <div className="space-y-5 max-w-3xl mx-auto">
+      {/* Barra superior con vuelta y selector de modo */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700 hover:text-indigo-600 px-3 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
+          className="btn btn-secondary btn-sm self-start"
         >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Volver al Mapa de Barrios</span>
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+          <span>Volver al mapa</span>
         </button>
 
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl">
+        <div className="segmented w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setActiveTab('phrases')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'phrases'
-                ? 'bg-white text-indigo-700 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+            className={`segmented-item ${
+              activeTab === 'phrases' ? 'segmented-item-active' : ''
             }`}
           >
-            📖 Expresiones de Calle
+            <BookOpen className="w-4 h-4" aria-hidden="true" />
+            <span>Expresiones</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('drills')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'drills'
-                ? 'bg-white text-indigo-700 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+            className={`segmented-item tabular-nums ${
+              activeTab === 'drills' ? 'segmented-item-active' : ''
             }`}
           >
-            ✍️ Escribir ({topic.exercises.length})
+            <PenLine className="w-4 h-4" aria-hidden="true" />
+            <span>Práctica ({topic.exercises.length})</span>
           </button>
         </div>
       </div>
 
-      {/* Topic Header */}
-      <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 text-white rounded-3xl p-5 sm:p-6 shadow-md border border-indigo-800">
-        <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-3xl shrink-0 shadow-inner">
-            {topic.icon}
-          </div>
+      {/* Cabecera editorial del tema */}
+      <section className="card p-5 sm:p-6 space-y-3">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <span className="text-[10px] font-black tracking-widest uppercase px-2.5 py-0.5 rounded-full bg-indigo-500/30 border border-indigo-400 text-indigo-200">
-              Tema Práctico de Calle
-            </span>
-            <h2 className="text-xl sm:text-2xl font-black mt-1 text-white tracking-tight">
+            <h2
+              id="topic-view-heading"
+              tabIndex={-1}
+              className="font-display text-xl sm:text-2xl font-bold text-[var(--ink)] outline-none"
+            >
               {topic.title}
             </h2>
-            <p className="text-xs sm:text-sm text-indigo-200 font-medium mt-0.5">
-              {topic.subtitle}
-            </p>
+            <p className="text-sm text-[var(--accent)] font-medium mt-0.5">{topic.subtitle}</p>
           </div>
+          <span className="text-xs font-mono font-semibold px-2.5 py-1 rounded-md bg-[var(--surface-2)] text-[var(--ink-muted)] shrink-0 tabular-nums">
+            {topic.phrases.length} claves
+          </span>
         </div>
 
-        <p className="text-xs sm:text-sm text-slate-300 mt-4 leading-relaxed bg-black/20 p-3.5 rounded-2xl border border-white/5">
-          {topic.description}
-        </p>
-      </div>
+        <p className="text-sm text-[var(--ink-muted)] leading-relaxed">{topic.description}</p>
+      </section>
 
-      {/* TAB 1: PHRASES (TEXTBOOK VS STREET) */}
+      {/* PESTAÑA 1: COMPARATIVA ACADEMIA VS CALLE */}
       {activeTab === 'phrases' && (
         <div className="space-y-4">
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs sm:text-sm text-amber-950 flex items-start gap-3">
-            <Sparkles className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="p-4 rounded-xl bg-[var(--accent-soft)] border border-[var(--accent-border)] text-xs sm:text-sm text-[var(--ink)] flex items-start gap-3">
+            <Sparkles className="w-4 h-4 text-[var(--accent)] shrink-0 mt-0.5" aria-hidden="true" />
             <div>
-              <strong className="font-black text-amber-900">Inglés Cotidiano vs Academia:</strong>
-              <p className="mt-0.5 text-amber-800">
-                Aprende cómo lo expresa la gente real en UK para no sonar como una enciclopedia al hablar con colegas, vecinos o en tiendas.
-              </p>
+              <strong className="font-semibold text-[var(--accent)]">
+                Inglés real frente a manual escolar:
+              </strong>{' '}
+              así habla la gente a diario en Londres sin sonar rígida ni artificial.
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3.5">
             {topic.phrases.map((item, idx) => (
-              <div
-                key={idx}
-                className="bg-white rounded-2xl border-2 border-slate-200 p-4 sm:p-5 shadow-xs hover:border-indigo-300 transition-all space-y-3"
-              >
-                {/* Contrast Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">
-                      ❌ Lo que te enseña la academia
+              <article key={idx} className="card p-4 sm:p-5 space-y-3.5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="inset-well p-3.5 space-y-1">
+                    <span className="text-xs font-medium text-[var(--ink-subtle)] block">
+                      En libros de texto
                     </span>
-                    <p className="text-xs sm:text-sm font-semibold text-slate-700 line-through">
-                      "{item.formal}"
+                    <p className="text-sm font-medium text-[var(--ink-muted)] line-through">
+                      “{item.formal}”
                     </p>
                   </div>
 
-                  <div className="bg-emerald-50 border-2 border-emerald-300 rounded-xl p-3 shadow-xs">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 block mb-1">
-                      ✅ Cómo lo dice un inglés en la calle
+                  <div className="rounded-xl p-3.5 bg-[var(--pine-soft)] border border-[var(--pine-border)] space-y-1">
+                    <span className="text-xs font-semibold text-[var(--pine)] block">
+                      En la calle en UK
                     </span>
-                    <p className="text-xs sm:text-sm font-black text-emerald-950">
-                      "{item.street}"
+                    <p className="text-sm sm:text-base font-bold text-[var(--ink)]">
+                      “{item.street}”
                     </p>
                   </div>
                 </div>
 
-                {/* Spanish Meaning & Context */}
-                <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                  <div>
-                    <span className="text-slate-400 font-bold">En cristiano:</span>{' '}
-                    <strong className="text-slate-900 font-bold">{item.es}</strong>
-                  </div>
+                <div className="text-sm text-[var(--ink)]">
+                  <span className="text-[var(--ink-muted)]">Significado equivalente: </span>
+                  <strong className="font-semibold">{item.es}</strong>
                 </div>
 
-                <p className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                  💡 <strong>Contexto de uso:</strong> {item.context}
-                </p>
+                <div className="text-xs sm:text-sm text-[var(--ink-muted)] flex items-start gap-2 pt-2 border-t border-[var(--border)]">
+                  <Info className="w-4 h-4 text-[var(--ink-subtle)] shrink-0 mt-0.5" aria-hidden="true" />
+                  <span>{item.context}</span>
+                </div>
 
                 {item.notes && (
-                  <p className="text-xs text-indigo-700 bg-indigo-50/70 p-2 rounded-xl">
-                    ⚠️ {item.notes}
+                  <p className="text-xs text-[var(--accent)] bg-[var(--accent-soft)] px-3 py-2 rounded-lg">
+                    {item.notes}
                   </p>
                 )}
-              </div>
+              </article>
             ))}
           </div>
 
-          {/* Cultural Secrets & Audio Guidance */}
+          {/* Notas culturales y entonación */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-2">
-              <div className="flex items-center gap-2 text-xs font-black text-slate-900">
-                <BookOpen className="w-4 h-4 text-indigo-600" />
-                <span>Secretos Cotidianos de UK</span>
+            <div className="card p-4 sm:p-5 space-y-2.5">
+              <div className="flex items-center gap-2 text-sm font-bold text-[var(--ink)]">
+                <BookOpen className="w-4 h-4 text-[var(--accent)]" aria-hidden="true" />
+                <span>Claves culturales en UK</span>
               </div>
-              <ul className="space-y-1.5 text-xs text-slate-600">
+              <ul className="space-y-1.5 text-xs sm:text-sm text-[var(--ink-muted)]">
                 {topic.culturalSecrets.map((secret, sIdx) => (
-                  <li key={sIdx} className="flex items-start gap-1.5">
-                    <span className="text-indigo-500 font-bold">•</span>
+                  <li key={sIdx} className="flex items-start gap-2">
+                    <span className="text-[var(--accent)] font-bold" aria-hidden="true">
+                      •
+                    </span>
                     <span>{secret}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-2">
-              <div className="flex items-center gap-2 text-xs font-black text-slate-900">
-                <Volume2 className="w-4 h-4 text-emerald-600" />
-                <span>Pronunciación y Entonación</span>
+            <div className="card p-4 sm:p-5 space-y-2.5">
+              <div className="flex items-center gap-2 text-sm font-bold text-[var(--ink)]">
+                <Volume2 className="w-4 h-4 text-[var(--pine)]" aria-hidden="true" />
+                <span>Pronunciación y ritmo</span>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
+              <p className="text-xs sm:text-sm text-[var(--ink-muted)] leading-relaxed">
                 {topic.audioTips}
               </p>
             </div>
           </div>
 
-          {/* Direct CTA to Exercises */}
-          <div className="pt-2">
-            <button
-              type="button"
-              onClick={() => setActiveTab('drills')}
-              className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-98 cursor-pointer"
-            >
-              <span>¡Entendido! Escribir las respuestas en los ejercicios (+XP)</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab('drills')}
+            className="btn btn-primary w-full"
+          >
+            <span>Pasar a los ejercicios escritos (+XP)</span>
+            <ArrowRight className="w-4 h-4" aria-hidden="true" />
+          </button>
         </div>
       )}
 
-      {/* TAB 2: DRILLS (WRITE YOUR ANSWER!) */}
+      {/* PESTAÑA 2: EJERCICIOS ESCRITOS */}
       {activeTab === 'drills' && currentExercise && (
-        <div className="bg-white rounded-3xl border-2 border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+        <section className="card p-5 sm:p-6 space-y-4">
+          <div className="flex items-center justify-between text-xs font-semibold text-[var(--ink-muted)] tabular-nums">
             <div className="flex items-center gap-2">
               <span>
                 Ejercicio {drillIndex + 1} de {topic.exercises.length}
               </span>
               {isCompleted && (
-                <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">
-                  ✓ Ya superado
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[var(--pine-soft)] text-[var(--pine)] border border-[var(--pine-border)]">
+                  <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
+                  Superado
                 </span>
               )}
             </div>
-            <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-full font-black">
-              +{currentExercise.xpReward} XP Callejera ⚡
+            <span className="px-2.5 py-0.5 rounded-md bg-[var(--brass-soft)] text-[var(--brass)] border border-[var(--brass-border)] font-semibold">
+              +{currentExercise.xpReward} XP
             </span>
           </div>
 
-          {/* Situation Box */}
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs sm:text-sm">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
-              Situación Real
+          <div className="inset-well p-4 text-sm space-y-1">
+            <span className="text-xs font-semibold text-[var(--ink-muted)] block">
+              Situación
             </span>
-            <p className="text-slate-800 font-medium">{currentExercise.situation}</p>
+            <p className="text-[var(--ink)] font-medium leading-relaxed">
+              {currentExercise.situation}
+            </p>
           </div>
 
-          {/* Question / Goal */}
-          <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">
+          <h3 className="font-display font-bold text-base sm:text-lg text-[var(--ink)]">
             {currentExercise.question}
           </h3>
 
-          {/* Hint button & Box */}
           {currentExercise.hint && (
             <div>
               {!showHint ? (
                 <button
                   type="button"
                   onClick={() => setShowHint(true)}
-                  className="text-xs font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1.5 cursor-pointer"
+                  className="text-xs font-semibold text-[var(--brass)] hover:underline flex items-center gap-1.5"
                 >
-                  <Lightbulb className="w-4 h-4 text-amber-500" />
-                  <span>¿Dudas? Ver pista para escribirlo</span>
+                  <Lightbulb className="w-4 h-4" aria-hidden="true" />
+                  <span>Ver pista</span>
                 </button>
               ) : (
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 animate-in fade-in">
-                  💡 {currentExercise.hint}
+                <div className="p-3 rounded-xl bg-[var(--brass-soft)] border border-[var(--brass-border)] text-xs sm:text-sm text-[var(--ink)]">
+                  {currentExercise.hint}
                 </div>
               )}
             </div>
           )}
 
-          {/* Text Input Form (Type your response) */}
           <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="relative">
+            <div>
+              <label htmlFor="topic-drill-input" className="sr-only">
+                Tu respuesta en inglés
+              </label>
               <input
+                id="topic-drill-input"
+                name="topicAnswer"
                 type="text"
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
                 disabled={isAnswered}
-                placeholder="Escribe tu respuesta en inglés aquí..."
-                className="w-full p-4 rounded-2xl border-2 border-slate-300 focus:border-indigo-600 focus:bg-white text-sm font-semibold text-slate-900 outline-none transition-all placeholder:text-slate-400"
+                placeholder="Escribe tu respuesta en inglés…"
+                className="input-field font-medium"
                 autoComplete="off"
-                autoFocus
+                spellCheck={false}
               />
             </div>
 
-            {!isAnswered ? (
+            {!isAnswered && (
               <button
                 type="submit"
                 disabled={!userInput.trim()}
-                className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+                className="btn btn-primary w-full"
               >
-                <span>Comprobar lo que he escrito</span>
-                <Send className="w-4 h-4" />
+                <span>Comprobar respuesta</span>
+                <Send className="w-4 h-4" aria-hidden="true" />
               </button>
-            ) : null}
+            )}
           </form>
 
-          {/* Feedback Card */}
           {isAnswered && (
             <div
-              className={`p-4 rounded-2xl border-2 animate-in fade-in duration-200 ${
+              aria-live="polite"
+              className={`p-4 rounded-xl border space-y-3 ${
                 isCorrect
-                  ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
-                  : 'bg-rose-50 border-rose-300 text-rose-950'
+                  ? 'bg-[var(--pine-soft)] border-[var(--pine-border)]'
+                  : 'bg-[var(--crimson-soft)] border-[var(--crimson-border)]'
               }`}
             >
-              <div className="flex items-center gap-2 font-black text-sm mb-1">
+              <div
+                className={`flex items-center gap-2 font-bold text-sm ${
+                  isCorrect ? 'text-[var(--pine)]' : 'text-[var(--crimson)]'
+                }`}
+              >
                 {isCorrect ? (
                   <>
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                    <span>¡Exacto! Lo has escrito de forma natural (+{currentExercise.xpReward} XP)</span>
+                    <CheckCircle2 className="w-5 h-5 shrink-0" aria-hidden="true" />
+                    <span className="tabular-nums">
+                      ¡Exacto! Expresión natural (+{currentExercise.xpReward} XP)
+                    </span>
                   </>
                 ) : (
                   <>
-                    <XCircle className="w-5 h-5 text-rose-600 shrink-0" />
-                    <span>Casi, pero en la calle se dice de otra forma</span>
+                    <XCircle className="w-5 h-5 shrink-0" aria-hidden="true" />
+                    <span>En la calle se suele decir de otra forma</span>
                   </>
                 )}
               </div>
 
-              <div className="mt-2 text-xs sm:text-sm bg-white/90 p-3 rounded-xl border border-slate-200">
-                <span className="text-[10px] font-black uppercase text-slate-500 block mb-0.5">
-                  Respuesta ideal de calle:
+              <div className="bg-[var(--surface)] p-3.5 rounded-lg border border-[var(--border)]">
+                <span className="text-xs font-medium text-[var(--ink-muted)] block mb-0.5">
+                  Respuesta recomendada
                 </span>
-                <strong className="text-emerald-900 text-sm font-black">
-                  "{currentExercise.sampleIdealAnswer}"
+                <strong className="text-[var(--pine)] text-sm sm:text-base font-bold">
+                  “{currentExercise.sampleIdealAnswer}”
                 </strong>
               </div>
 
-              <p className="text-xs sm:text-sm mt-2">{currentExercise.explanationEs}</p>
+              <p className="text-xs sm:text-sm text-[var(--ink)]">
+                {currentExercise.explanationEs}
+              </p>
 
-              <div className="mt-2 text-xs font-semibold bg-white/80 p-2.5 rounded-xl text-slate-700">
-                💡 <strong>Truco:</strong> {currentExercise.streetTip}
-              </div>
+              <p className="text-xs text-[var(--ink-muted)]">
+                <strong className="text-[var(--ink)]">Consejo:</strong> {currentExercise.streetTip}
+              </p>
 
               {drillIndex + 1 < topic.exercises.length ? (
                 <button
                   type="button"
                   onClick={handleNextDrill}
-                  className="mt-3.5 w-full py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                  className="btn btn-dark w-full"
                 >
-                  <span>Siguiente Ejercicio para Escribir</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>Siguiente ejercicio</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
                 </button>
               ) : (
-                <div className="mt-4 p-3 bg-white rounded-xl border border-emerald-200 text-center">
-                  <span className="text-xs font-black text-emerald-800">
-                    🎉 ¡Has completado todos los ejercicios escritos de este tema!
-                  </span>
-                  <button
-                    type="button"
-                    onClick={onBack}
-                    className="mt-2 w-full py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs cursor-pointer"
-                  >
-                    Volver al Mapa
+                <div className="pt-2 space-y-2.5 text-center border-t border-[var(--border)]">
+                  <p className="text-xs sm:text-sm font-semibold text-[var(--pine)]">
+                    Has completado todos los ejercicios escritos de este tema.
+                  </p>
+                  <button type="button" onClick={onBack} className="btn btn-dark w-full">
+                    Volver al mapa de barrios
                   </button>
                 </div>
               )}
             </div>
           )}
-        </div>
+        </section>
       )}
     </div>
   );
