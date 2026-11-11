@@ -2,9 +2,9 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>UK Street English — Cómo se hizo · Showcase 3D Interactivo</title>
-<link rel="icon" href="../public/icon.svg" type="image/svg+xml" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%230F2747'/%3E%3Ccircle cx='20' cy='20' r='11' stroke='%23C8102E' stroke-width='3.6' fill='%23F7F7F5'/%3E%3Crect x='4' y='16.5' width='32' height='7' rx='2' fill='%2312397A'/%3E%3C/svg%3E" type="image/svg+xml" />
 <style>
 :root{
   --cyan:#38bdf8; --sky:#0284c7; --indigo:#6366f1; --violet:#8b5cf6; --amber:#fbbf24;
@@ -27,8 +27,15 @@ body{
 }
 .kicker::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
 
-h1{font-size:clamp(2.6rem,6.5vw,5.8rem);font-weight:900;letter-spacing:-.04em;line-height:1.02}
+h1,.end-title{font-size:clamp(2.6rem,6.5vw,5.8rem);font-weight:900;letter-spacing:-.04em;line-height:1.02}
 h2{font-size:clamp(1.9rem,4.6vw,4rem);font-weight:800;letter-spacing:-.035em;line-height:1.06}
+.visually-hidden:where(:not(:focus-within,:active)){
+  position:absolute !important;clip-path:inset(50%) !important;overflow:hidden !important;
+  width:1px !important;height:1px !important;margin:-1px !important;padding:0 !important;border:0 !important;white-space:nowrap !important;
+}
+:where(a:any-link,button,input):focus-visible{
+  outline:3px solid var(--cyan);outline-offset:3px;
+}
 .grad{background:linear-gradient(90deg,var(--cyan),var(--indigo) 50%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
 .grad-warm{background:linear-gradient(90deg,var(--amber),#f97316,var(--rose));-webkit-background-clip:text;background-clip:text;color:transparent}
 .grad-pub{background:linear-gradient(90deg,#38bdf8,#818cf8 50%,#ec4899);-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -72,18 +79,22 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
   background:linear-gradient(90deg,var(--cyan),var(--indigo),var(--pink));
   z-index:61;box-shadow:0 0 14px var(--cyan);
 }
-#dots{position:fixed;right:22px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:12px;z-index:60}
+#dots{position:fixed;right:18px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:4px;z-index:60}
 #dots a{
-  display:block;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.22);
-  position:relative;transition:transform .3s,background .3s,box-shadow .3s;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;
+  position:relative;cursor:pointer;text-decoration:none;
 }
-#dots a.on{background:var(--cyan);transform:scale(1.6);box-shadow:0 0 14px var(--cyan)}
+#dots a::before{
+  content:"";width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.26);
+  transition:transform .3s,background .3s,box-shadow .3s;
+}
+#dots a.on::before{background:var(--cyan);transform:scale(1.55);box-shadow:0 0 14px var(--cyan)}
 #dots a span{
-  position:absolute;right:18px;top:50%;transform:translateY(-50%);white-space:nowrap;
+  position:absolute;right:26px;top:50%;transform:translateY(-50%);white-space:nowrap;
   font-size:.7rem;color:#e2e8f0;opacity:0;transition:.22s;pointer-events:none;
   background:rgba(15,23,42,.92);padding:.25rem .55rem;border-radius:6px;border:1px solid var(--line);
 }
-#dots a:hover span{opacity:1}
+#dots a:hover span,#dots a:focus-visible span{opacity:1}
 
 /* ---------- 1 · HERO: 3D GLOBE / UK PARTICLES ---------- */
 #ukCanvas{position:absolute;inset:0;width:100%;height:100%}
@@ -94,7 +105,10 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
 .hero-mid h2{font-size:clamp(2.2rem,5.4vw,4.8rem);max-width:17ch;text-shadow:0 10px 50px #000,0 0 30px #000}
 .scroll-cue{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;font-size:.72rem;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;z-index:3}
 .mouse{width:24px;height:38px;border:2px solid rgba(255,255,255,.45);border-radius:14px;position:relative}
-.mouse::after{content:"";position:absolute;left:50%;top:7px;width:4px;height:8px;margin-left:-2px;border-radius:2px;background:#fff;animation:wheel 1.6s infinite}
+.mouse::after{content:"";position:absolute;left:50%;top:7px;width:4px;height:8px;margin-left:-2px;border-radius:2px;background:#fff}
+@media (prefers-reduced-motion:no-preference){
+  .mouse::after{animation:wheel 1.6s infinite}
+}
 @keyframes wheel{0%{opacity:0;transform:translateY(0)}30%{opacity:1}100%{opacity:0;transform:translateY(13px)}}
 
 /* ---------- 2 · 3D CYLINDRICAL CAROUSEL ---------- */
@@ -116,8 +130,8 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
 .pcard code{margin-top:12px;align-self:flex-start}
 .ring-bottom{position:absolute;bottom:6vh;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:14px;z-index:4;padding:0 8vw}
 .ring-cap{font-size:clamp(.95rem,1.3vw,1.15rem);color:#e2e8f0;text-align:center;max-width:62ch;min-height:3em;transition:opacity .3s}
-.steps{display:flex;gap:8px}
-.steps i{width:38px;height:4px;border-radius:2px;background:rgba(255,255,255,.16);overflow:hidden;position:relative}
+.steps{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:92vw}
+.steps i{width:clamp(22px,6.5vw,38px);height:4px;border-radius:2px;background:rgba(255,255,255,.16);overflow:hidden;position:relative}
 .steps i b{position:absolute;inset:0;background:var(--cyan);transform-origin:left;transform:scaleX(0)}
 
 /* ---------- 3 · EXPLODED TECH STACK (3D Layers) ---------- */
@@ -240,6 +254,7 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
 .node.hv{border-color:rgba(139,92,246,.7);box-shadow:0 0 34px rgba(139,92,246,.24),0 24px 50px rgba(0,0,0,.6)}
 .node.ho{border-color:rgba(251,191,36,.7);box-shadow:0 0 34px rgba(251,191,36,.24),0 24px 50px rgba(0,0,0,.6)}
 .node.hg{border-color:rgba(16,185,129,.7);box-shadow:0 0 34px rgba(16,185,129,.24),0 24px 50px rgba(0,0,0,.6)}
+.node.node-sm{min-width:120px;padding:.45rem .8rem}
 .bottom-cap{position:absolute;bottom:5vh;left:0;right:0;text-align:center;color:#cbd5e1;padding:0 8vw;opacity:0}
 
 /* ---------- 7 & 8 · INTERACTIVE SIMULATORS ---------- */
@@ -260,20 +275,27 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
 }
 .chat-bubble{
   padding:12px 16px;border-radius:18px;max-width:85%;font-size:.9rem;line-height:1.45;
-  box-shadow:0 8px 20px rgba(0,0,0,.3);animation:popIn .3s ease-out;
+  box-shadow:0 8px 20px rgba(0,0,0,.3);
+}
+@media (prefers-reduced-motion:no-preference){
+  .chat-bubble{animation:popIn .3s ease-out}
 }
 .chat-incoming{background:#1e293b;color:#f1f5f9;align-self:flex-start;border-bottom-left-radius:4px}
 .chat-outgoing{background:linear-gradient(135deg,var(--indigo),var(--cyan));color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
 .slang-btn{
-  background:rgba(30,41,59,.9);border:1px solid rgba(255,255,255,.14);
-  color:#f8fafc;padding:12px 14px;border-radius:14px;text-align:left;
+  width:100%;background:rgba(30,41,59,.9);border:1px solid rgba(255,255,255,.14);
+  color:#f8fafc;padding:12px 14px;border-radius:14px;text-align:left;font-family:inherit;
   font-size:.88rem;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;gap:4px;
 }
 .slang-btn:hover{background:#334155;border-color:var(--cyan);transform:translateY(-2px)}
 .slang-btn.correct{border-color:var(--green);background:rgba(16,185,129,.2)}
+.slang-btn.wrong{border-color:var(--amber);background:rgba(245,158,11,.14)}
 .expl-box{
   background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.4);
-  border-radius:14px;padding:12px 14px;font-size:.84rem;color:#a7f3d0;display:none;
+  border-radius:14px;padding:12px 14px;font-size:.84rem;color:#a7f3d0;display:none;line-height:1.45;
+}
+.expl-box.warn{
+  background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.45);color:#fde68a;
 }
 .audio-btn{
   background:rgba(56,189,248,.18);border:1px solid var(--cyan);color:#38bdf8;
@@ -339,13 +361,16 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
 .term .tbar i:nth-child(2){background:#febc2e}.term .tbar i:nth-child(3){background:#28c840}
 .term pre{padding:1.1rem 1.25rem;line-height:1.75;min-height:310px;white-space:pre-wrap}
 .term .c{color:#64748b}.term .g{color:#4ade80}.term .y{color:#facc15}.term .b{color:#38bdf8}
-.caret{display:inline-block;width:8px;height:1em;background:#4ade80;vertical-align:-2px;animation:blink 1s step-end infinite}
+.caret{display:inline-block;width:8px;height:1em;background:#4ade80;vertical-align:-2px}
+@media (prefers-reduced-motion:no-preference){
+  .caret{animation:blink 1s step-end infinite}
+}
 @keyframes blink{50%{opacity:0}}
 .side .card{margin-bottom:14px;opacity:0}
 
 /* ---------- 12 · FINAL & LAUNCH ---------- */
 .end-emoji{font-size:clamp(4.5rem,11vw,8rem);display:inline-block;will-change:transform;filter:drop-shadow(0 15px 30px rgba(56,189,248,.3))}
-.end h1{margin-top:1rem}
+.end .end-title{margin-top:1rem}
 .end .lead{margin:1.2rem auto 0}
 .btn-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:2.2rem}
 .btn{
@@ -368,11 +393,14 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
   #topnav a.nav-link{padding:.26rem .65rem;font-size:.74rem}
   #dots{display:none}
 
-  /* Structural Sticky Container for Mobile */
-  .sticky.col{
-    padding-top:52px !important;
+  /* Structural Sticky Container for Mobile (All scenes stack vertically, never flex-row) */
+  .sticky{
+    flex-direction:column !important;
+    align-items:center !important;
     justify-content:center !important;
+    padding-top:52px !important;
     height:100vh !important;
+    height:100dvh !important;
     overflow:hidden !important;
   }
 
@@ -411,23 +439,23 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
   .mouse{width:18px;height:30px}
 
   /* 2 · Carousel */
-  .ring-stage{position:relative !important;inset:auto !important;padding-top:0 !important;height:300px !important}
+  .ring-stage{position:relative !important;inset:auto !important;width:100% !important;flex-shrink:0 !important;padding-top:0 !important;height:min(300px,42dvh) !important}
   .ring{width:min(240px,74vw);height:min(300px,42vh)}
   .pcard{padding:16px 14px;border-radius:20px}
   .pcard .big{font-size:3rem;top:12px;left:12px}
   .pcard .num{font-size:.68rem;top:14px;right:14px}
   .pcard b{font-size:1.2rem}
   .pcard p{font-size:.78rem;line-height:1.3;margin-top:3px}
-  .ring-bottom{position:relative !important;bottom:auto !important;margin-top:8px !important;gap:6px;padding:0 4vw}
+  .ring-bottom{position:relative !important;bottom:auto !important;width:100% !important;flex-shrink:0 !important;margin-top:8px !important;gap:6px;padding:0 4vw}
   .ring-cap{font-size:.8rem;min-height:2.4em;line-height:1.3}
 
   /* 3 · Exploded Tech Stack */
-  .caps{position:relative !important;inset:auto !important;width:100% !important;height:120px !important;transform:none !important;text-align:center;padding:0 16px}
-  .cap h2{font-size:clamp(1.3rem,5vw,1.9rem)}
-  .cap .lead{font-size:.8rem;margin-top:.3rem;line-height:1.3}
-  .explode-stage{position:relative !important;inset:auto !important;height:210px !important;padding-top:0 !important}
+  .caps{position:relative !important;inset:auto !important;width:100% !important;height:160px !important;transform:none !important;text-align:center;padding:0 16px;flex-shrink:0 !important}
+  .cap h2{font-size:clamp(1.25rem,5vw,1.85rem)}
+  .cap .lead{font-size:.8rem;margin-top:.35rem;line-height:1.32}
+  .explode-stage{position:relative !important;inset:auto !important;width:100% !important;height:215px !important;padding-top:0 !important;flex-shrink:0 !important}
   .browser3d{width:min(310px,86vw);height:min(190px,52vw)}
-  .burst .chip{font-size:.62rem;padding:.18rem .4rem}
+  .burst .chip{font-size:.62rem;padding:.18rem .4rem;max-width:44vw;overflow:hidden;text-overflow:ellipsis}
   .lbl{display:none}
 
   /* 4 · Build & Stats */
@@ -446,13 +474,13 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
   .board-cap{font-size:.82rem;padding:0 1rem;min-height:2.2em}
 
   /* 6 · Architecture SVG */
-  .arch-stage{position:relative !important;inset:auto !important;height:240px !important;padding-top:0 !important}
+  .arch-stage{position:relative !important;inset:auto !important;width:100% !important;height:240px !important;padding-top:0 !important;flex-shrink:0 !important}
   .arch{width:94vw;max-width:420px}
-  .node{padding:.25rem .4rem;min-width:70px;border-radius:8px}
+  .node,.node.node-sm{padding:.25rem .4rem !important;min-width:68px !important;border-radius:8px}
   .node .e{font-size:1rem}
-  .node b{font-size:.65rem;line-height:1.1}
+  .node b{font-size:.62rem;line-height:1.1}
   .node small{display:none}
-  .bottom-cap{position:relative !important;bottom:auto !important;margin-top:8px !important;font-size:.72rem;padding:0 4vw}
+  .bottom-cap{position:relative !important;bottom:auto !important;width:100% !important;flex-shrink:0 !important;margin-top:8px !important;font-size:.72rem;padding:0 4vw}
 
   /* 7 & 8 · Simulators */
   .sim-stage{
@@ -467,6 +495,7 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
     align-items:center !important;
   }
   .phone-mockup{padding:12px;border-radius:22px;width:100%;max-width:350px}
+  #waChatLog{min-height:76px !important}
   .chat-bubble{font-size:.8rem;padding:8px 11px}
   .slang-btn{padding:8px 10px;font-size:.78rem}
   .drill-input{font-size:16px;padding:11px 13px}
@@ -476,23 +505,23 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
 
   /* 9 · 4 Flip Cards */
   .flipgrid{grid-template-columns:repeat(2,1fr);gap:8px;padding:0 4vw;margin-top:1.5vh}
-  .flip{height:185px}
-  .face{padding:10px 8px;border-radius:14px}
-  .face .icon{font-size:1.3rem;margin-bottom:.15rem}
-  .face h3{font-size:.84rem;margin-bottom:.15rem}
-  .face p{font-size:.68rem;line-height:1.25}
+  .flip{height:202px}
+  .face{padding:10px 9px;border-radius:14px}
+  .face .icon{font-size:1.25rem;margin-bottom:.15rem}
+  .face h3{font-size:.82rem;margin-bottom:.15rem}
+  .face p{font-size:.68rem;line-height:1.24}
   .face.back{font-size:2.8rem}
   .shieldnote{flex-direction:column;text-align:center;font-size:.75rem;padding:8px 10px;margin-top:1vh;gap:4px}
 
   /* 10 · 3D Fly-Through Bugs */
-  .bug-stage{position:relative !important;inset:auto !important;height:240px !important;padding-top:0 !important}
-  .bug-world{width:min(660px,92vw);height:240px}
-  .bug{padding:16px 14px;border-radius:18px}
-  .bug .q{font-size:clamp(1rem,3.8vw,1.35rem);line-height:1.22}
+  .bug-stage{position:relative !important;inset:auto !important;width:100% !important;height:270px !important;padding-top:0 !important;flex-shrink:0 !important}
+  .bug-world{width:min(660px,92vw);height:270px}
+  .bug{padding:15px 14px;border-radius:18px;min-height:220px}
+  .bug .q{font-size:clamp(.98rem,3.8vw,1.3rem);line-height:1.22}
   .bug .why{font-size:.78rem;margin-top:.35rem;line-height:1.3}
   .bug .fixl{font-size:.78rem;margin-top:.45rem;line-height:1.3}
-  .stamp{top:10px;right:10px;font-size:.65rem;padding:2px 7px}
-  .bug-count{position:relative !important;bottom:auto !important;margin-top:8px !important;font-size:.76rem;gap:5px}
+  .stamp{top:10px;right:10px;font-size:.64rem;padding:2px 7px}
+  .bug-count{position:relative !important;bottom:auto !important;width:100% !important;flex-shrink:0 !important;margin-top:10px !important;font-size:.76rem;gap:6px}
 
   /* 11 · Terminal (Fixed for Mobile - No Side Overlap) */
   .term-split{
@@ -513,12 +542,12 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
     margin:0 auto !important;
   }
   .term .tbar{padding:.42rem .65rem;font-size:.66rem}
-  .term pre{min-height:150px;font-size:.7rem;padding:.7rem .8rem;line-height:1.38}
+  .term pre{min-height:150px;font-size:.7rem;padding:.7rem .8rem;line-height:1.38;word-break:break-word}
   #side{display:none !important}
 
   /* 12 · Final CTA */
   .end-emoji{font-size:clamp(3rem,13vw,5rem)}
-  .end h1{font-size:clamp(1.65rem,6.5vw,2.8rem);margin-top:.5rem}
+  .end .end-title{font-size:clamp(1.65rem,6.5vw,2.8rem);margin-top:.5rem}
   .end .lead{font-size:.85rem;line-height:1.4;padding:0 4vw;margin-top:.6rem}
   .btn-row{margin-top:1.2rem;gap:8px}
   .btn{padding:.7rem 1.3rem;font-size:.88rem}
@@ -529,29 +558,31 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
 
 <!-- TOP CHROME -->
 <header id="topnav">
-  <b>🇬🇧 UK STREET ENGLISH <span>· De cero a hablar como un local</span></b>
+  <b>🇬🇧 UK STREET ENGLISH <span>· London Press · PWA v20</span></b>
   <div style="display:flex;align-items:center;gap:12px">
-    <a href="https://adriansg25.github.io/aprende-en/" target="_blank" class="nav-link">🚀 Abrir App</a>
+    <a href="https://adriansg25.github.io/aprende-en/" target="_blank" rel="noopener noreferrer" class="nav-link">🚀 Abrir App</a>
   </div>
 </header>
 <div id="bar"></div>
-<nav id="dots"></nav>
+<nav id="dots" aria-label="Índice de secciones"></nav>
+<main id="presentation-main">
 
 <!-- ================= 1 · HERO: 3D GLOBE / UK PARTICLES ================= -->
 <section class="scene" id="s-hero" data-len="280" data-title="Inicio">
   <div class="sticky">
-    <canvas id="ukCanvas"></canvas>
+    <canvas id="ukCanvas" aria-hidden="true"></canvas>
     <div class="hero-text" id="heroText">
-      <div class="kicker">Proyecto · Noviembre 2026 · PWA & AI</div>
+      <div class="kicker">Proyecto · Noviembre 2026 · PWA v20 &amp; Multi-LLM</div>
       <h1>Cómo creamos<br><span class="grad">UK Street English</span>.</h1>
-      <p class="lead">De la frustración del inglés académico de libro que nadie habla en la vida real, a una app progresiva, gamificada e impulsada por IA para dominar el inglés auténtico de la calle, pubs, WhatsApp y series en Reino Unido.</p>
+      <p class="lead">De la frustración del inglés académico de libro a una app progresiva con diseño editorial <b>London Press &amp; Underground</b>, conexión en vivo a <b>TVMaze</b>, 5 proveedores de IA y gamificación por barrios en Reino Unido.</p>
       <div class="tags">
         <span class="tag">React 19</span>
         <span class="tag">TypeScript</span>
         <span class="tag">Tailwind 4</span>
-        <span class="tag">Multi-LLM (Groq & Gemini)</span>
-        <span class="tag">PWA 100% Offline</span>
-        <span class="tag">Web Speech Audio</span>
+        <span class="tag">Multi-LLM (5 APIs)</span>
+        <span class="tag">TVMaze API en vivo</span>
+        <span class="tag">London Press UI</span>
+        <span class="tag">PWA v20 Offline</span>
         <span class="tag">0€ Servidor</span>
       </div>
     </div>
@@ -579,81 +610,81 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
   <div class="sticky">
     <div class="caps">
       <div class="cap">
-        <div class="kicker">02 · Por dentro</div>
-        <h2>La experiencia <span class="grad">PWA Móvil</span>.</h2>
-        <p class="lead">Diseñada con ergonomía táctil idéntica a una app nativa de iOS y Android. Navegación fluida por pestañas, feedback háptico y sonido en directo.</p>
+        <div class="kicker">02 · Identidad London Press</div>
+        <h2>Diseño <span class="grad">editorial y Web Nativa</span>.</h2>
+        <p class="lead">Superficies limpias de papel neutro, tipografías <i>Bricolage Grotesque</i> &amp; <i>Onest</i>, emblema Roundel propio, barra móvil de 5 botones con Popover nativo y diálogos accesibles <code>&lt;dialog&gt;</code>.</p>
       </div>
       <div class="cap">
         <div class="kicker">Vista desmontada</div>
         <h2>Una app son <span class="grad">cuatro capas</span>.</h2>
-        <p class="lead">Lo que tocas es React 19 con Tailwind 4. Debajo operan el enrutador de modelos de IA, la síntesis de voz nativa y el Service Worker offline con cache-busting.</p>
+        <p class="lead">En la cima React 19 con <code>View Transitions</code>. Debajo operan la API oficial de <b>TVMaze</b> para series recientes, el enrutador Multi-LLM (5 proveedores) y el Service Worker <code>uk-street-v20</code>.</p>
       </div>
       <div class="cap">
         <div class="kicker">Resiliencia absoluta</div>
-        <h2>Cero caída, <span class="grad">cero servidor</span>.</h2>
-        <p class="lead">Toda la lógica corre en el dispositivo del alumno. Si se agota una clave de IA o se cae un proveedor, conmuta al siguiente en milisegundos sin interrumpir la sesión.</p>
+        <h2>Cero caída, <span class="grad">cero desfase temporal</span>.</h2>
+        <p class="lead">Toda la lógica corre en cliente: si sale una temporada nueva (como <i>The Gentlemen T2</i> o <i>Reacher T4</i>), consulta TVMaze en directo; si falla un proveedor IA, conmuta en milisegundos.</p>
       </div>
     </div>
     <div class="explode-stage">
       <div class="browser3d" id="b3d">
-        <!-- Layer 1: PWA Core -->
+        <!-- Layer 1: PWA & Native Web APIs -->
         <div class="layer l-pwa">
           <div class="inner">
-            <div>sw.js (cache v19)</div><div>manifest.json</div><div>SpeechSynthesis (en-GB)</div>
-            <div>localStorage Engine</div><div>ActiveRecallStore.ts</div><div>AudioPlayer.ts</div>
-            <div>offlineSync.ts</div><div>levelState.ts</div>
+            <div>sw.js (uk-street-v20)</div><div>manifest.json</div><div>SpeechSynthesis (en-GB)</div>
+            <div>localStorage SRS</div><div>NativeDialog (&lt;dialog&gt;)</div><div>Popover API (Más)</div>
+            <div>viewTransition.ts</div><div>TVMaze Live API</div>
           </div>
-          <div class="lbl" style="color:#6ee7b7;border-color:rgba(16,185,129,.6)">Capa 1: PWA & Offline Engine</div>
+          <div class="lbl" style="color:#6ee7b7;border-color:rgba(16,185,129,.6)">Capa 1: PWA v20 &amp; Web APIs</div>
         </div>
-        <!-- Layer 2: Multi-LLM AI Router -->
+        <!-- Layer 2: Multi-LLM + TVMaze Router -->
         <div class="layer l-ai">
           <div class="inner">
-            <div><b>const</b> AI_ROUTER = [</div>
-            <div>  { provider: 'groq', model: 'llama-3.3-70b-versatile', speed: '300 t/s' },</div>
-            <div>  { provider: 'gemini', model: 'gemini-2.5-flash', speed: 'fallback' },</div>
-            <div>  { provider: 'openai', model: 'gpt-4o-mini', speed: 'resilience' },</div>
-            <div>  { provider: 'local', fallback: 'curated-uk-database.json' }</div>
-            <div>]; // Conmutación transparente en cliente</div>
+            <div><b>const</b> DATA_&_AI = {</div>
+            <div>  tvLive: 'api.tvmaze.com/shows/:id/episodes',</div>
+            <div>  llm: ['groq/llama-3.3-70b', 'gemini-2.5-flash'],</div>
+            <div>  also: ['openai', 'xai-grok', 'openrouter'],</div>
+            <div>  guards: 'no-refusal + Levenshtein'</div>
+            <div>}; // Datos reales 2026 sin backend propio</div>
           </div>
-          <div class="lbl" style="color:#c084fc;border-color:rgba(168,85,247,.6)">Capa 2: Motor Multi-LLM</div>
+          <div class="lbl" style="color:#c084fc;border-color:rgba(168,85,247,.6)">Capa 2: Multi-LLM &amp; TVMaze</div>
         </div>
         <!-- Layer 3: React 19 Components -->
         <div class="layer l-react">
           <div class="inner">
-            <div class="rc-title">⚛️ Componentes React 19 + TypeScript</div>
+            <div class="rc-title">⚛️ 19 Componentes React 19 + BrandMark</div>
             <div class="sw" title="StreetLevelMap">🗺️</div>
-            <div class="sw" title="WhatsAppSimulator">💬</div>
-            <div class="sw" title="MediaLearningZone">🎬</div>
-            <div class="sw" title="FieldDictionary">📖</div>
-            <div class="sw" title="ReadingZone">📑</div>
+            <div class="sw" title="StreetWhatsAppSimulator">💬</div>
+            <div class="sw" title="MediaLearningZone + TVMaze">🎬</div>
+            <div class="sw" title="FieldDictionaryZone">📖</div>
+            <div class="sw" title="ReadingZone Rayos X">📑</div>
             <div class="sw" title="StreetBossFight">👑</div>
-            <div class="sw" title="ActiveRecall2x">🔁</div>
-            <div class="sw" title="SpeechDrill">🗣️</div>
-            <div class="sw" title="LevelBadge">💷</div>
-            <div class="sw" title="Settings">⚙️</div>
+            <div class="sw" title="StreetDrillArena 0/2">🔥</div>
+            <div class="sw" title="BrandMark Roundel">🚇</div>
+            <div class="sw" title="NativeDialog showModal">🪟</div>
+            <div class="sw" title="SettingsModal">⚙️</div>
           </div>
           <div class="lbl" style="color:#93c5fd;border-color:rgba(59,130,246,.6)">Capa 3: React 19 + Tailwind 4</div>
         </div>
         <!-- Layer 4: UI Screen -->
         <div class="layer l-page">
           <div class="inner">
-            <div class="bar"><i></i><i></i><i></i>&nbsp; uk-street-english.pwa — Camden Level 3</div>
+            <div class="bar"><i></i><i></i><i></i>&nbsp; London Press &amp; Underground — Niveles 3/3</div>
             <div class="ui">
               <div class="ui-header">
-                <span style="font-weight:700;font-size:.78rem">🇬🇧 UK Street English</span>
-                <span class="ui-badge">⚡ 300 XP · 45 Quids 💷</span>
+                <span style="font-weight:700;font-size:.78rem">🚇 UK Street English</span>
+                <span class="ui-badge">✨ 300 XP · 45 Quids · 3/3 Jefes</span>
               </div>
               <div class="ui-card">
-                <span style="font-size:.7rem;color:#38bdf8;font-weight:700">DESAFÍO CALLEJERO #12</span>
-                <p style="font-size:.82rem;font-weight:600">"El camarero en el pub te dice: 'Alright mate, pint of bitter?' ¿Cómo respondes?"</p>
-                <div style="background:#0f172a;padding:6px 10px;border-radius:8px;font-size:.72rem;color:#4ade80">✓ "Yeah, lovely mate, cheers!"</div>
+                <span style="font-size:.7rem;color:#38bdf8;font-weight:700">SERIES IA + TVMAZE EN VIVO</span>
+                <p style="font-size:.82rem;font-weight:600">"Reacher S04E02 verificado al segundo: vocabulario callejero y preguntas sin alucinaciones."</p>
+                <div style="background:#0f172a;padding:6px 10px;border-radius:8px;font-size:.72rem;color:#4ade80">✓ Episodio oficial confirmado · Sinopsis inyectada</div>
               </div>
               <div class="ui-bar-nav">
-                <span>🗺️</span><span>⚡</span><span>💬</span><span>🎬</span><span>👤</span>
+                <span>🗺️</span><span>📖</span><span>🎬</span><span>🔥</span><span>⊞</span>
               </div>
             </div>
           </div>
-          <div class="lbl" style="color:#fff;border-color:rgba(255,255,255,.5)">Capa 4: Interfaz Móvil PWA</div>
+          <div class="lbl" style="color:#fff;border-color:rgba(255,255,255,.5)">Capa 4: Interfaz London Press</div>
         </div>
       </div>
     </div>
@@ -664,13 +695,13 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
 <!-- ================= 4 · BUILD & STATS ================= -->
 <section class="scene" id="s-build" data-len="380" data-title="Métricas">
   <div class="sticky col">
-    <div class="kicker">03 · Métricas del Proyecto</div>
-    <p class="bigtext" id="bigtext">Desarrollamos una arquitectura 100% *Client-Side* en *React* *19*, *TypeScript* y *Tailwind* *4*. Más de *1.850* modismos y palabras callejeras curadas, motor de fonética española amigable y *cero* *euros* mensuales en servidores o bases de datos externas.</p>
+    <div class="kicker">03 · Métricas Reales del Proyecto</div>
+    <p class="bigtext" id="bigtext">Desarrollamos una arquitectura 100% *Client-Side* en *React* *19*, *TypeScript* y *Tailwind* *4*. Más de *600* ítems curados más lotes infinitos con *5* *IAs*, sinopsis oficiales de *TVMaze* en tiempo real, estética *London* *Press* y *cero* *euros* al mes en servidores.</p>
     <div class="stats">
-      <div class="stat card"><div class="n" data-count="1850" data-suf="+">0</div><p>expresiones y slang UK</p></div>
-      <div class="stat card"><div class="n" data-count="17">0</div><p>componentes modulares</p></div>
-      <div class="stat card"><div class="n" data-count="300" data-suf=" t/s">0</div><p>velocidad inferencia con Groq</p></div>
-      <div class="stat card"><div class="n" data-count="0" data-suf=" €">0</div><p>coste mensual de hosting</p></div>
+      <div class="stat card"><div class="n" data-count="600" data-suf="+">0</div><p>ítems curados (+ lotes ×50 IA)</p></div>
+      <div class="stat card"><div class="n" data-count="19">0</div><p>componentes + servicios en vivo</p></div>
+      <div class="stat card"><div class="n" data-count="5">0</div><p>APIs IA + TVMaze en directo</p></div>
+      <div class="stat card"><div class="n" data-count="0" data-suf=" €">0</div><p>coste mensual de servidor</p></div>
     </div>
   </div>
 </section>
@@ -739,17 +770,17 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
             <circle r="5" fill="#f43f5e"><animateMotion dur="1.8s" repeatCount="indefinite" begin=".9s"><mpath href="#w5"/></animateMotion></circle>
           </g>
         </svg>
-        <div class="node hl" style="left:13%;top:23%"><span class="e">📱</span><b>Tu Teléfono (PWA)</b><small>Service Worker v19</small></div>
-        <div class="node hl" style="left:13%;top:77%"><span class="e">🗣️</span><b>Web Speech API</b><small>Acento nativo en-GB</small></div>
-        <div class="node ho" style="left:44%;top:50%"><span class="e">⚡</span><b>Router Inteligente IA</b><small>Fallback automático</small></div>
-        <div class="node hv" style="left:66%;top:50%"><span class="e">🧠</span><b>Groq Llama 3.3 70B</b><small>300 tokens/segundo</small></div>
-        <div class="node hg" style="left:88%;top:23%"><span class="e">✨</span><b>Google Gemini Flash</b><small>Respaldo de alta cuota</small></div>
-        <div class="node" style="left:88%;top:77%"><span class="e">📦</span><b>Base de Datos Local</b><small>1.850+ modismos offline</small></div>
-        <div class="node" style="left:88%;top:2%;min-width:120px;padding:.45rem .8rem"><b style="font-size:.78rem">🛡️ Anti-Alucinación</b></div>
+        <div class="node hl" style="left:13%;top:23%"><span class="e">📱</span><b>Tu Teléfono (PWA)</b><small>Service Worker v20</small></div>
+        <div class="node hl" style="left:13%;top:77%"><span class="e">🗣️</span><b>Web APIs + Voz</b><small>en-GB, Dialog &amp; Popover</small></div>
+        <div class="node ho" style="left:44%;top:50%"><span class="e">⚡</span><b>Router IA + TVMaze</b><small>Auto-prefijos + Sinopsis</small></div>
+        <div class="node hv" style="left:66%;top:50%"><span class="e">🧠</span><b>Groq / Gemini / GPT</b><small>xAI y OpenRouter libres</small></div>
+        <div class="node hg" style="left:88%;top:23%"><span class="e">📡</span><b>TVMaze en Tiempo Real</b><small>Estrenos sin negativas</small></div>
+        <div class="node" style="left:88%;top:77%"><span class="e">📦</span><b>Banco Local + SRS</b><small>600+ ítems y Baúl</small></div>
+        <div class="node node-sm" style="left:88%;top:2%"><b style="font-size:.78rem">🛡️ No-Pedante &amp; Rescate</b></div>
       </div>
     </div>
     <div class="bottom-cap" id="archCap">
-      PWA sirve todo al instante desde caché local · <b>Groq / Gemini</b> generan ejercicios y analizan series · <b>Web Speech</b> da vida al acento británico sin coste alguno.
+      PWA v20 arranca desde caché local · <b>TVMaze API</b> aporta datos oficiales de series recientes · <b>Multi-LLM Router</b> elige proveedor por prefijo de API Key · <b>Web Speech</b> pronuncia en británico sin coste.
     </div>
   </div>
 </section>
@@ -771,7 +802,7 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
               <small style="color:#4ade80;display:block;font-size:.72rem">● en línea</small>
             </div>
           </div>
-          <button class="audio-btn" id="waSpeakerBtn" onclick="speakCurrentWa()">🔊 Escuchar</button>
+          <button type="button" class="audio-btn" id="waSpeakerBtn">🔊 Escuchar</button>
         </div>
         <div id="waChatLog" style="display:flex;flex-direction:column;gap:10px;min-height:160px">
           <div class="chat-bubble chat-incoming" id="waIncomingMsg">
@@ -779,16 +810,16 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
           </div>
         </div>
         <div id="waChoices" style="display:flex;flex-direction:column;gap:8px">
-          <div class="slang-btn" onclick="handleWaChoice(true)">
+          <button type="button" class="slang-btn" data-wa-choice="correct">
             <b>🇬🇧 Respuesta Callejera Auténtica:</b>
             <span>"madness innit! forty quid is daylight robbery tbh, proper taking the piss"</span>
-          </div>
-          <div class="slang-btn" onclick="handleWaChoice(false)">
+          </button>
+          <button type="button" class="slang-btn" data-wa-choice="robot">
             <b>🤖 Respuesta Robótica de Academia:</b>
             <span>"I consider 40 pounds to be a reasonable investment in musical culture."</span>
-          </div>
+          </button>
         </div>
-        <div class="expl-box" id="waExpl">
+        <div class="expl-box" id="waExpl" role="status" aria-live="polite">
           🎉 <b>¡Exacto! Hablas como un local.</b><br>
           • <b>Quid</b> = Libra (£).<br>
           • <b>Taking the piss</b> = Tomar el pelo o pasarse de la raya.<br>
@@ -799,11 +830,11 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
       <div class="card desk-only" style="align-self:center">
         <h3>¿Por qué este enfoque?</h3>
         <p style="margin-top:.6rem">En los libros de texto te enseñan a decir <i>"Good afternoon sir, how do you do?"</i>. Si le dices eso a un amigo en un pub de Camden o por WhatsApp, se pensará que eres un robot victoriano.</p>
-        <p style="margin-top:.8rem">En nuestra app entrenas con <b>mensajes reales</b> de británicos cotidianos (Dave, Liam, Chloe, Maya), aprendiendo cuándo usar <i>innit</i>, <i>dodgy</i>, <i>chuffed</i>, <i>bloke</i> o <i>knackered</i> de manera natural.</p>
-        <div style="margin-top:1.2rem;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="tag" style="cursor:pointer" onclick="setWaScenario('dave')">🎸 Dave · Concierto</button>
-          <button class="tag" style="cursor:pointer" onclick="setWaScenario('chloe')">☕ Chloe · Plan finde</button>
-          <button class="tag" style="cursor:pointer" onclick="setWaScenario('liam')">🍻 Liam · El pub</button>
+        <p style="margin-top:.8rem">En nuestra app entrenas con <b>mensajes reales</b> de británicos cotidianos (Liam, Sarah, Dave, Chloe), aprendiendo cuándo usar <i>innit</i>, <i>dodgy</i>, <i>sorted</i>, <i>bloke</i> o <i>fancy</i> de manera natural.</p>
+        <div style="margin-top:1.2rem;display:flex;gap:8px;flex-wrap:wrap" id="waScenarioBtns">
+          <button type="button" class="tag" style="cursor:pointer" data-wa-scene="dave">🎸 Dave · Concierto</button>
+          <button type="button" class="tag" style="cursor:pointer" data-wa-scene="chloe">☕ Chloe · Plan finde</button>
+          <button type="button" class="tag" style="cursor:pointer" data-wa-scene="liam">🍻 Liam · El pub</button>
         </div>
       </div>
     </div>
@@ -832,13 +863,14 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
             <b id="drillTargetText" style="color:#f8fafc;font-size:1.05rem">"He was focused on looking for his charger"</b>
             <small style="display:block;color:#7dd3fc;margin-top:4px">[ji uós fócast on lúking for jis cháryer]</small>
           </div>
-          <button class="audio-btn" onclick="speakText(document.getElementById('drillTargetText').innerText)">🔊 Oír</button>
+          <button type="button" class="audio-btn" id="drillSpeakerBtn">🔊 Oír</button>
         </div>
 
-        <form onsubmit="handleDrillSubmit(event)" style="display:flex;flex-direction:column;gap:12px">
+        <form id="drillForm" style="display:flex;flex-direction:column;gap:12px">
+          <label for="drillInput" class="visually-hidden">Escribe exactamente la frase corregida</label>
           <input type="text" id="drillInput" class="drill-input" placeholder="Escribe la frase exacta aquí..." autocomplete="off" />
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span id="drillFeedback" style="font-size:.82rem;color:var(--muted)">Escribe exactamente la frase y pulsa Comprobar</span>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+            <span id="drillFeedback" role="status" aria-live="polite" style="font-size:.82rem;color:var(--muted)">Escribe exactamente la frase y pulsa Comprobar</span>
             <button type="submit" class="check-btn">Comprobar ✓</button>
           </div>
         </form>
@@ -864,8 +896,26 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
         <div class="face back">⚡</div>
         <div class="face">
           <div class="icon">⚡</div>
-          <h3>Multi-LLM Fallback</h3>
-          <p>Groq Llama 3.3 @ 300 t/s como motor primario; si se satura, conmuta a Gemini Flash o GPT-4o mini sin corte.</p>
+          <h3>Router 5-IA + Prefijos</h3>
+          <p>Auto-detecta Groq, Gemini, OpenAI, xAI Grok y OpenRouter por el prefijo de clave y evita errores 404 descubriendo modelos en vivo.</p>
+          <div class="meter"><i></i></div>
+        </div>
+      </div>
+      <div class="flip">
+        <div class="face back">📡</div>
+        <div class="face">
+          <div class="icon">📡</div>
+          <h3>TVMaze en Tiempo Real</h3>
+          <p>Consulta la sinopsis oficial de series recién estrenadas (como Reacher T4 o The Gentlemen T2) y rescata episodios sin negativas.</p>
+          <div class="meter"><i></i></div>
+        </div>
+      </div>
+      <div class="flip">
+        <div class="face back">🚇</div>
+        <div class="face">
+          <div class="icon">🚇</div>
+          <h3>London Press &amp; Nativo</h3>
+          <p>Estética editorial cuidada, <code>&lt;dialog showModal()&gt;</code>, Popover API en móvil, View Transitions y síntesis de voz <code>en-GB</code>.</p>
           <div class="meter"><i></i></div>
         </div>
       </div>
@@ -873,26 +923,8 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
         <div class="face back">📵</div>
         <div class="face">
           <div class="icon">📵</div>
-          <h3>PWA 100% Offline</h3>
-          <p>Service Worker v19 precachea toda la aplicación. Puedes practicar en el metro de Londres o en pleno vuelo.</p>
-          <div class="meter"><i></i></div>
-        </div>
-      </div>
-      <div class="flip">
-        <div class="face back">🗣️</div>
-        <div class="face">
-          <div class="icon">🗣️</div>
-          <h3>Audio Nativo en-GB</h3>
-          <p>Web Speech API sintetiza con acento británico local directamente en el dispositivo: 0 coste y 0 latencia.</p>
-          <div class="meter"><i></i></div>
-        </div>
-      </div>
-      <div class="flip">
-        <div class="face back">🛡️</div>
-        <div class="face">
-          <div class="icon">🛡️</div>
-          <h3>Anti-Alucinación</h3>
-          <p>Módulo Series IA con botón de reporte y corrección comunitaria si la IA se inventa episodios de series recientes.</p>
+          <h3>PWA v20 Offline</h3>
+          <p>Service Worker <code>uk-street-v20</code> precachea la app completa: practica en el metro, en el avión o sin datos móviles.</p>
           <div class="meter"><i></i></div>
         </div>
       </div>
@@ -905,7 +937,7 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
 </section>
 
 <!-- ================= 10 · DIARIO DE DEPURACIÓN (3D Fly-Through) ================= -->
-<section class="scene" id="s-bugs" data-len="560" data-title="Depuración 3D">
+<section class="scene" id="s-bugs" data-len="700" data-title="Depuración 3D">
   <div class="sticky">
     <div class="head-top">
       <div class="kicker">09 · Diario de Desarrollo</div>
@@ -927,44 +959,60 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
           <div class="sev" style="color:#f43f5e">● Crítico · Despliegue PWA</div>
           <div class="q">"No se me actualiza en el móvil, actualízala bien."</div>
           <div class="why">Los navegadores móviles cacheaban agresivamente el bundle antiguo de Vite sin refrescar el Service Worker.</div>
-          <div class="fixl">✓ Service Worker con cache-busting 'uk-street-v19', skipWaiting() y recarga forzada.</div>
+          <div class="fixl">✓ Service Worker con cache-busting 'uk-street-v20', skipWaiting() y recarga limpia.</div>
         </div>
         <!-- Bug 3 -->
         <div class="bug">
           <div class="stamp">RESUELTO</div>
           <div class="sev" style="color:#fbbf24">● Usabilidad · UX Móvil</div>
           <div class="q">"El botón de comprobar queda fuera de su sitio con el teclado."</div>
-          <div class="why">El teclado virtual de iOS y Android descolocaba el layout flotante y tapaba el campo de entrada.</div>
-          <div class="fixl">✓ Rediseño con flexbox responsive, scroll automático y botón anclado al teclado.</div>
+          <div class="why">El teclado virtual de iOS y Android descolocaba el layout flotante y causaba auto-zoom en inputs.</div>
+          <div class="fixl">✓ Campos a 16px mínimo, flexbox fluido, scroll seguro y targets táctiles amplios.</div>
         </div>
         <!-- Bug 4 -->
         <div class="bug">
           <div class="stamp">RESUELTO</div>
-          <div class="sev" style="color:#fbbf24">● Precisión de IA</div>
-          <div class="q">"La IA se ha inventado la temporada 2 de The Gentlemen."</div>
-          <div class="why">Los modelos de lenguaje alucinaban información sobre temporadas recientemente emitidas.</div>
-          <div class="fixl">✓ Búsqueda de sinopsis actualizada y panel de corrección en vivo para el usuario.</div>
+          <div class="sev" style="color:#fbbf24">● Precisión · Desambiguación</div>
+          <div class="q">"La IA confunde The Gentlemen T2 con la película de 2019."</div>
+          <div class="why">Mezclaba a Eddie Horniman y Susie Glass con Mickey Pearson de la peli original.</div>
+          <div class="fixl">✓ Contexto explícito de adaptación, edición inline y panel de corrección guiada.</div>
         </div>
         <!-- Bug 5 -->
         <div class="bug">
           <div class="stamp">RESUELTO</div>
-          <div class="sev" style="color:#38bdf8">● Vocabulario Esencial</div>
-          <div class="q">"Quiero aprender las 50 palabras más usadas y verbos en pasado."</div>
-          <div class="why">Hacía falta un módulo específico de cimientos con transcripción fonética entendible en español.</div>
-          <div class="fixl">✓ Zona de Machaque con Top 50 palabras, fonética tipo [uént] y generador de lotes con IA.</div>
+          <div class="sev" style="color:#f43f5e">● IA Desactualizada · TVMaze</div>
+          <div class="q">"Me dice 'no dispongo de información' con temporadas nuevas (Reacher T4)."</div>
+          <div class="why">La memoria estática de los modelos no cubre estrenos recientes tras su fecha de corte.</div>
+          <div class="fixl">✓ Conexión en vivo con api.tvmaze.com + bloqueo anti-negativas y botón de rescate.</div>
         </div>
         <!-- Bug 6 -->
         <div class="bug">
           <div class="stamp">RESUELTO</div>
+          <div class="sev" style="color:#38bdf8">● Vocabulario &amp; Lectura</div>
+          <div class="q">"Quiero Top 50 palabras, verbos en pasado y buscar palabras al leer."</div>
+          <div class="why">Faltaban cimientos con fonética legible en español y lookup contextual en historias.</div>
+          <div class="fixl">✓ Diccionario Top 50 + fonética [uént] + lotes ×50 IA + buscador contextual en Lecturas.</div>
+        </div>
+        <!-- Bug 7 -->
+        <div class="bug">
+          <div class="stamp">RESUELTO</div>
           <div class="sev" style="color:#38bdf8">● Gamificación</div>
-          <div class="q">"Quiero que sea progresivo rollo videojuego, no poder avanzar sin pasar requisitos."</div>
-          <div class="why">Sin objetivos claros y bloqueos de nivel, el usuario pierde la motivación de completar cada lección.</div>
-          <div class="fixl">✓ Mapa callejero de Londres con distritos bloqueados, Quids 💷, XP y combate de Jefes.</div>
+          <div class="q">"Quiero que sea progresivo rollo videojuego con requisitos para avanzar."</div>
+          <div class="why">Sin objetivos claros ni cierres de distrito, faltaba sensación de progreso tangible.</div>
+          <div class="fixl">✓ Mapa de Londres por distritos, Quids 💷, XP y combate dinámico contra Jefes (3/3).</div>
+        </div>
+        <!-- Bug 8 -->
+        <div class="bug">
+          <div class="stamp">RESUELTO</div>
+          <div class="sev" style="color:#10b981">● Identidad Visual &amp; Web APIs</div>
+          <div class="q">"La app parece muy hecha con IA y los 7 botones del móvil se apretujan."</div>
+          <div class="why">Degradados genéricos por defecto, iconos amontonados en la barra inferior y modals con divs.</div>
+          <div class="fixl">✓ Diseño 'London Press', Roundel propio, barra móvil de 5 ítems + Popover y &lt;dialog&gt; nativo.</div>
         </div>
       </div>
     </div>
     <div class="bug-count">
-      <span id="bugN">Desafío 1 / 6</span>
+      <span id="bugN">Desafío 1 / 8</span>
       <div class="steps" id="bugSteps"></div>
     </div>
   </div>
@@ -976,7 +1024,7 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
     <div class="split term-split">
       <div class="term-stage">
         <div class="kicker">10 · Puesta en Producción</div>
-        <h2 style="margin-bottom:3vh">Compilación instantánea.<br><span class="grad">GitHub Pages & PWA.</span></h2>
+        <h2 style="margin-bottom:3vh">Compilación instantánea.<br><span class="grad">GitHub Pages &amp; PWA.</span></h2>
         <div class="term" id="term">
           <div class="tbar"><i></i><i></i><i></i>&nbsp; PowerShell — Aprende_EN</div>
           <pre id="typed"></pre>
@@ -984,16 +1032,16 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
       </div>
       <div class="side desk-only" id="side">
         <div class="card">
-          <h3>⚡ Build ultrarrápido</h3>
-          <p>Vite compila y minifica todo el proyecto en menos de <b>600 milisegundos</b> con cero warnings de TypeScript.</p>
+          <h3>⚡ Build &amp; PDF en segundos</h3>
+          <p>Vite compila TypeScript + Tailwind 4 y genera además la memoria técnica en PDF mediante <code>generate_doc_pdf.cjs</code>.</p>
         </div>
         <div class="card">
-          <h3>🌐 Despliegue en 1 clic</h3>
-          <p>Conectado a GitHub Pages (<code>adriansg25.github.io/aprende-en/</code>) con certificado SSL y CDN global gratuito.</p>
+          <h3>🌐 Despliegue en GitHub Pages</h3>
+          <p>Publicado en <code>adriansg25.github.io/aprende-en/</code> con certificado SSL, zero-backend y sincronización directa con TVMaze.</p>
         </div>
         <div class="card">
           <h3>📲 Instálalo en tu móvil</h3>
-          <p>Abre el enlace en Safari o Chrome, pulsa <b>"Añadir a pantalla de inicio"</b> y disfruta de una app nativa sin tiendas.</p>
+          <p>Abre el enlace en Safari o Chrome, pulsa <b>"Añadir a pantalla de inicio"</b> y disfruta de la interfaz <b>London Press</b> nativa.</p>
         </div>
       </div>
     </div>
@@ -1003,22 +1051,24 @@ code{background:rgba(255,255,255,.09);padding:.14em .46em;border-radius:6px;font
 <!-- ================= 12 · FINAL & LAUNCH ================= -->
 <section class="scene" id="s-end" data-len="100" data-title="Fin">
   <div class="sticky col end center" id="end">
-    <span class="end-emoji" id="endEmoji">🇬🇧</span>
-    <h1>¡Aprende el inglés de verdad!</h1>
+    <span class="end-emoji" id="endEmoji" aria-hidden="true">🇬🇧</span>
+    <h2 class="end-title">¡Aprende el inglés de verdad!</h2>
     <p class="lead">UK Street English está listo para llevarte desde tus primeras palabras hasta sentirte como en casa en cualquier pub de Londres o Manchester.</p>
     <div class="btn-row">
-      <a href="https://adriansg25.github.io/aprende-en/" target="_blank" class="btn">🚀 Abrir App en Vivo</a>
-      <button class="btn btn-ghost" onclick="scrollTo({top:0,behavior:'smooth'})">↑ Volver al inicio</button>
+      <a href="https://adriansg25.github.io/aprende-en/" target="_blank" rel="noopener noreferrer" class="btn">🚀 Abrir App en Vivo</a>
+      <button type="button" id="backToTopBtn" class="btn btn-ghost">↑ Volver al inicio</button>
     </div>
     <div style="margin-top:2rem">
       <span class="tag">React 19</span>
       <span class="tag">TypeScript</span>
       <span class="tag">Tailwind 4</span>
-      <span class="tag">Groq Llama 3.3</span>
-      <span class="tag">PWA v19</span>
+      <span class="tag">TVMaze API</span>
+      <span class="tag">London Press UI</span>
+      <span class="tag">PWA v20</span>
     </div>
   </div>
 </section>
+</main>
 
 <script>
 /* ============================================================
@@ -1051,8 +1101,13 @@ sceneEls.forEach(s=>s.style.height=(+s.dataset.len||100)+'vh');
 const dotsNav=$('#dots');
 sceneEls.forEach(s=>{
   const a=document.createElement('a');
+  a.href=`#${s.id}`;
+  a.setAttribute('aria-label',s.dataset.title);
   a.innerHTML=`<span>${s.dataset.title}</span>`;
-  a.onclick=()=>scrollTo({top:s.offsetTop+(s.id==='s-hero'?0:2),behavior:'smooth'});
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    scrollTo({top:s.offsetTop+(s.id==='s-hero'?0:2),behavior:reduce?'auto':'smooth'});
+  });
   dotsNav.appendChild(a);
 });
 const dots=$$('#dots a');
@@ -1224,11 +1279,11 @@ updaters['s-hero']=(p,t)=>{
    2 · 3D CAROUSEL
    ============================================================ */
 const phases=[
-  {e:'🍻',n:'Pub & Saludos',c:'alright-mate',d:'Responde como un nativo sin pensar.',l:'De "How do you do?" a "Alright mate? You good?". En UK nadie se para a contar sus penas ante un saludo reflejo.',col:'#38bdf8'},
-  {e:'📱',n:'WhatsApp UK',c:'chat-simulator',d:'Conversaciones con jerga cotidiana.',l:'Chatea con Dave, Liam o Chloe usando modismos reales: "forty quid", "taking the piss", "proper dodgy" e "innit".',col:'#6366f1'},
-  {e:'🗺️',n:'Mapa Callejero',c:'street-levels',d:'Progresión con distritos y jefes.',l:'Avanza por Camden, Soho, Brixton y Mayfair ganando Quids 💷 y XP. No puedes pasar de nivel sin dominar los desafíos.',col:'#fbbf24'},
-  {e:'🧠',n:'Fijación Muscular',c:'muscle-memory-2x',d:'Repetición activa 0/2.',l:'Si cometes un fallo escribiendo, nada de pistas automáticas: debes escribir la frase corregida 2 veces seguidas hasta grabarla.',col:'#10b981'},
-  {e:'🎬',n:'Series & Pelis IA',c:'media-analysis',d:'Aprende con series reales.',l:'Analiza episodios de The Gentlemen, Peaky Blinders o Top Boy. Extrae vocabulario raro, preguntas de trama y corrección comunitaria.',col:'#f43f5e'}
+  {e:'🚇',n:'London Press UI',c:'london-press-ui',d:'Identidad editorial y barra móvil de 5 ítems.',l:'Rediseño completo "London Press & Underground": tipografía propia, emblema Roundel, <dialog showModal()>, Popover API y View Transitions.',col:'#38bdf8'},
+  {e:'📱',n:'WhatsApp UK',c:'chat-simulator',d:'Conversaciones reales con Liam, Sarah, Dave y Chloe.',l:'Chatea por turnos usando expresiones reales ("forty quid", "sorted", "pop into the shop") con evaluación tolerante no pedante.',col:'#6366f1'},
+  {e:'🗺️',n:'Barrios & Jefes 3/3',c:'street-levels',d:'Progresión por distritos, Quids y combate final.',l:'Avanza por Heathrow, The Red Lion Pub y El Metro ganando Quids 💷 y XP hasta derrotar a los 3 Jefes de distrito.',col:'#fbbf24'},
+  {e:'🧠',n:'Machaque & 0/2',c:'muscle-memory-2x',d:'Top 50, fonética [uént] y repetición muscular.',l:'Diccionario con fonética española, lotes infinitos ×50 palabras con IA, Lecturas con Rayos X y regla obligatoria de escribir 2 veces cada fallo.',col:'#10b981'},
+  {e:'📡',n:'Series IA + TVMaze',c:'tvmaze-live-api',d:'Sinopsis oficiales en vivo sin alucinaciones.',l:'Conectado a api.tvmaze.com para verificar estrenos recientes como Reacher T4 o The Gentlemen T2 antes de pedir el análisis a Groq, Gemini o Grok.',col:'#f43f5e'}
 ];
 
 const ring=$('#ring'),ringCap=$('#ringCap'),stepsEl=$('#steps');
@@ -1269,8 +1324,9 @@ updaters['s-game']=p=>{
 const b3d=$('#b3d'),layers=$$('#b3d .layer'),lbls=$$('#b3d .lbl'),caps=$$('#s-inspect .cap'),burst=$('#burst');
 const chipNames=[
   'StreetLevelMap.tsx','StreetWhatsAppSimulator.tsx','MediaLearningZone.tsx',
-  'FieldDictionaryZone.tsx','ReadingZone.tsx','StreetBossFight.tsx',
-  'sw.js','aiService.ts','speechAudio.ts','muscleMemory.ts','uk-street-v19.cache'
+  'tvEpisodeService.ts','FieldDictionaryZone.tsx','ReadingZone.tsx',
+  'NativeDialog.tsx','BrandMark.tsx','viewTransition.ts',
+  'aiService.ts','Popover API','uk-street-v20.cache'
 ];
 const chips=chipNames.map(n=>{
   const c=document.createElement('div');c.className='chip';c.textContent=n;
@@ -1291,8 +1347,8 @@ onResize.push(()=>{
 
 updaters['s-inspect']=p=>{
   const a=eOut(seg(p,0,.22)),b=eIO(seg(p,.28,.6)),c=seg(p,.66,.97);
-  const shift=mobile?0:W*.14,shiftY=mobile?H*.12:0;
-  const rx=lerp(lerp(64,0,a),56,b),rz=lerp(0,-36,b),sc=lerp(lerp(.7,1,a),.8,b),ty=lerp(H*.4,0,a)+shiftY;
+  const shift=mobile?0:W*.14,shiftY=mobile?18:0;
+  const rx=lerp(lerp(64,0,a),56,b),rz=lerp(0,-36,b),sc=lerp(lerp(.7,1,a),.8,b),ty=lerp(mobile?H*.24:H*.4,0,a)+shiftY;
   b3d.style.transform=`translate3d(${shift}px,${ty}px,0) rotateX(${rx}deg) rotateZ(${rz}deg) scale(${sc})`;
   b3d.style.opacity=a*(1-c*.65);
   const gap=b*(mobile?55:95);
@@ -1309,7 +1365,7 @@ updaters['s-inspect']=p=>{
   chips.forEach((ch,i)=>{
     const t=eOut(seg(c,i*.045,i*.045+.4)),T=chipT[i]||{x:0,y:0,r:0};
     ch.style.opacity=t;
-    ch.style.transform=`translate(-50%,-50%) translate3d(${lerp(shift,T.x,t)}px,${lerp(shiftY+H*.05,T.y,t)}px,${lerp(-500,0,t)}px) rotate(${lerp(0,T.r,t)*.3}deg) scale(${lerp(.3,1,t)})`;
+    ch.style.transform=`translate(-50%,-50%) translate3d(${lerp(shift,T.x,t)}px,${lerp(shiftY+(mobile?H*.08:H*.05),T.y,t)}px,${lerp(-500,0,t)}px) rotate(${lerp(0,T.r,t)*.3}deg) scale(${lerp(.3,1,t)})`;
   });
 };
 
@@ -1462,11 +1518,17 @@ function setWaScenario(key){
   const s=waScenarios[key];
   $('#waName').innerText=s.name;
   $('#waIncomingMsg').innerText=s.incoming;
+  const chatLog=$('#waChatLog');
+  [...chatLog.querySelectorAll('.chat-outgoing')].forEach(el=>el.remove());
   const btns=$$('#waChoices .slang-btn');
+  btns[0].classList.remove('correct','wrong');
+  btns[1].classList.remove('correct','wrong');
   btns[0].querySelector('span').innerText=`"${s.correct}"`;
   btns[1].querySelector('span').innerText=`"${s.robot}"`;
-  $('#waExpl').style.display='none';
-  $('#waExpl').innerHTML=s.expl;
+  const expl=$('#waExpl');
+  expl.classList.remove('warn');
+  expl.style.display='none';
+  expl.innerHTML=s.expl;
   speakText(s.incoming);
 }
 
@@ -1474,18 +1536,44 @@ function handleWaChoice(isCorrect){
   const expl=$('#waExpl');
   const chatLog=$('#waChatLog');
   const s=waScenarios[currentWaKey];
+  const btns=$$('#waChoices .slang-btn');
 
   if(isCorrect){
+    btns[0].classList.add('correct');
+    btns[1].classList.remove('wrong');
+    expl.classList.remove('warn');
+    expl.innerHTML=s.expl;
     expl.style.display='block';
-    const bubble=document.createElement('div');
-    bubble.className='chat-bubble chat-outgoing';
-    bubble.innerText=s.correct;
-    chatLog.appendChild(bubble);
+    if(!chatLog.querySelector('.chat-outgoing')){
+      const bubble=document.createElement('div');
+      bubble.className='chat-bubble chat-outgoing';
+      bubble.innerText=s.correct;
+      chatLog.appendChild(bubble);
+    }
     speakText(s.correct);
   } else {
-    alert("🤖 ¡Demasiado formal! Un británico te miraría raro si le contestas como una enciclopedia.");
+    btns[1].classList.add('wrong');
+    expl.classList.add('warn');
+    expl.innerHTML='🤖 <b>¡Demasiado formal para un colega!</b> En Reino Unido te mirarían raro si contestas así por WhatsApp. Prueba la opción callejera arriba.';
+    expl.style.display='block';
   }
 }
+
+$('#waSpeakerBtn')?.addEventListener('click',speakCurrentWa);
+$$('#waChoices .slang-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>handleWaChoice(btn.dataset.waChoice==='correct'));
+});
+$$('#waScenarioBtns [data-wa-scene]').forEach(btn=>{
+  btn.addEventListener('click',()=>setWaScenario(btn.dataset.waScene));
+});
+$('#drillSpeakerBtn')?.addEventListener('click',()=>{
+  const target=$('#drillTargetText');
+  if(target) speakText(target.innerText);
+});
+$('#drillForm')?.addEventListener('submit',handleDrillSubmit);
+$('#backToTopBtn')?.addEventListener('click',()=>{
+  scrollTo({top:0,behavior:reduce?'auto':'smooth'});
+});
 
 // Active recall repetition simulation
 let drillCount=0;
@@ -1570,16 +1658,15 @@ updaters['s-bugs']=p=>{
    ============================================================ */
 const term=$('#term'),typed=$('#typed'),sideCards=$$('#side .card');
 const tLines=[
-  ['c','# 1. Clonar repositorio e instalar dependencias'],
-  ['g','PS> git clone https://github.com/adrianSG25/aprende-en.git'],
-  ['g','PS> npm install'],
-  ['b','✓ 142 packages installed in 1.4s'],
-  ['',''],
-  ['c','# 2. Compilar con Vite + TypeScript'],
+  ['c','# 1. Compilar app (TypeScript + Vite + Tailwind 4)'],
   ['g','PS> npm run build'],
-  ['b','✓ built in 580ms (PWA Cache uk-street-v19 active)'],
+  ['b','✓ tsc -b + vite build OK (PWA Cache uk-street-v20)'],
   ['',''],
-  ['c','# 3. Desplegar en producción global'],
+  ['c','# 2. Regenerar memoria técnica PDF (Edge Headless)'],
+  ['g','PS> node scripts/generate_doc_pdf.cjs'],
+  ['b','✓ EngDrill_Pro_Arquitectura_y_Codigo.pdf actualizado'],
+  ['',''],
+  ['c','# 3. Publicar Web + /presentacion/ en GitHub Pages'],
   ['g','PS> npx gh-pages -d dist'],
   ['y','🚀 Published to https://adriansg25.github.io/aprende-en/']
 ];

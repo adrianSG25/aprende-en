@@ -1,11 +1,11 @@
 {
   "name": "UK Street English",
   "short_name": "UK Street EN",
-  "description": "El videojuego para aprender el inglés real de la calle, pubs y WhatsApp en Reino Unido.",
+  "description": "Entrena el inglés real de Londres: barrios, WhatsApp, vocabulario de calle y análisis con IA.",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#4f46e5",
+  "background_color": "#f5f6f4",
+  "theme_color": "#ffffff",
   "orientation": "portrait-primary",
   "icons": [
     {
