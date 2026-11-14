@@ -95,14 +95,62 @@ export async function fetchAvailableModelsForKey(config: AIConfig): Promise<stri
   if (resolved.provider === 'gemini') {
     try {
       const res = await fetch(`${resolved.baseUrl}/models?key=${resolved.apiKey}`);
-      if (!res.ok) return ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+      if (!res.ok) return ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-4-hydrogen', 'gemini-2.5-flash-lite'];
       const data = await res.json();
-      const models: string[] = (data.models || [])
-        .map((m: { name?: string }) => (m.name || '').replace('models/', ''))
-        .filter((name: string) => name.includes('gemini') && !name.includes('embedding') && !name.includes('imagen'));
-      return models.length > 0 ? models : ['gemini-2.5-flash', 'gemini-2.0-flash'];
+      const rawModels: any[] = data.models || [];
+      const filtered = rawModels.filter((m) => {
+        const sup = m.supportedGenerationMethods;
+        const hasGen = !Array.isArray(sup) || sup.includes('generateContent');
+        const name = (m.name || '').toLowerCase();
+        if (!hasGen) return false;
+        if (!name.includes('gemini')) return false;
+        if (
+          name.includes('embedding') ||
+          name.includes('imagen') ||
+          name.includes('veo') ||
+          name.includes('lyria') ||
+          name.includes('tts') ||
+          name.includes('live') ||
+          name.includes('audio') ||
+          name.includes('transcribe') ||
+          name.includes('image') ||
+          name.includes('robotics') ||
+          name.includes('deep-research') ||
+          name.includes('2.0') ||
+          name.includes('1.5') ||
+          name.includes('1.0')
+        ) {
+          return false;
+        }
+        return true;
+      });
+
+      const models: string[] = filtered.map((m) => (m.name || '').replace('models/', ''));
+
+      const preferredOrder = [
+        'gemini-3.8-flash',
+        'gemini-3.5-flash-lite',
+        'gemini-4-hydrogen',
+        'gemini-3.6-flash',
+        'gemini-2.5-flash-lite',
+        'gemini-2.5-flash',
+        'gemini-4-argon',
+        'gemini-4-carbon'
+      ];
+
+      models.sort((a, b) => {
+        const idxA = preferredOrder.findIndex((p) => a.toLowerCase().includes(p.toLowerCase()));
+        const idxB = preferredOrder.findIndex((p) => b.toLowerCase().includes(p.toLowerCase()));
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a.localeCompare(b);
+      });
+
+      const fallbacks = ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-4-hydrogen', 'gemini-2.5-flash-lite'];
+      return models.length > 0 ? models : fallbacks;
     } catch {
-      return ['gemini-2.5-flash', 'gemini-2.0-flash'];
+      return ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-4-hydrogen', 'gemini-2.5-flash-lite'];
     }
   }
 
@@ -197,13 +245,36 @@ async function callLLMJson(systemPrompt: string, userPrompt: string, config: AIC
 
   // 1) Proveedor Gemini
   if (resolved.provider === 'gemini') {
-    const candidateModels =
-      config.model && config.model !== 'auto' && config.model.includes('gemini')
-        ? [config.model, 'gemini-2.5-flash', 'gemini-2.0-flash']
-        : ['gemini-2.5-flash', 'gemini-2.0-flash'];
+    const candidateModels: string[] = [];
+    if (
+      config.model &&
+      config.model !== 'auto' &&
+      config.model.includes('gemini') &&
+      !config.model.includes('2.0') &&
+      !config.model.includes('1.5')
+    ) {
+      candidateModels.push(config.model);
+    }
+
+    const defaultGeminiCandidates = [
+      'gemini-3.8-flash',
+      'gemini-3.5-flash-lite',
+      'gemini-4-hydrogen',
+      'gemini-2.5-flash-lite',
+      'gemini-2.5-flash'
+    ];
+
+    for (const m of defaultGeminiCandidates) {
+      if (!candidateModels.includes(m)) {
+        candidateModels.push(m);
+      }
+    }
 
     let lastErr = '';
+    const triedModels = new Set<string>();
+
     for (const mdl of candidateModels) {
+      triedModels.add(mdl);
       const url = `${resolved.baseUrl}/models/${mdl}:generateContent?key=${resolved.apiKey}`;
       const res = await fetch(url, {
         method: 'POST',
@@ -223,6 +294,36 @@ async function callLLMJson(systemPrompt: string, userPrompt: string, config: AIC
       }
       lastErr = await res.text();
     }
+
+    // Try dynamically discovered models if initial candidates fail
+    try {
+      const dynamicModels = await fetchAvailableModelsForKey(config);
+      for (const mdl of dynamicModels) {
+        if (triedModels.has(mdl)) continue;
+        triedModels.add(mdl);
+        const url = `${resolved.baseUrl}/models/${mdl}:generateContent?key=${resolved.apiKey}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+            generationConfig: {
+              temperature: 0.4,
+              responseMimeType: 'application/json'
+            }
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+          return extractCleanJson(rawText);
+        }
+        lastErr = await res.text();
+      }
+    } catch (e: any) {
+      lastErr = e?.message || lastErr;
+    }
+
     throw new Error(`Error de Gemini API: ${lastErr}`);
   }
 
