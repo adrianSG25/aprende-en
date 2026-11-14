@@ -1090,23 +1090,28 @@ You must provide:
    - "sceneContextEn": sample sentence showing how it is used in the context
    - "sceneContextEs": natural Spanish translation of that sentence
    - "explanationWhyEs": why it is used here, nuance or street usage
-3. "questions": 3 open comprehension questions in English about specific plot events, character motivations or decisions in this work.
+3. "questions": 3 EASYGOING, CONVERSATIONAL comprehension questions in everyday B1/B2 English — just like chatting casually with a friend who asks you what happened in the show/movie/book.
+   STRICT RULES FOR QUESTIONS (VERY IMPORTANT):
+   - Keep every question SHORT, CLEAR, and DOWN-TO-EARTH (max ~15 words in "questionEn").
+   - Someone who just watched/read it must be able to answer it effortlessly even in Spanish in 1–2 simple sentences.
+   - Ask about clear, obvious main events, simple character actions/feelings, or a casual personal opinion (e.g. "Why did X get angry at the start?", "What happened when X met Y?", "Do you think X did the right thing at the end? Why?").
+   - STRICTLY FORBIDDEN: NO academic or literary-criticism questions, NO comparative film/book essays, NO complex or formal vocabulary (NEVER use words like "depiction", "villainy", "pivotal", "alter the traditional", "descent into", "portrayal", "subvert", "juxtaposition", "thematic").
    For each question:
    - "id": "mq-1", "mq-2", "mq-3"
-   - "questionEn": Question in English
-   - "questionEs": Translation in Spanish
-   - "sceneHintEs": Scene context hint in Spanish
-   - "sampleIdealAnswerEn": Complete, natural model answer in English
-   - "targetGrammarHint": Grammar advice in Spanish (e.g. "Responde usando Past Simple o Past Continuous")
+   - "questionEn": Short, casual question in everyday English
+   - "questionEs": Natural, casual translation in Spanish
+   - "sceneHintEs": Friendly, concrete 1-line memory cue in plain Spanish (e.g. "Recuerda la escena del bar cuando...") — NO essay instructions
+   - "sampleIdealAnswerEn": Short, natural 1–2 sentence conversational answer in everyday B1/B2 English
+   - "targetGrammarHint": Simple grammar tip in Spanish (e.g. "Responde en 1 o 2 frases sencillas usando Past Simple")
 
 Return ONLY valid JSON matching this structure.`;
 
   const usr =
     mediaType === 'series'
-      ? `Generate episode analysis for "${mediaTitle}" - "${episodeOrPart}". Make sure vocabulary has words that are not common and require thinking to translate to Spanish.`
+      ? `Generate episode analysis for "${mediaTitle}" - "${episodeOrPart}". Keep vocabulary interesting/colloquial, and keep the 3 questions super relaxed, short, and conversational (like a friend asking what happened).`
       : mediaType === 'movie'
-      ? `Generate movie analysis for the film "${mediaTitle}". Make sure vocabulary has words that are not common, idiomatic or slang and require thinking to translate to Spanish.`
-      : `Generate book analysis for the book/novel "${mediaTitle}". Make sure vocabulary has words that are not common, literary or British expressions and require thinking to translate to Spanish.`;
+      ? `Generate movie analysis for the film "${mediaTitle}". Keep vocabulary interesting/colloquial, and keep the 3 questions super relaxed, short, and conversational (like a friend asking what happened).`
+      : `Generate book analysis for the book/novel "${mediaTitle}". Keep vocabulary interesting/colloquial, and keep the 3 questions super relaxed, short, and conversational (like a friend asking what happened).`;
   const jsonStr = await callLLMJson(sys, usr, config);
   const parsed = JSON.parse(jsonStr);
 
@@ -1166,18 +1171,18 @@ export async function evaluateMediaQuestionAnswerWithAI(
   expectedContextEn: string
 ): Promise<OpenAnswerFeedback> {
   const config = getAIConfig();
-  const sys = `You are an expert British English teacher correcting a student's answer about a TV show / movie / book episode.
-Show/Movie: "${mediaTitle}" (${episodeOrPart})
+  const sys = `You are a friendly, non-pedantic British English teacher correcting a student's casual answer about a TV show / movie / book.
+Show/Movie/Book: "${mediaTitle}" (${episodeOrPart})
 Question: "${questionEn}"
-Expected Plot Answer / Reference: "${expectedContextEn}"
+Reference Answer: "${expectedContextEn}"
 Student's Answer in English: "${userAnswerEn}"
 
-Evaluate the student's answer:
-1. Is the content accurate to what happened in this episode?
-2. Correct every grammar, spelling, tense, and vocabulary mistake.
-3. Provide a score from 1 to 10.
-4. Provide a corrected version of the user's sentence.
-5. Provide a natural native British English / B2 upgrade sentence.
+Evaluate the student's answer in an encouraging, practical way:
+1. Is the content generally accurate or reasonable for the question (or a valid personal opinion)? Do NOT expect a long academic essay—1 or 2 simple sentences are totally fine.
+2. Correct clear grammar, spelling, tense, and vocabulary mistakes (ignore minor punctuation like missing commas or hyphens).
+3. Provide a fair score from 1 to 10.
+4. Provide a clean corrected version of the user's sentence.
+5. Provide a natural everyday British English / B2 upgrade sentence (keep it conversational, not stiff/academic).
 6. List all errors found: { wrong, right, whyEs }.
 7. Provide encouraging and clear feedback in Spanish.
 
