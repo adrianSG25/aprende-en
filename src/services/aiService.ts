@@ -87,6 +87,28 @@ function resolveProviderAndEndpoint(config: AIConfig): {
   };
 }
 
+// Fetch con límite de tiempo para evitar peticiones colgadas en redes móviles
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit = {},
+  timeoutMs: number = 18000
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error(
+        `La IA tardó más de ${Math.round(timeoutMs / 1000)}s en responder. Reinténtalo o elige un modelo más rápido en Ajustes IA.`
+      );
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Consulta en vivo a la API qué modelos tiene disponibles esta cuenta/clave y elige el mejor modelo de texto
 export async function fetchAvailableModelsForKey(config: AIConfig): Promise<string[]> {
   const resolved = resolveProviderAndEndpoint(config);
@@ -94,7 +116,7 @@ export async function fetchAvailableModelsForKey(config: AIConfig): Promise<stri
 
   if (resolved.provider === 'gemini') {
     try {
-      const res = await fetch(`${resolved.baseUrl}/models?key=${resolved.apiKey}`);
+      const res = await fetchWithTimeout(`${resolved.baseUrl}/models?key=${resolved.apiKey}`, {}, 8000);
       if (!res.ok) return ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-4-hydrogen', 'gemini-2.5-flash-lite'];
       const data = await res.json();
       const rawModels: any[] = data.models || [];
@@ -155,11 +177,15 @@ export async function fetchAvailableModelsForKey(config: AIConfig): Promise<stri
   }
 
   try {
-    const res = await fetch(`${resolved.baseUrl}/models`, {
-      headers: {
-        Authorization: `Bearer ${resolved.apiKey}`
-      }
-    });
+    const res = await fetchWithTimeout(
+      `${resolved.baseUrl}/models`,
+      {
+        headers: {
+          Authorization: `Bearer ${resolved.apiKey}`
+        }
+      },
+      8000
+    );
     if (!res.ok) return [];
     const data = await res.json();
     const rawIds: string[] = (data.data || []).map((m: { id: string }) => m.id);
@@ -185,26 +211,26 @@ export async function fetchAvailableModelsForKey(config: AIConfig): Promise<stri
       return true;
     });
 
-    // Priorizar los mejores modelos conocidos si están en la lista de la cuenta
+    // Priorizar modelos rápidos de chat/JSON antes que modelos reasoning pesados
     const preferredOrder = [
       'llama-3.3-70b-versatile',
       'llama-3.1-8b-instant',
-      'openai/gpt-oss-120b',
-      'openai/gpt-oss-20b',
-      'meta-llama/llama-4-scout-17b-16e-instruct',
-      'meta-llama/llama-4-maverick-17b-128e-instruct',
-      'qwen-qwq-32b',
-      'qwen/qwen3-32b',
-      'deepseek-r1-distill-llama-70b',
-      'gemma2-9b-it',
-      'llama3-70b-8192',
-      'llama3-8b-8192',
+      'gpt-4o-mini',
+      'gpt-4.1-mini',
       'grok-3-mini',
       'grok-3',
       'grok-2-latest',
-      'gpt-4o-mini',
-      'gpt-4.1-mini',
-      'gpt-4o'
+      'meta-llama/llama-4-scout-17b-16e-instruct',
+      'meta-llama/llama-4-maverick-17b-128e-instruct',
+      'openai/gpt-oss-20b',
+      'openai/gpt-oss-120b',
+      'gemma2-9b-it',
+      'llama3-70b-8192',
+      'llama3-8b-8192',
+      'gpt-4o',
+      'qwen/qwen3-32b',
+      'qwen-qwq-32b',
+      'deepseek-r1-distill-llama-70b'
     ];
 
     chatModels.sort((a, b) => {
@@ -238,7 +264,7 @@ function extractCleanJson(text: string): string {
 
 async function callLLMJson(systemPrompt: string, userPrompt: string, config: AIConfig): Promise<string> {
   if (!config.apiKey.trim()) {
-    throw new Error('No has configurado una API Key todavía. Haz clic en el botón "IA / Móvil" arriba a la derecha.');
+    throw new Error('No has configurado una API Key todavía. Haz clic en el botón "Ajustes IA" arriba a la derecha.');
   }
 
   const resolved = resolveProviderAndEndpoint(config);
@@ -273,36 +299,11 @@ async function callLLMJson(systemPrompt: string, userPrompt: string, config: AIC
     let lastErr = '';
     const triedModels = new Set<string>();
 
-    for (const mdl of candidateModels) {
-      triedModels.add(mdl);
+    const callGeminiModel = async (mdl: string) => {
       const url = `${resolved.baseUrl}/models/${mdl}:generateContent?key=${resolved.apiKey}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
-          generationConfig: {
-            temperature: 0.4,
-            responseMimeType: 'application/json'
-          }
-        })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-        return extractCleanJson(rawText);
-      }
-      lastErr = await res.text();
-    }
-
-    // Try dynamically discovered models if initial candidates fail
-    try {
-      const dynamicModels = await fetchAvailableModelsForKey(config);
-      for (const mdl of dynamicModels) {
-        if (triedModels.has(mdl)) continue;
-        triedModels.add(mdl);
-        const url = `${resolved.baseUrl}/models/${mdl}:generateContent?key=${resolved.apiKey}`;
-        const res = await fetch(url, {
+      const res = await fetchWithTimeout(
+        url,
+        {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -312,34 +313,56 @@ async function callLLMJson(systemPrompt: string, userPrompt: string, config: AIC
               responseMimeType: 'application/json'
             }
           })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-          return extractCleanJson(rawText);
+        },
+        18000
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+        if (config.model !== mdl) {
+          saveAIConfig({ ...config, model: mdl });
         }
-        lastErr = await res.text();
+        return extractCleanJson(rawText);
       }
-    } catch (e: any) {
-      lastErr = e?.message || lastErr;
+      if (res.status === 401 || res.status === 403) {
+        throw new Error('La API Key de Gemini no es válida o no tiene permisos. Revísala en "Ajustes IA".');
+      }
+      if (res.status === 429) {
+        throw new Error('Has alcanzado el límite de peticiones de Gemini (429). Espera unos segundos e inténtalo de nuevo.');
+      }
+      lastErr = await res.text();
+      return null;
+    };
+
+    for (const mdl of candidateModels.slice(0, 3)) {
+      triedModels.add(mdl);
+      const result = await callGeminiModel(mdl);
+      if (result !== null) return result;
+    }
+
+    // Descubrimiento dinámico acotado si los modelos iniciales devolvieron 404/error
+    const dynamicModels = await fetchAvailableModelsForKey(config);
+    for (const mdl of dynamicModels.filter((m) => !triedModels.has(m)).slice(0, 2)) {
+      triedModels.add(mdl);
+      const result = await callGeminiModel(mdl);
+      if (result !== null) return result;
     }
 
     throw new Error(`Error de Gemini API: ${lastErr}`);
   }
 
   // 2) Proveedores compatibles con OpenAI (Groq, xAI Grok, OpenAI, OpenRouter)
-  // Descubrimos qué modelos tiene activos la cuenta por si el modelo guardado ya no existe (404 model_not_found)
-  const discoveredModels = await fetchAvailableModelsForKey(config);
-
+  // Probar directo el modelo guardado si existe; solo consultar /models en 'auto' o ante fallo de modelo
+  const hasSavedModel = Boolean(config.model && config.model !== 'auto');
   const candidateModels: string[] = [];
-  if (config.model && config.model !== 'auto') {
+
+  if (hasSavedModel) {
     candidateModels.push(config.model);
+  } else {
+    const discoveredModels = await fetchAvailableModelsForKey(config);
+    candidateModels.push(...discoveredModels);
   }
-  for (const m of discoveredModels) {
-    if (!candidateModels.includes(m)) {
-      candidateModels.push(m);
-    }
-  }
+
   if (candidateModels.length === 0) {
     candidateModels.push(
       resolved.provider === 'xai'
@@ -351,29 +374,36 @@ async function callLLMJson(systemPrompt: string, userPrompt: string, config: AIC
   }
 
   let lastErrorText = '';
+  const tried = new Set<string>();
 
-  for (const modelToTry of candidateModels.slice(0, 6)) {
-    // Intento con response_format json_object primero
-    const res = await fetch(`${resolved.baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${resolved.apiKey}`
+  for (let i = 0; i < candidateModels.length && tried.size < 3; i++) {
+    const modelToTry = candidateModels[i];
+    if (tried.has(modelToTry)) continue;
+    tried.add(modelToTry);
+
+    const res = await fetchWithTimeout(
+      `${resolved.baseUrl}/chat/completions`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${resolved.apiKey}`
+        },
+        body: JSON.stringify({
+          model: modelToTry,
+          temperature: 0.4,
+          messages: [
+            { role: 'system', content: systemPrompt + '\nIMPORTANT: Respond ONLY with a valid JSON object. No markdown, no extra text.' },
+            { role: 'user', content: userPrompt }
+          ]
+        })
       },
-      body: JSON.stringify({
-        model: modelToTry,
-        temperature: 0.4,
-        messages: [
-          { role: 'system', content: systemPrompt + '\nIMPORTANT: Respond ONLY with a valid JSON object. No markdown, no extra text.' },
-          { role: 'user', content: userPrompt }
-        ]
-      })
-    });
+      18000
+    );
 
     if (res.ok) {
       const data = await res.json();
       const content = data.choices?.[0]?.message?.content || '{}';
-      // Guardar este modelo que sí ha funcionado para futuras llamadas
       if (config.model !== modelToTry) {
         saveAIConfig({ ...config, model: modelToTry });
       }
@@ -383,9 +413,18 @@ async function callLLMJson(systemPrompt: string, userPrompt: string, config: AIC
     const errText = await res.text();
     lastErrorText = `(${res.status}) ${errText}`;
 
-    // Si es error 401 (API Key inválida), no seguir probando otros modelos
-    if (res.status === 401) {
-      throw new Error('La API Key introducida no es válida o ha caducado (Error 401). Revisa la clave en el botón "IA / Móvil".');
+    if (res.status === 401 || res.status === 403) {
+      throw new Error('La API Key introducida no es válida o ha caducado. Revisa la clave en "Ajustes IA".');
+    }
+    if (res.status === 429) {
+      throw new Error('Límite temporal de peticiones alcanzado (429). Espera unos segundos e inténtalo de nuevo.');
+    }
+
+    if (hasSavedModel && i === 0 && (res.status === 404 || res.status === 400)) {
+      const discovered = await fetchAvailableModelsForKey(config);
+      for (const m of discovered) {
+        if (!tried.has(m)) candidateModels.push(m);
+      }
     }
   }
 
@@ -976,7 +1015,7 @@ Return ONLY valid JSON:
   };
 }
 
-// ==================== ANÁLISIS DE SERIES, PELÍCULAS Y LIBROS CON IA ====================
+// ==================== ANÁLISIS DE SERIES, PELÍCULAS Y CANCIONES CON IA ====================
 export interface MediaWordItem {
   id: string;
   wordEn: string;
@@ -1002,7 +1041,7 @@ export interface MediaAnalysisSession {
   id: string;
   createdAt: number;
   mediaTitle: string;
-  mediaType: 'series' | 'movie' | 'book';
+  mediaType: 'series' | 'movie' | 'song';
   episodeOrPart: string;
   synopsisEs: string;
   words: MediaWordItem[];
@@ -1011,7 +1050,7 @@ export interface MediaAnalysisSession {
 
 export async function generateMediaAnalysisWithAI(
   mediaTitle: string,
-  mediaType: 'series' | 'movie' | 'book',
+  mediaType: 'series' | 'movie' | 'song',
   episodeOrPart: string,
   userNotes?: string,
   prefetchedEpisodeData?: TVEpisodeInfo | null
@@ -1033,14 +1072,20 @@ export async function generateMediaAnalysisWithAI(
       ? 'TV series episode'
       : mediaType === 'movie'
       ? 'movie / film'
-      : 'book / novel';
+      : 'song / music track';
 
   const sys = `You are a native British English linguist and pop culture tutor.
-The student is watching or reading:
+The student is watching or listening to:
 - Title: "${mediaTitle}"
 - Media Type: ${mediaType} (${mediaLabel})
-${mediaType === 'series' ? `- Episode / Season / Chapter: "${episodeOrPart}"` : `- Scope: Full ${mediaLabel} ("${episodeOrPart || 'Complete work'}")`}
-${userNotes ? `- Additional user notes / real plot details: "${userNotes}"` : ''}
+${
+  mediaType === 'series'
+    ? `- Episode / Season / Chapter: "${episodeOrPart}"`
+    : mediaType === 'song'
+    ? `- Artist / Scope: "${episodeOrPart || 'Canción completa'}"`
+    : `- Scope: Full movie ("${episodeOrPart || 'Película completa'}")`
+}
+${userNotes ? `- Additional user notes / lyrics or plot details: "${userNotes}"` : ''}
 ${
   onlineEpisode
     ? `
@@ -1078,8 +1123,8 @@ CRITICAL RULES AGAINST REFUSALS & HALLUCINATIONS:
 
 Generate a rich, authentic study session for this specific work.
 You must provide:
-1. "synopsisEs": A concise 2-sentence summary in Spanish of what happens in this work/episode/chapter.
-2. "words": 6 to 8 UNCOMMON, colloquial, slang, idiomatic or distinctive English words/phrases actually used or strongly associated with this work. (Do NOT include basic A1/A2 words like "house", "car", "eat").
+1. "synopsisEs": A concise 2-sentence summary in Spanish of what happens in this episode/movie or what this song is about (its emotional tone, story or message).
+2. "words": 6 to 8 UNCOMMON, colloquial, slang, idiomatic, phrasal verb, lyrical metaphor or distinctive English words/phrases actually used or strongly associated with this work. (Do NOT include basic A1/A2 words like "house", "car", "eat").
    For each word:
    - "id": "mw-1", "mw-2", etc.
    - "wordEn": English word, phrasal verb or idiom (e.g. "collateral", "proper dodgy", "leverage", "extortion", "take the piss", "geezer")
@@ -1087,22 +1132,22 @@ You must provide:
    - "partOfSpeech": "noun" | "verb" | "adjective" | "expression" | "slang"
    - "acceptedMeaningsEs": array of accepted short Spanish meanings/translations the student might type (e.g. ["garantía", "aval", "fianza", "prenda"])
    - "primaryMeaningEs": clear definition in Spanish
-   - "sceneContextEn": sample sentence showing how it is used in the context
+   - "sceneContextEn": sample sentence or lyric-inspired usage showing how it is used in the context
    - "sceneContextEs": natural Spanish translation of that sentence
    - "explanationWhyEs": why it is used here, nuance or street usage
-3. "questions": 3 EASYGOING, CONVERSATIONAL comprehension questions in everyday B1/B2 English — just like chatting casually with a friend who asks you what happened in the show/movie/book.
+3. "questions": 3 EASYGOING, CONVERSATIONAL comprehension questions in everyday B1/B2 English — just like chatting casually with a friend who asks you about the show, movie, or song.
    STRICT RULES FOR QUESTIONS (VERY IMPORTANT):
    - Keep every question SHORT, CLEAR, and DOWN-TO-EARTH (max ~15 words in "questionEn").
-   - Someone who just watched/read it must be able to answer it effortlessly even in Spanish in 1–2 simple sentences.
-   - Ask about clear, obvious main events, simple character actions/feelings, or a casual personal opinion (e.g. "Why did X get angry at the start?", "What happened when X met Y?", "Do you think X did the right thing at the end? Why?").
-   - STRICTLY FORBIDDEN: NO academic or literary-criticism questions, NO comparative film/book essays, NO complex or formal vocabulary (NEVER use words like "depiction", "villainy", "pivotal", "alter the traditional", "descent into", "portrayal", "subvert", "juxtaposition", "thematic").
+   - Someone who just watched or listened to it must be able to answer effortlessly in 1–2 simple sentences.
+   - Ask about clear main events, simple character feelings/actions, or (for songs) what the song feels like, its story/message, or a casual personal opinion (e.g. "Why did X get angry at the start?", "What happened when X met Y?", "What mood does this song put you in and why?").
+   - STRICTLY FORBIDDEN: NO academic or literary-criticism questions, NO comparative essays, NO complex or formal vocabulary (NEVER use words like "depiction", "villainy", "pivotal", "alter the traditional", "descent into", "portrayal", "subvert", "juxtaposition", "thematic").
    For each question:
    - "id": "mq-1", "mq-2", "mq-3"
    - "questionEn": Short, casual question in everyday English
    - "questionEs": Natural, casual translation in Spanish
-   - "sceneHintEs": Friendly, concrete 1-line memory cue in plain Spanish (e.g. "Recuerda la escena del bar cuando...") — NO essay instructions
+   - "sceneHintEs": Friendly, concrete 1-line memory cue in plain Spanish (e.g. "Recuerda la escena del bar cuando..." o "Piensa en el estribillo...") — NO essay instructions
    - "sampleIdealAnswerEn": Short, natural 1–2 sentence conversational answer in everyday B1/B2 English
-   - "targetGrammarHint": Simple grammar tip in Spanish (e.g. "Responde en 1 o 2 frases sencillas usando Past Simple")
+   - "targetGrammarHint": Simple grammar tip in Spanish (e.g. "Responde en 1 o 2 frases sencillas usando Past Simple" o "Usa Present Simple para hablar del mensaje")
 
 Return ONLY valid JSON matching this structure.`;
 
@@ -1111,7 +1156,7 @@ Return ONLY valid JSON matching this structure.`;
       ? `Generate episode analysis for "${mediaTitle}" - "${episodeOrPart}". Keep vocabulary interesting/colloquial, and keep the 3 questions super relaxed, short, and conversational (like a friend asking what happened).`
       : mediaType === 'movie'
       ? `Generate movie analysis for the film "${mediaTitle}". Keep vocabulary interesting/colloquial, and keep the 3 questions super relaxed, short, and conversational (like a friend asking what happened).`
-      : `Generate book analysis for the book/novel "${mediaTitle}". Keep vocabulary interesting/colloquial, and keep the 3 questions super relaxed, short, and conversational (like a friend asking what happened).`;
+      : `Generate song analysis for the song "${mediaTitle}". In synopsisEs (in Spanish), explain casually what the song is about, its mood and message. Pick 6-8 interesting colloquial words, British/urban slang, idioms or lyrical metaphors. Keep the 3 questions super relaxed, short, and conversational (like a friend asking what the song is about or what you think of it).`;
   const jsonStr = await callLLMJson(sys, usr, config);
   const parsed = JSON.parse(jsonStr);
 
@@ -1121,8 +1166,10 @@ Return ONLY valid JSON matching this structure.`;
   if (!cleanSynopsis || isRefusal) {
     if (onlineEpisode?.summary) {
       cleanSynopsis = `En "${onlineEpisode.episodeName}" (${onlineEpisode.showName} T${onlineEpisode.season}E${onlineEpisode.number}): ${onlineEpisode.summary}`;
+    } else if (mediaType === 'song') {
+      cleanSynopsis = `Canción centrada en "${mediaTitle}", analizada a través de sus metáforas, expresiones idiomáticas y matices emocionales en inglés.`;
     } else {
-      const typeLabel = mediaType === 'series' ? 'Episodio ambientado' : mediaType === 'movie' ? 'Película ambientada' : 'Libro ambientado';
+      const typeLabel = mediaType === 'series' ? 'Episodio ambientado' : 'Película ambientada';
       cleanSynopsis = `${typeLabel} en el universo de ${mediaTitle}, donde los personajes se enfrentan a intensas situaciones características de la trama.`;
     }
   }
@@ -1157,7 +1204,11 @@ Return ONLY valid JSON matching this structure.`;
           questionEs: q.questionEs || '',
           sceneHintEs: q.sceneHintEs || '',
           sampleIdealAnswerEn: q.sampleIdealAnswerEn || '',
-          targetGrammarHint: q.targetGrammarHint || 'Escribe tu respuesta en inglés en pasado.'
+          targetGrammarHint:
+            q.targetGrammarHint ||
+            (mediaType === 'song'
+              ? 'Responde en inglés usando expresiones de la canción.'
+              : 'Escribe tu respuesta en inglés en pasado.')
         }))
       : []
   };
@@ -1171,14 +1222,14 @@ export async function evaluateMediaQuestionAnswerWithAI(
   expectedContextEn: string
 ): Promise<OpenAnswerFeedback> {
   const config = getAIConfig();
-  const sys = `You are a friendly, non-pedantic British English teacher correcting a student's casual answer about a TV show / movie / book.
-Show/Movie/Book: "${mediaTitle}" (${episodeOrPart})
+  const sys = `You are a friendly, non-pedantic British English teacher correcting a student's casual answer about a TV show / movie / song.
+Work/Title: "${mediaTitle}" (${episodeOrPart})
 Question: "${questionEn}"
 Reference Answer: "${expectedContextEn}"
 Student's Answer in English: "${userAnswerEn}"
 
 Evaluate the student's answer in an encouraging, practical way:
-1. Is the content generally accurate or reasonable for the question (or a valid personal opinion)? Do NOT expect a long academic essay—1 or 2 simple sentences are totally fine.
+1. Is the content generally accurate or reasonable for this episode, movie, or song's meaning (or a valid personal opinion)? Do NOT expect a long academic essay—1 or 2 simple sentences are totally fine.
 2. Correct clear grammar, spelling, tense, and vocabulary mistakes (ignore minor punctuation like missing commas or hyphens).
 3. Provide a fair score from 1 to 10.
 4. Provide a clean corrected version of the user's sentence.

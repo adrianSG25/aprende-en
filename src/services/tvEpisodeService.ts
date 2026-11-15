@@ -72,6 +72,16 @@ export function cleanShowTitle(title: string): string {
     .trim();
 }
 
+async function fetchTVMazeWithTimeout(url: string, timeoutMs: number = 4500): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * Busca en tiempo real en la API pública de TVMaze (sin API key, CORS permitido)
  * la información oficial, nombre y sinopsis del episodio consultado.
@@ -86,7 +96,7 @@ export async function fetchOnlineEpisodeData(
     if (!cleanTitle) return null;
 
     // 1. Buscar el show en TVMaze
-    const searchRes = await fetch(
+    const searchRes = await fetchTVMazeWithTimeout(
       `https://api.tvmaze.com/search/shows?q=${encodeURIComponent(cleanTitle)}`
     );
     if (!searchRes.ok) return null;
@@ -102,7 +112,7 @@ export async function fetchOnlineEpisodeData(
     const show = exactMatch ? exactMatch.show : searchData[0].show;
 
     // 2. Obtener lista completa de episodios del show
-    const epsRes = await fetch(`https://api.tvmaze.com/shows/${show.id}/episodes`);
+    const epsRes = await fetchTVMazeWithTimeout(`https://api.tvmaze.com/shows/${show.id}/episodes`);
     if (!epsRes.ok) return null;
 
     const eps: Array<{

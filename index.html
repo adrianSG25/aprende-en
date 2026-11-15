@@ -18,7 +18,15 @@
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=JetBrains+Mono:wght@500;600;700&family=Onest:wght@400;500;600;700&display=swap"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=JetBrains+Mono:wght@500;600;700&family=Onest:wght@400;500;600;700&display=swap"
+      />
+    </noscript>
     <title>UK Street English — Inglés Real de Londres</title>
   </head>
   <body>
@@ -39,21 +47,6 @@
             .register('./sw.js', { updateViaCache: 'none' })
             .then((reg) => {
               reg.update();
-              reg.onupdatefound = () => {
-                const installingWorker = reg.installing;
-                if (installingWorker) {
-                  installingWorker.onstatechange = () => {
-                    if (
-                      installingWorker.state === 'installed' &&
-                      hadController &&
-                      !refreshing
-                    ) {
-                      refreshing = true;
-                      window.location.reload();
-                    }
-                  };
-                }
-              };
             })
             .catch(() => {});
         });

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, lazy, Suspense } from 'react';
 import { Exercise, UserStats } from './types';
 import { GameProgress } from './types/streetGame';
 import { STREET_LEVELS } from './data/streetData';
@@ -11,13 +11,6 @@ import {
 } from './services/storageService';
 import { BrandMark } from './components/BrandMark';
 import { StreetLevelMap } from './components/StreetLevelMap';
-import { StreetDrillArena } from './components/StreetDrillArena';
-import { StreetWhatsAppSimulator } from './components/StreetWhatsAppSimulator';
-import { StreetProfile } from './components/StreetProfile';
-import { FieldDictionaryZone } from './components/FieldDictionaryZone';
-import { ReadingZone } from './components/ReadingZone';
-import { MediaLearningZone } from './components/MediaLearningZone';
-import { SettingsModal } from './components/SettingsModal';
 import { runViewTransition } from './utils/viewTransition';
 import {
   Map,
@@ -33,6 +26,40 @@ import {
   LayoutGrid,
   ChevronRight
 } from 'lucide-react';
+
+// Carga diferida de pestañas secundarias para acelerar el arranque inicial en móvil
+const FieldDictionaryZone = lazy(() =>
+  import('./components/FieldDictionaryZone').then((m) => ({ default: m.FieldDictionaryZone }))
+);
+const MediaLearningZone = lazy(() =>
+  import('./components/MediaLearningZone').then((m) => ({ default: m.MediaLearningZone }))
+);
+const StreetDrillArena = lazy(() =>
+  import('./components/StreetDrillArena').then((m) => ({ default: m.StreetDrillArena }))
+);
+const StreetWhatsAppSimulator = lazy(() =>
+  import('./components/StreetWhatsAppSimulator').then((m) => ({ default: m.StreetWhatsAppSimulator }))
+);
+const ReadingZone = lazy(() =>
+  import('./components/ReadingZone').then((m) => ({ default: m.ReadingZone }))
+);
+const StreetProfile = lazy(() =>
+  import('./components/StreetProfile').then((m) => ({ default: m.StreetProfile }))
+);
+const SettingsModal = lazy(() =>
+  import('./components/SettingsModal').then((m) => ({ default: m.SettingsModal }))
+);
+
+const TabLoadingFallback: React.FC = () => (
+  <div
+    role="status"
+    aria-live="polite"
+    className="card p-8 flex items-center justify-center gap-3 text-sm font-semibold text-[var(--ink-muted)]"
+  >
+    <span className="w-4 h-4 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" />
+    <span>Cargando sección…</span>
+  </div>
+);
 
 type ActiveTab = 'levels' | 'vocab' | 'media' | 'drills' | 'whatsapp' | 'reading' | 'profile';
 
@@ -107,7 +134,7 @@ export function App() {
       id: 'media',
       label: 'Series y Cine IA',
       shortLabel: 'Series IA',
-      description: 'Aprende con episodios y películas',
+      description: 'Aprende con series, cine y canciones',
       icon: Clapperboard
     },
     {
@@ -260,59 +287,61 @@ export function App() {
         tabIndex={-1}
         className="flex-1 max-w-6xl w-full mx-auto px-3.5 sm:px-6 py-5 sm:py-7 outline-none"
       >
-        {activeTab === 'levels' && (
-          <StreetLevelMap
-            progress={gameProgress}
-            onUpdateProgress={handleUpdateGameProgress}
-            onOpenSettings={() => setShowSettings(true)}
-          />
-        )}
+        <Suspense fallback={<TabLoadingFallback />}>
+          {activeTab === 'levels' && (
+            <StreetLevelMap
+              progress={gameProgress}
+              onUpdateProgress={handleUpdateGameProgress}
+              onOpenSettings={() => setShowSettings(true)}
+            />
+          )}
 
-        {activeTab === 'vocab' && (
-          <FieldDictionaryZone
-            progress={gameProgress}
-            onUpdateProgress={handleUpdateGameProgress}
-          />
-        )}
+          {activeTab === 'vocab' && (
+            <FieldDictionaryZone
+              progress={gameProgress}
+              onUpdateProgress={handleUpdateGameProgress}
+            />
+          )}
 
-        {activeTab === 'media' && (
-          <MediaLearningZone
-            progress={gameProgress}
-            onUpdateProgress={handleUpdateGameProgress}
-            onOpenSettings={() => setShowSettings(true)}
-          />
-        )}
+          {activeTab === 'media' && (
+            <MediaLearningZone
+              progress={gameProgress}
+              onUpdateProgress={handleUpdateGameProgress}
+              onOpenSettings={() => setShowSettings(true)}
+            />
+          )}
 
-        {activeTab === 'drills' && (
-          <StreetDrillArena
-            progress={gameProgress}
-            onUpdateProgress={handleUpdateGameProgress}
-            onOpenSettings={() => setShowSettings(true)}
-          />
-        )}
+          {activeTab === 'drills' && (
+            <StreetDrillArena
+              progress={gameProgress}
+              onUpdateProgress={handleUpdateGameProgress}
+              onOpenSettings={() => setShowSettings(true)}
+            />
+          )}
 
-        {activeTab === 'whatsapp' && (
-          <StreetWhatsAppSimulator
-            progress={gameProgress}
-            onUpdateProgress={handleUpdateGameProgress}
-          />
-        )}
+          {activeTab === 'whatsapp' && (
+            <StreetWhatsAppSimulator
+              progress={gameProgress}
+              onUpdateProgress={handleUpdateGameProgress}
+            />
+          )}
 
-        {activeTab === 'reading' && (
-          <ReadingZone
-            completedStories={stats.completedStories}
-            onMarkStoryComplete={handleMarkStoryComplete}
-            onExerciseAttempt={handleExerciseAttempt}
-            onOpenSettings={() => setShowSettings(true)}
-          />
-        )}
+          {activeTab === 'reading' && (
+            <ReadingZone
+              completedStories={stats.completedStories}
+              onMarkStoryComplete={handleMarkStoryComplete}
+              onExerciseAttempt={handleExerciseAttempt}
+              onOpenSettings={() => setShowSettings(true)}
+            />
+          )}
 
-        {activeTab === 'profile' && (
-          <StreetProfile
-            progress={gameProgress}
-            onUpdateProgress={handleUpdateGameProgress}
-          />
-        )}
+          {activeTab === 'profile' && (
+            <StreetProfile
+              progress={gameProgress}
+              onUpdateProgress={handleUpdateGameProgress}
+            />
+          )}
+        </Suspense>
       </main>
 
       {/* Popover de navegación adicional para móvil (WhatsApp, Lecturas, Pasaporte) */}
@@ -431,7 +460,11 @@ export function App() {
       </nav>
 
       {/* Diálogo modal nativo de Ajustes IA */}
-      <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
+      {showSettings && (
+        <Suspense fallback={null}>
+          <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
+        </Suspense>
+      )}
     </div>
   );
 }
