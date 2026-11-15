@@ -18,10 +18,18 @@
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=JetBrains+Mono:wght@500;600;700&family=Onest:wght@400;500;600;700&display=swap"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=JetBrains+Mono:wght@500;600;700&family=Onest:wght@400;500;600;700&display=swap"
+      />
+    </noscript>
     <title>UK Street English — Inglés Real de Londres</title>
-    <script type="module" crossorigin src="./assets/index-BX53L7q2.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-10Hm6Dg1.css">
+    <script type="module" crossorigin src="./assets/index-DdaVoCyK.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-B0auLf-b.css">
   </head>
   <body>
     <div id="root"></div>
@@ -40,21 +48,6 @@
             .register('./sw.js', { updateViaCache: 'none' })
             .then((reg) => {
               reg.update();
-              reg.onupdatefound = () => {
-                const installingWorker = reg.installing;
-                if (installingWorker) {
-                  installingWorker.onstatechange = () => {
-                    if (
-                      installingWorker.state === 'installed' &&
-                      hadController &&
-                      !refreshing
-                    ) {
-                      refreshing = true;
-                      window.location.reload();
-                    }
-                  };
-                }
-              };
             })
             .catch(() => {});
         });
